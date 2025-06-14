@@ -6,6 +6,7 @@ import { useCart } from "../contexts/CartContext";
 
 export default function OrderSummary() {
   const [, setLocation] = useLocation();
+  const [showSelectedItems, setShowSelectedItems] = useState(true);
   const { cartItems, updateQuantity, removeFromCart, clearCart, getTotalPrice } = useCart();
 
   const handlePlaceOrder = () => {
@@ -79,19 +80,17 @@ export default function OrderSummary() {
               CLEAR ALL
             </button>
             <button 
-              onClick={() => {
-                // Just a visual confirmation, doesn't clear cart
-                alert('Items confirmed! You can still modify quantities or place your order.');
-              }}
+              onClick={() => setShowSelectedItems(!showSelectedItems)}
               className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm"
             >
-              CONFIRM
+              {showSelectedItems ? 'CONFIRM' : 'SHOW ITEMS'}
             </button>
           </div>
         </div>
 
-        {/* Cart Items */}
-        <div className="space-y-6">
+        {/* Cart Items - Only show when showSelectedItems is true */}
+        {showSelectedItems && (
+          <div className="space-y-6">
           {cartItems.map((item) => (
             <div key={item.id} className="bg-white rounded-lg p-4 shadow-sm">
               {/* Main Item */}
@@ -140,7 +139,8 @@ export default function OrderSummary() {
               </div>
             </div>
           ))}
-        </div>
+          </div>
+        )}
 
         {/* Total */}
         <div className="mt-8 mb-4">

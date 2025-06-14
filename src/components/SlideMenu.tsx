@@ -59,6 +59,9 @@ function SlideMenu({ isOpen, onClose }: SlideMenuProps) {
             <button onClick={() => handleNavigation('/profile')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
               Profile
             </button>
+            <button onClick={() => handleNavigation('/create-profile')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
+              Create Profile
+            </button>
             <button onClick={() => handleNavigation('/settings')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
               Settings
             </button>

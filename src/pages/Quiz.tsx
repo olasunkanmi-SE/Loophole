@@ -109,14 +109,7 @@ export default function Quiz() {
           ))}
         </div>
 
-        {/* Continue Button */}
-        {selectedCategories.size > 0 && (
-          <div className="fixed bottom-6 left-6 right-6">
-            <button className="w-full bg-gray-900 text-white font-medium py-4 rounded-lg transition-colors duration-200 hover:bg-gray-800">
-              Continue ({selectedCategories.size})
-            </button>
-          </div>
-        )}
+        
       </div>
     </div>
   );

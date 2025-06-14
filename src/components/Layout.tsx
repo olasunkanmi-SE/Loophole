@@ -1,7 +1,7 @@
 
 import { type ReactNode } from "react";
 import MobileContainer from "./MobileContainer";
-import SlideMenuButton from "./SlideMenuButton";
+import SlideMenuButton from "./SlideMenu";
 
 interface LayoutProps {
   children: ReactNode;

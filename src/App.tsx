@@ -12,9 +12,10 @@ import DigitalQuestionnaire from "@/pages/DigitalQuestionnaire";
 import FoodQuestionnaire from "@/pages/FoodQuestionnaire";
 import Points from "@/pages/Points";
 import Profile from './pages/Profile';
+import SignIn from './pages/SignIn';
+import SignUp from './pages/SignUp';
 import CreateProfile from './pages/CreateProfile';
 import Settings from './pages/Settings';
-import SignIn from './pages/SignIn';
 import ErrorPage from "@/pages/ErrorPage";
 import { CartProvider } from "@/contexts/CartContext";
 import { PointsProvider } from "@/contexts/PointsContext";
@@ -28,8 +29,15 @@ function App() {
         <PointsProvider>
           <Switch>
             {/* Public routes */}
-            <Route path="/signin" component={SignIn} />
-            <Route path="/create-profile" component={CreateProfile} />
+            <Route path="/signin">
+              <SignIn />
+            </Route>
+            <Route path="/signup">
+              <SignUp />
+            </Route>
+            <Route path="/create-profile">
+              <CreateProfile />
+            </Route>
 
             {/* Protected routes */}
             <Route path="/">

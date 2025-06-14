@@ -64,7 +64,7 @@ export default function SlideMenuButton() {
       {/* Hamburger Menu Button */}
       <button
         onClick={() => setIsMenuOpen(true)}
-        className="fixed top-4 right-4 z-30 p-3 bg-black text-white rounded-lg shadow-lg hover:bg-gray-800 transition-colors"
+        className="fixed top-4 right-4 z-[9999] p-3 bg-black text-white rounded-lg shadow-lg hover:bg-gray-800 transition-colors"
       >
         <Menu size={24} />
       </button>

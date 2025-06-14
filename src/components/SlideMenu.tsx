@@ -1,6 +1,7 @@
 
 import { X, Menu } from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "wouter";
 
 interface SlideMenuProps {
   isOpen: boolean;
@@ -8,6 +9,13 @@ interface SlideMenuProps {
 }
 
 function SlideMenu({ isOpen, onClose }: SlideMenuProps) {
+  const [, setLocation] = useLocation();
+
+  const handleNavigation = (path: string) => {
+    setLocation(path);
+    onClose();
+  };
+
   return (
     <>
       {/* Overlay */}
@@ -34,21 +42,21 @@ function SlideMenu({ isOpen, onClose }: SlideMenuProps) {
           </div>
           
           <nav className="space-y-4">
-            <a href="#" className="block py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
+            <button onClick={() => handleNavigation('#')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
               Questionnaires
-            </a>
-            <a href="#" className="block py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
+            </button>
+            <button onClick={() => handleNavigation('/quiz')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
               Quizzes
-            </a>
-            <a href="#" className="block py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
+            </button>
+            <button onClick={() => handleNavigation('#')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
               Points
-            </a>
-            <a href="#" className="block py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
+            </button>
+            <button onClick={() => handleNavigation('#')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
               Profile
-            </a>
-            <a href="#" className="block py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
+            </button>
+            <button onClick={() => handleNavigation('#')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
               Settings
-            </a>
+            </button>
           </nav>
         </div>
       </div>

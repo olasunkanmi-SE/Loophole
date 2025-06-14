@@ -157,9 +157,9 @@ export default function Home() {
       </div>
 
       {/* Content Area */}
-      <div className="flex flex-grow overflow-hidden">
+      <div className="flex flex-col sm:flex-row flex-grow overflow-hidden">
         {/* Bridges List Sidebar */}
-        <div className="w-64 bg-white border-r border-gray-200 overflow-auto p-4">
+        <div className="w-full sm:w-64 bg-white border-b sm:border-b-0 sm:border-r border-gray-200 overflow-auto p-4 h-1/3 sm:h-full">
           <h2 className="text-lg font-semibold mb-2">Bridges</h2>
           {loadingBridges ? (
             <p className="text-gray-500">Loading bridges...</p>
@@ -187,7 +187,7 @@ export default function Home() {
           )}
         </div>
         {/* Map Area */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative h-2/3 sm:h-full">
           {loadingBridges && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-500 bg-opacity-20 z-10 backdrop-blur-sm">
               <div className="text-lg font-semibold text-gray-700">Loading Bridge Data...</div>

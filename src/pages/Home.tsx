@@ -30,6 +30,8 @@ const ChangeView = ({ center, zoom }: { center: L.LatLngExpression; zoom: number
   return null;
 };
 
+
+
 export default function Home() {
   const [showAddBridgePopup, setShowAddBridgePopup] = useState(false);
   const [bridges, setBridges] = useState<Bridge[]>([]);

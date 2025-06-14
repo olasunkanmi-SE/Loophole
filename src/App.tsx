@@ -12,6 +12,7 @@ import DigitalQuestionnaire from "@/pages/DigitalQuestionnaire";
 import FoodQuestionnaire from "@/pages/FoodQuestionnaire";
 import Points from "@/pages/Points";
 import Profile from './pages/Profile';
+import Settings from './pages/Settings';
 import ErrorPage from "@/pages/ErrorPage";
 import { CartProvider } from "@/contexts/CartContext";
 import { PointsProvider } from "@/contexts/PointsContext";
@@ -33,6 +34,7 @@ export default function App() {
             <Route path="/questionnaire/food" component={FoodQuestionnaire} />
             <Route path="/points" component={Points} />
             <Route path="/profile" component={Profile} />
+            <Route path="/settings" component={Settings} />
             <Route path="/listings" component={Listings} />
             <Route path="/listing/:id">
               <Listing />

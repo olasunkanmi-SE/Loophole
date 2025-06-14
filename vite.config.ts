@@ -16,7 +16,8 @@ export default defineConfig({
     port: 5173,
     allowedHosts: [
       ".replit.dev",
-      ".repl.co"
+      ".repl.co",
+      "2a51dba2-a7a2-4a09-82fd-2d445191ddb9-00-2su0owhisv2au.spock.replit.dev"
     ],
   },
 });

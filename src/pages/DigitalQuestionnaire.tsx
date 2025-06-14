@@ -118,7 +118,7 @@ export default function DigitalQuestionnaire() {
   };
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-white min-h-screen relative">
       <MobileHeader 
         title="Digital & Tech" 
         onBack={() => setLocation('/quiz')}
@@ -202,11 +202,11 @@ export default function DigitalQuestionnaire() {
 
       {/* Completion Modal */}
       {showCompletionModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 m-6 text-center animate-bounce">
-            <div className="text-6xl mb-4 animate-pulse">🎉</div>
-            <h2 className="text-2xl font-bold text-green-600 mb-2">Yay! Completed!</h2>
-            <p className="text-gray-600 mb-4">You've successfully completed the Digital & Tech questionnaire!</p>
+        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 mx-6 text-center animate-bounce max-w-sm">
+            <div className="text-4xl mb-3 animate-pulse">🎉</div>
+            <h2 className="text-xl font-bold text-green-600 mb-2">Yay! Completed!</h2>
+            <p className="text-gray-600 text-sm mb-4">You've successfully completed the Digital & Tech questionnaire!</p>
             <div className="flex justify-center items-center space-x-2">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>

@@ -70,6 +70,26 @@ export async function signOut(): Promise<void> {
   localStorage.removeItem('currentUser');
 }
 
+export async function resetPassword(email: string, newPassword: string): Promise<void> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, newPassword }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Password reset failed');
+    }
+  } catch (error) {
+    console.error('Error in resetPassword:', error);
+    throw error;
+  }
+}
+
 export function getCurrentUser(): User | null {
   try {
     const userStr = localStorage.getItem('currentUser');

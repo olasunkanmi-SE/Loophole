@@ -15,6 +15,7 @@ import Profile from './pages/Profile';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
 import CreateProfile from './pages/CreateProfile';
+import ResetPassword from "./pages/ResetPassword";
 import Settings from './pages/Settings';
 import ErrorPage from "@/pages/ErrorPage";
 import { CartProvider } from "@/contexts/CartContext";
@@ -37,6 +38,9 @@ function App() {
             </Route>
             <Route path="/create-profile">
               <CreateProfile />
+            </Route>
+            <Route path="/reset-password">
+              <ResetPassword />
             </Route>
 
             {/* Protected routes */}

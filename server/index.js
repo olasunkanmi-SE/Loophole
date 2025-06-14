@@ -123,6 +123,35 @@ app.post('/api/profile', checkDbConnection, async (req, res) => {
   }
 });
 
+app.post('/api/reset-password', checkDbConnection, async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    
+    if (!email || !newPassword) {
+      return res.status(400).json({ error: 'Email and new password are required' });
+    }
+    
+    const usersCollection = db.collection('users');
+    
+    // Check if user exists
+    const user = await usersCollection.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Update password (in production, hash this)
+    await usersCollection.updateOne(
+      { email },
+      { $set: { password: newPassword, updated_at: new Date().toISOString() } }
+    );
+    
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);
 });

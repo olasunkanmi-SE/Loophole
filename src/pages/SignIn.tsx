@@ -128,6 +128,15 @@ export default function SignIn() {
             >
               {isLoading ? 'Signing In...' : 'Sign In'}
             </button>
+
+            <div className="text-center mt-4">
+              <button
+                onClick={() => setLocation('/reset-password')}
+                className="text-blue-500 text-sm hover:underline"
+              >
+                Forgot your password?
+              </button>
+            </div>
           </div>
 
           {/* Create Account Link */}

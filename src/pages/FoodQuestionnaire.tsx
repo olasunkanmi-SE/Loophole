@@ -52,7 +52,7 @@ export default function FoodQuestionnaire() {
   const { addPoints } = usePoints();
 
   const currentQ = questions[currentQuestion];
-  const progress = ((currentQuestion + 1) / questions.length) * 100;
+  const progress = (currentQuestion / questions.length) * 100;
 
   const handleAnswer = (answer: string) => {
     if (currentQ.type === 'single') {

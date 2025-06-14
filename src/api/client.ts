@@ -1,5 +1,5 @@
 
-const API_BASE = 'http://0.0.0.0:3001';
+const API_BASE = 'http://localhost:3001';
 
 interface User {
   id: string;
@@ -31,25 +31,32 @@ interface Bridge {
 
 // Auth functions
 export async function signUp(email: string, password: string) {
-  const response = await fetch(`${API_BASE}/auth_users`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      id: Date.now().toString(),
-      email,
-      password,
-    }),
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to create user');
+  try {
+    const response = await fetch(`${API_BASE}/auth_users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        id: Date.now().toString(),
+        email,
+        password,
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to create user: ${response.status}`);
+    }
+    
+    const user = await response.json();
+    localStorage.setItem('currentUser', JSON.stringify(user));
+    return user;
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Unable to connect to server. Please check if the JSON server is running.');
+    }
+    throw error;
   }
-  
-  const user = await response.json();
-  localStorage.setItem('currentUser', JSON.stringify(user));
-  return user;
 }
 
 export async function signIn(email: string, password: string) {
@@ -76,23 +83,30 @@ export function getCurrentUser(): User | null {
 
 // Profile functions
 export async function createProfile(profileData: Omit<UserProfile, 'id' | 'created_at'>) {
-  const response = await fetch(`${API_BASE}/user_profiles`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      ...profileData,
-      id: Date.now(),
-      created_at: new Date().toISOString(),
-    }),
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to create profile');
+  try {
+    const response = await fetch(`${API_BASE}/user_profiles`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...profileData,
+        id: Date.now(),
+        created_at: new Date().toISOString(),
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to create profile: ${response.status}`);
+    }
+    
+    return response.json();
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Unable to connect to server. Please check if the JSON server is running.');
+    }
+    throw error;
   }
-  
-  return response.json();
 }
 
 export async function getProfile(email: string): Promise<UserProfile | null> {

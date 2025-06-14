@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import Layout from "../components/Layout";
 import MobileHeader from "../components/MobileHeader";
 import { useLocation } from "wouter";
-import { signIn, getProfile } from "../api/client";
+import { signIn, signUp, getProfile } from "../api/client";
 import { User, Mail, Lock } from "lucide-react";
 
 export default function SignIn() {
@@ -24,14 +23,33 @@ export default function SignIn() {
     setError(null);
 
     try {
-      // Sign in with JSON server
+      // Sign in with Express backend
       await signIn(formData.email, formData.password);
-      
+
       // Navigate to home and let ProtectedRoute handle profile check
       setLocation('/');
     } catch (err: any) {
       setError(err.message);
       console.error("Error signing in:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Sign up with Express backend
+      await signUp(formData.email, formData.password);
+
+      // Navigate to home and let ProtectedRoute handle profile check
+      setLocation('/');
+    } catch (err: any) {
+      setError(err.message);
+      console.error("Error signing up:", err);
     } finally {
       setIsLoading(false);
     }
@@ -46,7 +64,7 @@ export default function SignIn() {
           title="Sign In" 
           onBack={() => setLocation('/')}
         />
-        
+
         <div className="max-w-md mx-auto px-4 py-8 space-y-6">
           {/* Header */}
           <div className="text-center mb-8">
@@ -76,7 +94,7 @@ export default function SignIn() {
                   autoComplete="email"
                 />
               </div>
-              
+
             </div>
 
             <div>

@@ -20,7 +20,7 @@ localPort = 5174
 externalPort = 3000
 
 [workflows]
-runButton = "Run"
+runButton = "Full Stack"
 
 [[workflows.workflow]]
 name = "Run with JSON Server"
@@ -39,6 +39,19 @@ args = "npm run dev"
 name = "Run"
 author = 22621996
 mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+
+[[workflows.workflow]]
+name = "Full Stack"
+author = 22621996
+mode = "parallel"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node server/index.js"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"

@@ -96,7 +96,7 @@ export default function FoodMenu() {
   const totalPrice = cartItems.reduce((sum, item) => sum + (item.quantity * item.price), 0);
 
   return (
-    <div className="max-w-md mx-auto bg-gray-50 min-h-screen">
+    <div className="bg-gray-50 min-h-screen">
       <MobileHeader 
         title="Back"
         cartCount={totalItems}

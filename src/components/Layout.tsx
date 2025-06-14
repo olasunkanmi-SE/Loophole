@@ -1,4 +1,6 @@
+
 import { type ReactNode } from "react";
+import MobileContainer from "./MobileContainer";
 
 interface LayoutProps {
   children: ReactNode;
@@ -6,10 +8,10 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Header can go here if needed in the future */}
-      <main className="flex-grow container mx-auto p-4">{children}</main>
-      {/* Footer can go here if needed in the future */}
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      <MobileContainer>
+        {children}
+      </MobileContainer>
     </div>
   );
 }

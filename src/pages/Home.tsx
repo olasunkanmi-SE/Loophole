@@ -135,37 +135,22 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen">
-      {/* Breadcrumb Menu */}
-      <div className="bg-white p-4 shadow-md border-b">
-        <div className="container mx-auto">
-          <nav className="flex space-x-1" aria-label="Breadcrumb">
-            <button className="text-blue-600 hover:text-blue-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-              Questionnaires
-            </button>
-            <span className="text-gray-400 px-2 py-2">/</span>
-            <button className="text-blue-600 hover:text-blue-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-              Quizzes
-            </button>
-            <span className="text-gray-400 px-2 py-2">/</span>
-            <button className="text-blue-600 hover:text-blue-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-              Points
-            </button>
-          </nav>
-          <div className="mt-3">
-            <input
-              type="text"
-              placeholder="Search bridges..."
-              className="p-2 border border-gray-300 rounded-md w-full sm:w-1/2"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <button
-              onClick={handleAddBridgeClick}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md ml-2"
-            >
-              Add Bridge
-            </button>
-          </div>
+      {/* Top Bar */}
+      <div className="bg-gray-100 p-4 shadow-md">
+        <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+          <input
+            type="text"
+            placeholder="Search bridges..."
+            className="p-2 border border-gray-300 rounded-md w-full sm:flex-grow"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <button
+            onClick={handleAddBridgeClick}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md w-full sm:w-auto"
+          >
+            Add Bridge
+          </button>
         </div>
       </div>
 

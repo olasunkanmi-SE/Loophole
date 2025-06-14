@@ -56,24 +56,4 @@ function SlideMenu({ isOpen, onClose }: SlideMenuProps) {
   );
 }
 
-export default function SlideMenuButton() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  return (
-    <>
-      {/* Hamburger Menu Button */}
-      <button
-        onClick={() => setIsMenuOpen(true)}
-        className="fixed top-4 right-4 z-[9999] p-3 bg-black text-white rounded-lg shadow-lg hover:bg-gray-800 transition-colors"
-      >
-        <Menu size={24} />
-      </button>
-
-      {/* Slide Menu */}
-      <SlideMenu 
-        isOpen={isMenuOpen} 
-        onClose={() => setIsMenuOpen(false)} 
-      />
-    </>
-  );
-}
+export default SlideMenu;

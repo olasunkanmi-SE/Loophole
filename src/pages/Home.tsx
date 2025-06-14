@@ -3,6 +3,7 @@ import { supabase } from "../supabase/client";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import MobileHeader from "../components/MobileHeader";
 
 // Define the Bridge interface (if not already imported from a shared types file)
 interface Bridge {
@@ -135,6 +136,10 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen">
+      <MobileHeader 
+        title="Location" 
+      />
+      
       {/* Top Bar */}
       <div className="bg-gray-100 p-4 shadow-md">
         <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">

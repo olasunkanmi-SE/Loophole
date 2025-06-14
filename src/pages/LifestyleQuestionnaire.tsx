@@ -96,7 +96,7 @@ export default function LifestyleQuestionnaire() {
   useEffect(() => {
     if (showCompletionModal) {
       const timer = setTimeout(() => {
-        setLocation('/quiz');
+        setLocation('/');
       }, 3000);
       return () => clearTimeout(timer);
     }
@@ -121,7 +121,7 @@ export default function LifestyleQuestionnaire() {
     <div className="bg-white min-h-screen relative">
       <MobileHeader 
         title="Lifestyle & Shopping" 
-        onBack={() => setLocation('/quiz')}
+        onBack={() => setLocation('/')}
       />
 
       {/* Progress Bar */}

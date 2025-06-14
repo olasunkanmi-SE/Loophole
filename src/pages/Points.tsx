@@ -93,7 +93,7 @@ export default function Points() {
         {/* Action Button */}
         {completedCategories.length < 3 && (
           <button
-            onClick={() => setLocation('/quiz')}
+            onClick={() => setLocation('/')}
             className="w-full bg-gray-900 text-white font-medium py-3 rounded-xl hover:bg-gray-800 transition-colors text-sm"
           >
             Continue Surveys

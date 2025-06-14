@@ -44,6 +44,9 @@ function SlideMenu({ isOpen, onClose }: SlideMenuProps) {
             <button onClick={() => handleNavigation('/')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
               Home
             </button>
+            <button onClick={() => handleNavigation('/location')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
+              Location
+            </button>
             <button onClick={() => handleNavigation('#')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
               Questionnaires
             </button>

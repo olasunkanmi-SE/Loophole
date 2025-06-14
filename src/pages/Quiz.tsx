@@ -101,7 +101,6 @@ export default function Quiz() {
     <div className="bg-white min-h-screen">
       <MobileHeader 
         title="Interests" 
-        onBack={() => window.history.back()}
       />
 
       <div className="p-6">

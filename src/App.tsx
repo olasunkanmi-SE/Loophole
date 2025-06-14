@@ -22,11 +22,11 @@ export default function App() {
         <Layout>
         <main className="flex-grow">
           <Switch>
-            <Route path="/" component={Home} /> {/* Set Home as the default route */}
+            <Route path="/" component={Quiz} /> {/* Set Quiz as the home page */}
+            <Route path="/location" component={Home} /> {/* Move Home to location route */}
             <Route path="/menu" component={FoodMenu} />
             <Route path="/menu/:id" component={MenuItemDetail} />
             <Route path="/order-summary" component={OrderSummary} />
-            <Route path="/quiz" component={Quiz} />
             <Route path="/questionnaire/lifestyle" component={LifestyleQuestionnaire} />
             <Route path="/questionnaire/digital" component={DigitalQuestionnaire} />
             <Route path="/questionnaire/food" component={FoodQuestionnaire} />

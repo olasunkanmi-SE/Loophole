@@ -16,6 +16,16 @@ export default function SlideMenu({ isOpen, onClose }: SlideMenuProps) {
     onClose();
   };
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      onClose();
+      setLocation('/signin');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   return (
     <>
       {/* Overlay */}
@@ -66,7 +76,7 @@ export default function SlideMenu({ isOpen, onClose }: SlideMenuProps) {
             <button onClick={() => handleNavigation('/settings')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
               Settings
             </button>
-            <button onClick={signOut} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
+            <button onClick={handleSignOut} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
               Sign Out
             </button>
           </nav>

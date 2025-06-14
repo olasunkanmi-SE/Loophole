@@ -14,8 +14,8 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        // Not authenticated, redirect to home page
-        setLocation('/');
+        // Not authenticated, redirect to sign in
+        setLocation('/signin');
       } else if (!userProfile) {
         // Authenticated but no profile, redirect to create profile
         setLocation('/create-profile');

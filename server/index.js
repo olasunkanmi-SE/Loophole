@@ -11,19 +11,33 @@ const DATABASE_URL = 'mongodb+srv://kosemani:omowunmi888@cluster0.4i82g.mongodb.
 let db;
 
 // Connect to MongoDB
+let isConnected = false;
+
 MongoClient.connect(DATABASE_URL)
   .then(client => {
     console.log('Connected to MongoDB Atlas');
     db = client.db('learn');
+    isConnected = true;
   })
-  .catch(error => console.error('MongoDB connection error:', error));
+  .catch(error => {
+    console.error('MongoDB connection error:', error);
+    isConnected = false;
+  });
+
+// Middleware to check database connection
+const checkDbConnection = (req, res, next) => {
+  if (!isConnected || !db) {
+    return res.status(503).json({ error: 'Database connection not available' });
+  }
+  next();
+};
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
 // Routes
-app.post('/api/signin', async (req, res) => {
+app.post('/api/signin', checkDbConnection, async (req, res) => {
   try {
     const { email, password } = req.body;
     
@@ -42,7 +56,7 @@ app.post('/api/signin', async (req, res) => {
   }
 });
 
-app.post('/api/signup', async (req, res) => {
+app.post('/api/signup', checkDbConnection, async (req, res) => {
   try {
     const { email, password } = req.body;
     
@@ -69,7 +83,7 @@ app.post('/api/signup', async (req, res) => {
   }
 });
 
-app.get('/api/profile/:email', async (req, res) => {
+app.get('/api/profile/:email', checkDbConnection, async (req, res) => {
   try {
     const { email } = req.params;
     
@@ -83,7 +97,7 @@ app.get('/api/profile/:email', async (req, res) => {
   }
 });
 
-app.post('/api/profile', async (req, res) => {
+app.post('/api/profile', checkDbConnection, async (req, res) => {
   try {
     const profileData = req.body;
     

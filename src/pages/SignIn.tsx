@@ -19,10 +19,7 @@ export default function SignIn() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const isValidEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
+  
 
   const handleSignIn = async () => {
     setIsLoading(true);
@@ -58,7 +55,7 @@ export default function SignIn() {
     }
   };
 
-  const isFormValid = formData.email && formData.password && isValidEmail(formData.email);
+  const isFormValid = formData.email && formData.password;
 
   return (
     <Layout>
@@ -87,17 +84,11 @@ export default function SignIn() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-                className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent ${
-                  formData.email && !isValidEmail(formData.email)
-                    ? 'border-red-300 focus:ring-red-500'
-                    : 'border-gray-200 focus:ring-blue-500'
-                }`}
+                className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter your email"
               />
             </div>
-            {formData.email && !isValidEmail(formData.email) && (
-              <p className="text-red-500 text-sm mt-1">Please enter a valid email address</p>
-            )}
+            
           </div>
 
           <div>

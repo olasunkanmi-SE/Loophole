@@ -63,8 +63,10 @@ export default function CreateProfile() {
       // Refresh the user profile in context
       await refreshProfile();
 
-      // Navigate to home page after creation
-      setLocation('/');
+      // Small delay to ensure context is updated
+      setTimeout(() => {
+        setLocation('/');
+      }, 100);
     } catch (err: any) {
       setError(err.message);
       console.error("Error creating profile:", err);

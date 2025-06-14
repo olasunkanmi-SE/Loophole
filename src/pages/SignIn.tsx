@@ -27,16 +27,8 @@ export default function SignIn() {
       // Sign in with JSON server
       await signIn(formData.email, formData.password);
       
-      // Check if user has a profile
-      const userProfile = await getProfile(formData.email);
-
-      if (!userProfile) {
-        // Redirect to create profile if no profile exists
-        setLocation('/create-profile');
-      } else {
-        // Navigate to home if profile exists
-        setLocation('/');
-      }
+      // Navigate to home and let ProtectedRoute handle profile check
+      setLocation('/');
     } catch (err: any) {
       setError(err.message);
       console.error("Error signing in:", err);

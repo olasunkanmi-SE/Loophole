@@ -34,7 +34,7 @@ function App() {
             {/* Protected routes */}
             <Route path="/">
               <ProtectedRoute>
-                <Quiz />
+                <Home />
               </ProtectedRoute>
             </Route>
             <Route path="/lifestyle">

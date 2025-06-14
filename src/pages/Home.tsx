@@ -30,6 +30,15 @@ const ChangeView = ({ center, zoom }: { center: L.LatLngExpression; zoom: number
   return null;
 };
 
+// TODO: Move this to a shared component
+const MobileContainer = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <div className="container max-w-md mx-auto p-4">
+      {children}
+    </div>
+  );
+};
+
 export default function Home() {
   const [showAddBridgePopup, setShowAddBridgePopup] = useState(false);
   const [bridges, setBridges] = useState<Bridge[]>([]);
@@ -132,6 +141,7 @@ export default function Home() {
 
 
   return (
+    <MobileContainer>
     <div className="flex flex-col h-screen">
       {/* Top Bar */}
       <div className="bg-gray-100 p-4 shadow-md">
@@ -232,5 +242,6 @@ export default function Home() {
         </div>
       )}
     </div>
+    </MobileContainer>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
-import { supabase } from "../supabase/client";
+import { getBridges } from "../api/client";
 
 interface Bridge {
   id: number;
@@ -22,13 +22,7 @@ export default function Listings() {
       setLoading(true);
       setError(null);
       try {
-        const { data, error: supabaseError } = await supabase
-          .from("bridges")
-          .select("*");
-
-        if (supabaseError) {
-          throw supabaseError;
-        }
+        const data = await getBridges();
         setBridges(data || []);
       } catch (err: any) {
         setError(err.message);

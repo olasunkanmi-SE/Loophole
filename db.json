@@ -1,0 +1,25 @@
+
+{
+  "user_profiles": [],
+  "bridges": [
+    {
+      "id": 1,
+      "created_at": "2024-01-01T00:00:00Z",
+      "title": "Golden Gate Bridge",
+      "note": "Famous suspension bridge in San Francisco",
+      "latitude": 37.8199,
+      "longitude": -122.4783,
+      "image_url": "https://example.com/golden-gate.jpg"
+    },
+    {
+      "id": 2,
+      "created_at": "2024-01-02T00:00:00Z",
+      "title": "Brooklyn Bridge",
+      "note": "Historic bridge connecting Manhattan and Brooklyn",
+      "latitude": 40.7061,
+      "longitude": -73.9969,
+      "image_url": "https://example.com/brooklyn-bridge.jpg"
+    }
+  ],
+  "auth_users": []
+}

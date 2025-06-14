@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import MobileHeader from "../components/MobileHeader";
+import { getBridges } from "../api/bridgeClient";
 
 // Define the Bridge interface (if not already imported from a shared types file)
 interface Bridge {
@@ -53,13 +54,7 @@ export default function Home() {
       setLoadingBridges(true);
       setErrorBridges(null);
       try {
-        const { data, error: supabaseError } = await supabase
-          .from("bridges")
-          .select("*");
-
-        if (supabaseError) {
-          throw supabaseError;
-        }
+        const data = await getBridges();
         setBridges(data || []);
       } catch (err: any) {
         setErrorBridges(err.message);
@@ -139,7 +134,7 @@ export default function Home() {
       <MobileHeader 
         title="Location" 
       />
-      
+
       {/* Top Bar */}
       <div className="bg-gray-100 p-4 shadow-md">
         <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">

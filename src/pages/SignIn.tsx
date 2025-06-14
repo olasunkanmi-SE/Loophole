@@ -3,7 +3,7 @@ import { useState } from "react";
 import Layout from "../components/Layout";
 import MobileHeader from "../components/MobileHeader";
 import { useLocation } from "wouter";
-import { signIn, supabase } from "../supabase/client";
+import { signIn, getProfile } from "../api/client";
 import { User, Mail, Lock } from "lucide-react";
 
 export default function SignIn() {
@@ -19,32 +19,22 @@ export default function SignIn() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  
-
   const handleSignIn = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Sign in with Supabase Auth
+      // Sign in with JSON server
       await signIn(formData.email, formData.password);
       
       // Check if user has a profile
-      const { data: userProfile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('email', formData.email)
-        .single();
-
-      if (profileError && profileError.code !== 'PGRST116') {
-        throw profileError;
-      }
+      const userProfile = await getProfile(formData.email);
 
       if (!userProfile) {
-        // No profile found, redirect to create profile
+        // Redirect to create profile if no profile exists
         setLocation('/create-profile');
       } else {
-        // Profile exists, redirect to home
+        // Navigate to home if profile exists
         setLocation('/');
       }
     } catch (err: any) {
@@ -60,88 +50,89 @@ export default function SignIn() {
   return (
     <Layout>
       <div className="bg-gray-50 min-h-screen">
-        <MobileHeader title="Sign In" />
-
-      <div className="px-6 py-16 space-y-8">
-        {/* Logo/Icon Section */}
-        <div className="flex flex-col items-center">
-          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-            <User size={32} className="text-blue-600" />
-          </div>
-          <h1 className="text-2xl font-semibold text-gray-900">Welcome Back</h1>
-          <p className="text-gray-500 mt-2">Sign in to continue</p>
-        </div>
-
-        {/* Sign In Form */}
-        <div className="bg-white rounded-xl p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email
-            </label>
-            <div className="relative">
-              <Mail size={20} className="absolute left-3 top-3 text-gray-400" />
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value.trim())}
-                className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter your email"
-                autoComplete="email"
-              />
+        <MobileHeader 
+          title="Sign In" 
+          onBack={() => setLocation('/')}
+        />
+        
+        <div className="max-w-md mx-auto px-4 py-8 space-y-6">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <User className="w-8 h-8 text-blue-600" />
             </div>
-            
+            <h1 className="text-2xl font-semibold text-gray-900 mb-2">Welcome back</h1>
+            <p className="text-gray-600">Sign in to your account</p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Password
-            </label>
-            <div className="relative">
-              <Lock size={20} className="absolute left-3 top-3 text-gray-400" />
-              <input
-                type="password"
-                value={formData.password}
-                onChange={(e) => handleInputChange('password', e.target.value)}
-                className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter your password"
-              />
+          {/* Sign In Form */}
+          <div className="bg-white rounded-xl p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value.trim())}
+                  className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter your email"
+                  autoComplete="email"
+                />
+              </div>
+              
             </div>
-          </div>
-        </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-            <p className="text-red-700 text-sm">{error}</p>
-          </div>
-        )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter your password"
+                />
+              </div>
+            </div>
 
-        {/* Sign In Button */}
-        <button
-          onClick={handleSignIn}
-          disabled={!isFormValid || isLoading}
-          className={`w-full py-3 rounded-xl font-medium transition-colors ${
-            isFormValid && !isLoading
-              ? 'bg-blue-600 text-white hover:bg-blue-700'
-              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-          }`}
-        >
-          {isLoading ? 'Signing In...' : 'Sign In'}
-        </button>
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
+            )}
 
-        {/* Create Account Link */}
-        <div className="text-center">
-          <p className="text-sm text-gray-500">
-            Don't have an account?{' '}
             <button
-              onClick={() => setLocation('/create-profile')}
-              className="text-blue-600 font-medium hover:text-blue-700"
+              onClick={handleSignIn}
+              disabled={!isFormValid || isLoading}
+              className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
             >
-              Create Profile
+              {isLoading ? 'Signing In...' : 'Sign In'}
             </button>
-          </p>
+          </div>
+
+          {/* Create Account Link */}
+          <div className="text-center">
+            <p className="text-gray-600">
+              Don't have an account?{' '}
+              <button
+                onClick={() => setLocation('/create-profile')}
+                className="text-blue-500 font-medium hover:underline"
+              >
+                Create one
+              </button>
+            </p>
+          </div>
         </div>
-      </div>
       </div>
     </Layout>
   );

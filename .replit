@@ -10,3 +10,19 @@ run = ["sh", "-c", "npm run dev"]
 [[ports]]
 localPort = 5173
 externalPort = 80
+
+[workflows]
+runButton = "Run with JSON Server"
+
+[[workflows.workflow]]
+name = "Run with JSON Server"
+author = 22621996
+mode = "parallel"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx json-server --watch db.json --port 3001 --host 0.0.0.0"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"

@@ -1,8 +1,5 @@
 
-// In-memory storage using Maps
-const usersMap = new Map<string, User>();
-const profilesMap = new Map<string, UserProfile>();
-const bridgesMap = new Map<number, Bridge>();
+import { getDatabase } from '../db/mongodb';
 
 interface User {
   id: string;
@@ -32,54 +29,56 @@ interface Bridge {
   image_url?: string;
 }
 
-// Initialize with some sample bridges data
-bridgesMap.set(1, {
-  id: 1,
-  created_at: "2024-01-01T00:00:00Z",
-  title: "Golden Gate Bridge",
-  note: "Famous suspension bridge in San Francisco",
-  latitude: 37.8199,
-  longitude: -122.4783,
-  image_url: "https://example.com/golden-gate.jpg"
-});
-
-bridgesMap.set(2, {
-  id: 2,
-  created_at: "2024-01-02T00:00:00Z",
-  title: "Brooklyn Bridge",
-  note: "Historic bridge connecting Manhattan and Brooklyn",
-  latitude: 40.7061,
-  longitude: -73.9969,
-  image_url: "https://example.com/brooklyn-bridge.jpg"
-});
-
 // Auth functions
 export async function signUp(email: string, password: string): Promise<User> {
-  // Check if user already exists
-  if (usersMap.has(email)) {
-    throw new Error('User already exists with this email');
+  try {
+    const db = await getDatabase();
+    const usersCollection = db.collection('users');
+
+    // Check if user already exists
+    const existingUser = await usersCollection.findOne({ email });
+    if (existingUser) {
+      throw new Error('User already exists with this email');
+    }
+
+    const user: User = {
+      id: Date.now().toString(),
+      email,
+      password,
+    };
+
+    await usersCollection.insertOne(user);
+    localStorage.setItem('currentUser', JSON.stringify(user));
+    return user;
+  } catch (error) {
+    console.error('Error in signUp:', error);
+    throw error;
   }
-
-  const user: User = {
-    id: Date.now().toString(),
-    email,
-    password,
-  };
-
-  usersMap.set(email, user);
-  localStorage.setItem('currentUser', JSON.stringify(user));
-  return user;
 }
 
 export async function signIn(email: string, password: string): Promise<User> {
-  const user = usersMap.get(email);
-  
-  if (!user || user.password !== password) {
-    throw new Error('Invalid credentials');
+  try {
+    const db = await getDatabase();
+    const usersCollection = db.collection('users');
+
+    const user = await usersCollection.findOne({ email, password });
+    
+    if (!user) {
+      throw new Error('Invalid credentials');
+    }
+    
+    const userObj: User = {
+      id: user.id,
+      email: user.email,
+      password: user.password
+    };
+
+    localStorage.setItem('currentUser', JSON.stringify(userObj));
+    return userObj;
+  } catch (error) {
+    console.error('Error in signIn:', error);
+    throw error;
   }
-  
-  localStorage.setItem('currentUser', JSON.stringify(user));
-  return user;
 }
 
 export async function signOut(): Promise<void> {
@@ -97,39 +96,141 @@ export function getCurrentUser(): User | null {
 
 // Profile functions
 export async function createProfile(profileData: Omit<UserProfile, 'id' | 'created_at'>): Promise<UserProfile> {
-  // Check if profile already exists for this email
-  if (profilesMap.has(profileData.email)) {
-    throw new Error('Profile already exists for this email');
+  try {
+    const db = await getDatabase();
+    const profilesCollection = db.collection('profiles');
+
+    // Check if profile already exists for this email
+    const existingProfile = await profilesCollection.findOne({ email: profileData.email });
+    if (existingProfile) {
+      throw new Error('Profile already exists for this email');
+    }
+
+    const profile: UserProfile = {
+      ...profileData,
+      id: Date.now(),
+      created_at: new Date().toISOString(),
+    };
+
+    await profilesCollection.insertOne(profile);
+    return profile;
+  } catch (error) {
+    console.error('Error in createProfile:', error);
+    throw error;
   }
-
-  const profile: UserProfile = {
-    ...profileData,
-    id: Date.now(),
-    created_at: new Date().toISOString(),
-  };
-
-  profilesMap.set(profileData.email, profile);
-  return profile;
 }
 
 export async function getProfile(email: string): Promise<UserProfile | null> {
-  return profilesMap.get(email) || null;
+  try {
+    const db = await getDatabase();
+    const profilesCollection = db.collection('profiles');
+
+    const profile = await profilesCollection.findOne({ email });
+    return profile ? {
+      id: profile.id,
+      first_name: profile.first_name,
+      last_name: profile.last_name,
+      email: profile.email,
+      phone: profile.phone,
+      location: profile.location,
+      bio: profile.bio,
+      profile_image_url: profile.profile_image_url,
+      created_at: profile.created_at
+    } : null;
+  } catch (error) {
+    console.error('Error in getProfile:', error);
+    return null;
+  }
 }
 
 // Bridges functions
 export async function getBridges(): Promise<Bridge[]> {
-  return Array.from(bridgesMap.values());
+  try {
+    const db = await getDatabase();
+    const bridgesCollection = db.collection('bridges');
+
+    // Initialize with sample data if collection is empty
+    const count = await bridgesCollection.countDocuments();
+    if (count === 0) {
+      const sampleBridges = [
+        {
+          id: 1,
+          created_at: "2024-01-01T00:00:00Z",
+          title: "Golden Gate Bridge",
+          note: "Famous suspension bridge in San Francisco",
+          latitude: 37.8199,
+          longitude: -122.4783,
+          image_url: "https://example.com/golden-gate.jpg"
+        },
+        {
+          id: 2,
+          created_at: "2024-01-02T00:00:00Z",
+          title: "Brooklyn Bridge",
+          note: "Historic bridge connecting Manhattan and Brooklyn",
+          latitude: 40.7061,
+          longitude: -73.9969,
+          image_url: "https://example.com/brooklyn-bridge.jpg"
+        }
+      ];
+      await bridgesCollection.insertMany(sampleBridges);
+    }
+
+    const bridges = await bridgesCollection.find({}).toArray();
+    return bridges.map(bridge => ({
+      id: bridge.id,
+      created_at: bridge.created_at,
+      title: bridge.title,
+      note: bridge.note,
+      latitude: bridge.latitude,
+      longitude: bridge.longitude,
+      image_url: bridge.image_url
+    }));
+  } catch (error) {
+    console.error('Error in getBridges:', error);
+    return [];
+  }
 }
 
 export async function getBridge(id: number): Promise<Bridge | null> {
-  return bridgesMap.get(id) || null;
+  try {
+    const db = await getDatabase();
+    const bridgesCollection = db.collection('bridges');
+
+    const bridge = await bridgesCollection.findOne({ id });
+    return bridge ? {
+      id: bridge.id,
+      created_at: bridge.created_at,
+      title: bridge.title,
+      note: bridge.note,
+      latitude: bridge.latitude,
+      longitude: bridge.longitude,
+      image_url: bridge.image_url
+    } : null;
+  } catch (error) {
+    console.error('Error in getBridge:', error);
+    return null;
+  }
 }
 
 // Helper function to get all data (for debugging)
-export function getStorageData() {
-  return {
-    users: Array.from(usersMap.entries()),
-    profiles: Array.from(profilesMap.entries()),
-    bridges: Array.from(bridgesMap.entries())
-  };
+export async function getStorageData() {
+  try {
+    const db = await getDatabase();
+    const users = await db.collection('users').find({}).toArray();
+    const profiles = await db.collection('profiles').find({}).toArray();
+    const bridges = await db.collection('bridges').find({}).toArray();
+    
+    return {
+      users,
+      profiles,
+      bridges
+    };
+  } catch (error) {
+    console.error('Error in getStorageData:', error);
+    return {
+      users: [],
+      profiles: [],
+      bridges: []
+    };
+  }
 }

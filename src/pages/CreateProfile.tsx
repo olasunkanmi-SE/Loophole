@@ -2,15 +2,18 @@
 import { useState } from "react";
 import MobileHeader from "../components/MobileHeader";
 import { useLocation } from "wouter";
-import { User, Camera } from "lucide-react";
-import { supabase } from "../supabase/client";
+import { User, Camera, Lock } from "lucide-react";
+import { supabase, signUp } from "../supabase/client";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function CreateProfile() {
   const [, setLocation] = useLocation();
+  const { user, refreshProfile } = useAuth();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
+    password: "",
     phone: "",
     location: "",
     bio: ""
@@ -39,6 +42,11 @@ export default function CreateProfile() {
     setError(null);
 
     try {
+      // If user is not authenticated, sign them up first
+      if (!user) {
+        await signUp(formData.email, formData.password);
+      }
+
       // Save profile data to database
       const { data, error: supabaseError } = await supabase
         .from('user_profiles')
@@ -50,7 +58,7 @@ export default function CreateProfile() {
             phone: formData.phone,
             location: formData.location,
             bio: formData.bio,
-            profile_image_url: profileImage // For now, saving as base64. In production, you'd upload to storage first
+            profile_image_url: profileImage
           }
         ])
         .select();
@@ -60,8 +68,12 @@ export default function CreateProfile() {
       }
 
       console.log("Profile created successfully:", data);
-      // Navigate to profile page after creation
-      setLocation('/profile');
+      
+      // Refresh the user profile in context
+      await refreshProfile();
+      
+      // Navigate to home page after creation
+      setLocation('/');
     } catch (err: any) {
       setError(err.message);
       console.error("Error creating profile:", err);
@@ -70,7 +82,7 @@ export default function CreateProfile() {
     }
   };
 
-  const isFormValid = formData.firstName && formData.lastName && formData.email;
+  const isFormValid = formData.firstName && formData.lastName && formData.email && (!user ? formData.password : true);
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -149,6 +161,24 @@ export default function CreateProfile() {
             />
           </div>
 
+          {!user && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Password *
+              </label>
+              <div className="relative">
+                <Lock size={20} className="absolute left-3 top-3 text-gray-400" />
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Create a password"
+                />
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Phone Number
@@ -212,6 +242,20 @@ export default function CreateProfile() {
         <p className="text-xs text-gray-500 text-center">
           Fields marked with * are required
         </p>
+
+        {!user && (
+          <div className="text-center">
+            <p className="text-sm text-gray-500">
+              Already have an account?{' '}
+              <button
+                onClick={() => setLocation('/signin')}
+                className="text-blue-600 font-medium hover:text-blue-700"
+              >
+                Sign In
+              </button>
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

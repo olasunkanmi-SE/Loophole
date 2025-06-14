@@ -14,43 +14,102 @@ import Points from "@/pages/Points";
 import Profile from './pages/Profile';
 import CreateProfile from './pages/CreateProfile';
 import Settings from './pages/Settings';
+import SignIn from './pages/SignIn';
 import ErrorPage from "@/pages/ErrorPage";
 import { CartProvider } from "@/contexts/CartContext";
 import { PointsProvider } from "@/contexts/PointsContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function App() {
   return (
-    <CartProvider>
-      <PointsProvider>
-        <Layout>
-        <main className="flex-grow">
-          <Switch>
-            <Route path="/" component={Quiz} /> {/* Set Quiz as the home page */}
-            <Route path="/location" component={Home} /> {/* Move Home to location route */}
-            <Route path="/menu" component={FoodMenu} />
-            <Route path="/menu/:id" component={MenuItemDetail} />
-            <Route path="/order-summary" component={OrderSummary} />
-            <Route path="/questionnaire/lifestyle" component={LifestyleQuestionnaire} />
-            <Route path="/questionnaire/digital" component={DigitalQuestionnaire} />
-            <Route path="/questionnaire/food" component={FoodQuestionnaire} />
-            <Route path="/points" component={Points} />
-            <Route path="/profile" component={Profile} />
-            <Route path="/create-profile" component={CreateProfile} />
-            <Route path="/settings" component={Settings} />
-            <Route path="/listings" component={Listings} />
-            <Route path="/listing/:id">
-              <Listing />
-            </Route>
-            <Route path="*">
-              <ErrorPage
-                title="404: Page Not Found"
-                message="Sorry, the page you are looking for does not exist"
-              />
-            </Route>
-          </Switch>
-        </main>
-      </Layout>
-      </PointsProvider>
-    </CartProvider>
+    <AuthProvider>
+      <CartProvider>
+        <PointsProvider>
+          <Layout>
+          <main className="flex-grow">
+            <Switch>
+              {/* Public routes */}
+              <Route path="/signin" component={SignIn} />
+              <Route path="/create-profile" component={CreateProfile} />
+              
+              {/* Protected routes */}
+              <Route path="/">
+                <ProtectedRoute>
+                  <Quiz />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/location">
+                <ProtectedRoute>
+                  <Home />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/menu">
+                <ProtectedRoute>
+                  <FoodMenu />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/menu/:id">
+                <ProtectedRoute>
+                  <MenuItemDetail />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/order-summary">
+                <ProtectedRoute>
+                  <OrderSummary />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/questionnaire/lifestyle">
+                <ProtectedRoute>
+                  <LifestyleQuestionnaire />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/questionnaire/digital">
+                <ProtectedRoute>
+                  <DigitalQuestionnaire />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/questionnaire/food">
+                <ProtectedRoute>
+                  <FoodQuestionnaire />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/points">
+                <ProtectedRoute>
+                  <Points />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/profile">
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/settings">
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/listings">
+                <ProtectedRoute>
+                  <Listings />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/listing/:id">
+                <ProtectedRoute>
+                  <Listing />
+                </ProtectedRoute>
+              </Route>
+              <Route path="*">
+                <ErrorPage
+                  title="404: Page Not Found"
+                  message="Sorry, the page you are looking for does not exist"
+                />
+              </Route>
+            </Switch>
+          </main>
+        </Layout>
+        </PointsProvider>
+      </CartProvider>
+    </AuthProvider>
   );
 }

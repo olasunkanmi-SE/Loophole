@@ -1,14 +1,15 @@
-import { X, Menu } from "lucide-react";
-import { useState } from "react";
+import { X, Home, MapPin, Utensils, HelpCircle, Trophy, User, Settings, UserPlus, LogOut } from "lucide-react";
 import { useLocation } from "wouter";
+import { useAuth } from "../contexts/AuthContext";
 
 interface SlideMenuProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-function SlideMenu({ isOpen, onClose }: SlideMenuProps) {
+export default function SlideMenu({ isOpen, onClose }: SlideMenuProps) {
   const [, setLocation] = useLocation();
+  const { signOut } = useAuth();
 
   const handleNavigation = (path: string) => {
     setLocation(path);
@@ -65,11 +66,12 @@ function SlideMenu({ isOpen, onClose }: SlideMenuProps) {
             <button onClick={() => handleNavigation('/settings')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
               Settings
             </button>
+            <button onClick={signOut} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
+              Sign Out
+            </button>
           </nav>
         </div>
       </div>
     </>
   );
 }
-
-export default SlideMenu;

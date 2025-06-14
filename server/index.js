@@ -102,6 +102,7 @@ app.post('/api/profile', checkDbConnection, async (req, res) => {
     const profileData = req.body;
     
     const profilesCollection = db.collection('profiles');
+    const usersCollection = db.collection('users');
     
     // Check if profile already exists
     const existingProfile = await profilesCollection.findOne({ email: profileData.email });
@@ -109,8 +110,29 @@ app.post('/api/profile', checkDbConnection, async (req, res) => {
       return res.status(409).json({ error: 'Profile already exists' });
     }
     
+    // If password is provided, ensure user exists in users collection
+    if (profileData.password) {
+      const existingUser = await usersCollection.findOne({ email: profileData.email });
+      if (!existingUser) {
+        // Create user if it doesn't exist
+        await usersCollection.insertOne({
+          email: profileData.email,
+          password: profileData.password,
+          created_at: new Date().toISOString()
+        });
+      } else {
+        // Update password if user exists but password is different
+        await usersCollection.updateOne(
+          { email: profileData.email },
+          { $set: { password: profileData.password } }
+        );
+      }
+    }
+    
+    // Create profile (exclude password from profile data)
+    const { password, ...profileDataWithoutPassword } = profileData;
     const profile = {
-      ...profileData,
+      ...profileDataWithoutPassword,
       id: Date.now(),
       created_at: new Date().toISOString(),
     };

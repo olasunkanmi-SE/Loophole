@@ -44,19 +44,24 @@ export default function CreateProfile() {
     try {
       // If user is not authenticated, sign them up first
       if (!user) {
-        await signUp(formData.email, formData.password);
+        const userData = await signUp(formData.email, formData.password);
+        console.log("User account created:", userData);
       }
 
-      // Save profile data to database
-      const data = await createProfile({
+      // Save profile data to database (including password for existing user flow)
+      const profileData = {
         first_name: formData.firstName,
         last_name: formData.lastName,
         email: formData.email,
         phone: formData.phone,
         location: formData.location,
         bio: formData.bio,
-        profile_image_url: profileImage
-      });
+        profile_image_url: profileImage,
+        // Include password if creating a new user
+        ...(formData.password && { password: formData.password })
+      };
+
+      const data = await createProfile(profileData);
 
       console.log("Profile created successfully:", data);
 

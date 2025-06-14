@@ -21,95 +21,91 @@ import { PointsProvider } from "@/contexts/PointsContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
-export default function App() {
+function App() {
   return (
     <AuthProvider>
       <CartProvider>
         <PointsProvider>
-          <Layout>
-          <main className="flex-grow">
-            <Switch>
-              {/* Public routes */}
-              <Route path="/signin" component={SignIn} />
-              <Route path="/create-profile" component={CreateProfile} />
-              
-              {/* Protected routes */}
-              <Route path="/">
+          <Switch>
+            {/* Public routes */}
+            <Route path="/signin" component={SignIn} />
+            <Route path="/create-profile" component={CreateProfile} />
+
+            {/* Protected routes */}
+            <Route path="/">
+              <ProtectedRoute>
+                <Quiz />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/lifestyle">
+              <ProtectedRoute>
+                <LifestyleQuestionnaire />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/digital">
+              <ProtectedRoute>
+                <DigitalQuestionnaire />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/food">
+              <ProtectedRoute>
+                <FoodQuestionnaire />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/food-menu">
+              <ProtectedRoute>
+                <FoodMenu />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/menu/:id">
+              {(params) => (
                 <ProtectedRoute>
-                  <Quiz />
+                  <MenuItemDetail id={params.id} />
                 </ProtectedRoute>
-              </Route>
-              <Route path="/location">
+              )}
+            </Route>
+            <Route path="/order-summary">
+              <ProtectedRoute>
+                <OrderSummary />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/points">
+              <ProtectedRoute>
+                <Points />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/location">
+              <ProtectedRoute>
+                <Home />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/profile">
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/settings">
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/listings">
+              <ProtectedRoute>
+                <Listings />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/listing/:id">
+              {(params) => (
                 <ProtectedRoute>
-                  <Home />
+                  <Listing id={params.id} />
                 </ProtectedRoute>
-              </Route>
-              <Route path="/menu">
-                <ProtectedRoute>
-                  <FoodMenu />
-                </ProtectedRoute>
-              </Route>
-              <Route path="/menu/:id">
-                <ProtectedRoute>
-                  <MenuItemDetail />
-                </ProtectedRoute>
-              </Route>
-              <Route path="/order-summary">
-                <ProtectedRoute>
-                  <OrderSummary />
-                </ProtectedRoute>
-              </Route>
-              <Route path="/questionnaire/lifestyle">
-                <ProtectedRoute>
-                  <LifestyleQuestionnaire />
-                </ProtectedRoute>
-              </Route>
-              <Route path="/questionnaire/digital">
-                <ProtectedRoute>
-                  <DigitalQuestionnaire />
-                </ProtectedRoute>
-              </Route>
-              <Route path="/questionnaire/food">
-                <ProtectedRoute>
-                  <FoodQuestionnaire />
-                </ProtectedRoute>
-              </Route>
-              <Route path="/points">
-                <ProtectedRoute>
-                  <Points />
-                </ProtectedRoute>
-              </Route>
-              <Route path="/profile">
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              </Route>
-              <Route path="/settings">
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              </Route>
-              <Route path="/listings">
-                <ProtectedRoute>
-                  <Listings />
-                </ProtectedRoute>
-              </Route>
-              <Route path="/listing/:id">
-                <ProtectedRoute>
-                  <Listing />
-                </ProtectedRoute>
-              </Route>
-              <Route path="*">
-                <ErrorPage
-                  title="404: Page Not Found"
-                  message="Sorry, the page you are looking for does not exist"
-                />
-              </Route>
-            </Switch>
-          </main>
-        </Layout>
+              )}
+            </Route>
+          </Switch>
         </PointsProvider>
       </CartProvider>
     </AuthProvider>
   );
 }
+
+export default App;

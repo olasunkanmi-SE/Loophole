@@ -26,6 +26,11 @@ export default function CreateProfile() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -82,7 +87,7 @@ export default function CreateProfile() {
     }
   };
 
-  const isFormValid = formData.firstName && formData.lastName && formData.email && (!user ? formData.password : true);
+  const isFormValid = formData.firstName && formData.lastName && formData.email && isValidEmail(formData.email) && (!user ? formData.password : true);
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -156,9 +161,16 @@ export default function CreateProfile() {
               type="email"
               value={formData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent ${
+                formData.email && !isValidEmail(formData.email)
+                  ? 'border-red-300 focus:ring-red-500'
+                  : 'border-gray-200 focus:ring-blue-500'
+              }`}
               placeholder="john.doe@example.com"
             />
+            {formData.email && !isValidEmail(formData.email) && (
+              <p className="text-red-500 text-sm mt-1">Please enter a valid email address</p>
+            )}
           </div>
 
           {!user && (

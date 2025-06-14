@@ -87,8 +87,12 @@ export async function signOut(): Promise<void> {
 }
 
 export function getCurrentUser(): User | null {
-  const userStr = localStorage.getItem('currentUser');
-  return userStr ? JSON.parse(userStr) : null;
+  try {
+    const userStr = localStorage.getItem('currentUser');
+    return userStr ? JSON.parse(userStr) : null;
+  } catch {
+    return null;
+  }
 }
 
 // Profile functions
@@ -119,16 +123,6 @@ export async function getBridges(): Promise<Bridge[]> {
 
 export async function getBridge(id: number): Promise<Bridge | null> {
   return bridgesMap.get(id) || null;
-}
-
-// Helper function to get current user from localStorage
-export function getCurrentUser(): User | null {
-  try {
-    const userStr = localStorage.getItem('currentUser');
-    return userStr ? JSON.parse(userStr) : null;
-  } catch {
-    return null;
-  }
 }
 
 // Helper function to get all data (for debugging)

@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import Layout from "../components/Layout";
 import MobileHeader from "../components/MobileHeader";
 import { useLocation } from "wouter";
 import { signIn, supabase } from "../supabase/client";
@@ -60,8 +61,9 @@ export default function SignIn() {
   const isFormValid = formData.email && formData.password && isValidEmail(formData.email);
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <MobileHeader title="Sign In" />
+    <Layout>
+      <div className="bg-gray-50 min-h-screen">
+        <MobileHeader title="Sign In" />
 
       <div className="px-6 py-16 space-y-8">
         {/* Logo/Icon Section */}
@@ -148,6 +150,7 @@ export default function SignIn() {
           </p>
         </div>
       </div>
-    </div>
+      </div>
+    </Layout>
   );
 }

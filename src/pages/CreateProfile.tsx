@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import Layout from "../components/Layout";
 import MobileHeader from "../components/MobileHeader";
 import { useLocation } from "wouter";
 import { User, Camera, Lock } from "lucide-react";
@@ -90,11 +91,12 @@ export default function CreateProfile() {
   const isFormValid = formData.firstName && formData.lastName && formData.email && isValidEmail(formData.email) && (!user ? formData.password : true);
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <MobileHeader 
-        title="Create Profile" 
-        onBack={() => setLocation('/')}
-      />
+    <Layout>
+      <div className="bg-gray-50 min-h-screen">
+        <MobileHeader 
+          title="Create Profile" 
+          onBack={() => setLocation('/')}
+        />
 
       <div className="px-6 py-8 space-y-8">
         {/* Profile Image Section */}
@@ -269,6 +271,7 @@ export default function CreateProfile() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </Layout>
   );
 }

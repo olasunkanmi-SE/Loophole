@@ -78,7 +78,13 @@ export default function OrderSummary() {
             >
               CLEAR ALL
             </button>
-            <button className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm">
+            <button 
+              onClick={() => {
+                // Just a visual confirmation, doesn't clear cart
+                alert('Items confirmed! You can still modify quantities or place your order.');
+              }}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm"
+            >
               CONFIRM
             </button>
           </div>

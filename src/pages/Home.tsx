@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import MobileHeader from "../components/MobileHeader";
-import { getBridges } from "../api/bridgeClient";
+import { getBridges } from "../api/client";
 
 // Define the Bridge interface (if not already imported from a shared types file)
 interface Bridge {

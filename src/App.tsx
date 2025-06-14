@@ -57,6 +57,11 @@ function App() {
                 <FoodMenu />
               </ProtectedRoute>
             </Route>
+            <Route path="/menu">
+              <ProtectedRoute>
+                <FoodMenu />
+              </ProtectedRoute>
+            </Route>
             <Route path="/menu/:id">
               {(params) => (
                 <ProtectedRoute>

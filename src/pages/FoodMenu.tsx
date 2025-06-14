@@ -4,7 +4,7 @@ import SearchBar from "../components/SearchBar";
 import CategoryFilter from "../components/CategoryFilter";
 import MenuItem from "../components/MenuItem";
 import CheckoutBar from "../components/CheckoutBar";
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'wouter';
 import { useCart } from "../contexts/CartContext";
 
 interface MenuItem {
@@ -165,12 +165,7 @@ export default function FoodMenu() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("drink");
   const { addToCart, getTotalItems, getTotalPrice } = useCart();
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  const setLocation = (path: string) => {
-    navigate(path);
-  };
+  const [location, setLocation] = useLocation();
 
   const filteredItems = menuItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());

@@ -6,8 +6,6 @@ interface CategoryCard {
   title: string;
   icon: string;
   description: string;
-  color: string;
-  borderColor: string;
 }
 
 const categories: CategoryCard[] = [
@@ -15,25 +13,19 @@ const categories: CategoryCard[] = [
     id: "lifestyle",
     title: "Lifestyle & Shopping",
     icon: "🛍️",
-    description: "Discover trends in fashion, home decor, and smart shopping habits",
-    color: "bg-pink-100",
-    borderColor: "border-pink-300"
+    description: "Fashion, home decor, and smart shopping"
   },
   {
     id: "digital",
     title: "Digital & Tech",
     icon: "💻",
-    description: "Explore the latest in technology, apps, and digital innovations",
-    color: "bg-blue-100",
-    borderColor: "border-blue-300"
+    description: "Technology, apps, and digital innovations"
   },
   {
     id: "food",
     title: "Food & Dining",
     icon: "🍽️",
-    description: "Learn about cuisine, cooking techniques, and dining experiences",
-    color: "bg-green-100",
-    borderColor: "border-green-300"
+    description: "Cuisine, cooking, and dining experiences"
   }
 ];
 
@@ -46,39 +38,27 @@ interface CategoryCardProps {
 function CategoryCardComponent({ category, isSelected, onSelect }: CategoryCardProps) {
   return (
     <div 
-      className={`w-full h-48 cursor-pointer transition-all duration-300 transform hover:scale-105 ${
-        isSelected ? 'scale-105 shadow-xl' : 'shadow-lg'
+      className={`w-full cursor-pointer transition-all duration-200 ${
+        isSelected ? 'transform scale-[1.02]' : 'hover:transform hover:scale-[1.01]'
       }`}
       onClick={() => onSelect(category.id)}
     >
-      <div className={`relative w-full h-full rounded-xl border-2 ${category.color} ${category.borderColor} p-6 flex flex-col justify-center items-center text-center ${
-        isSelected ? 'ring-4 ring-blue-300' : ''
+      <div className={`relative w-full rounded-lg border p-6 text-center ${
+        isSelected 
+          ? 'bg-gray-900 text-white border-gray-900' 
+          : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
       }`}>
-        {isSelected && (
-          <div className="absolute top-3 right-3 text-green-500 text-xl">
-            ✅
-          </div>
-        )}
-
-        <div className="text-5xl mb-4">
+        <div className="text-3xl mb-3">
           {category.icon}
         </div>
 
-        <h3 className="text-lg font-bold text-gray-800 mb-3">
+        <h3 className="text-lg font-medium mb-2">
           {category.title}
         </h3>
 
-        <p className="text-sm text-gray-600 leading-relaxed">
+        <p className={`text-sm ${isSelected ? 'text-gray-300' : 'text-gray-500'}`}>
           {category.description}
         </p>
-
-        {!isSelected && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
-            <div className="bg-white bg-opacity-80 text-gray-700 text-xs px-3 py-1 rounded-full">
-              Tap to select
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -99,46 +79,26 @@ export default function Quiz() {
     });
   };
 
-  const resetSelection = () => {
-    setSelectedCategories(new Set());
-  };
-
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="bg-white min-h-screen">
       <MobileHeader 
-        title="Interest Categories" 
+        title="Interests" 
         onBack={() => window.history.back()}
       />
 
-      <div className="p-4">
+      <div className="p-6">
         {/* Header */}
-        <div className="bg-white rounded-lg p-4 mb-6 shadow-sm text-center">
-          <h2 className="text-xl font-bold text-gray-800 mb-2">
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl font-light text-gray-900 mb-2">
             Choose Your Interests
           </h2>
-          <p className="text-gray-600 text-sm">
-            Select the categories that match your interests
+          <p className="text-gray-500">
+            Select categories that match your preferences
           </p>
         </div>
 
-        {/* Progress */}
-        <div className="bg-white rounded-lg p-4 mb-6 shadow-sm">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-semibold text-gray-600">Selected</span>
-            <span className="text-sm text-gray-600">
-              {selectedCategories.size}/{categories.length} categories
-            </span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(selectedCategories.size / categories.length) * 100}%` }}
-            ></div>
-          </div>
-        </div>
-
         {/* Category Cards */}
-        <div className="space-y-6">
+        <div className="space-y-4 mb-8">
           {categories.map((category) => (
             <CategoryCardComponent
               key={category.id}
@@ -149,35 +109,12 @@ export default function Quiz() {
           ))}
         </div>
 
-        {/* Action Buttons */}
+        {/* Continue Button */}
         {selectedCategories.size > 0 && (
-          <div className="bg-white rounded-lg p-4 mt-6 shadow-sm">
-            <div className="flex gap-3">
-              <button
-                onClick={resetSelection}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
-              >
-                Clear All
-              </button>
-              <button
-                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
-              >
-                Continue ({selectedCategories.size})
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Completion Message */}
-        {selectedCategories.size === categories.length && (
-          <div className="bg-gradient-to-r from-green-100 to-blue-100 rounded-lg p-6 mt-4 text-center border-2 border-green-200">
-            <div className="text-3xl mb-2">🎉</div>
-            <h3 className="text-lg font-bold text-gray-800 mb-2">
-              All Categories Selected!
-            </h3>
-            <p className="text-gray-600 text-sm">
-              You've selected all interest categories. Great choice!
-            </p>
+          <div className="fixed bottom-6 left-6 right-6">
+            <button className="w-full bg-gray-900 text-white font-medium py-4 rounded-lg transition-colors duration-200 hover:bg-gray-800">
+              Continue ({selectedCategories.size})
+            </button>
           </div>
         )}
       </div>

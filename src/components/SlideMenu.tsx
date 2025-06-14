@@ -1,4 +1,3 @@
-
 import { X, Menu } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -25,7 +24,7 @@ function SlideMenu({ isOpen, onClose }: SlideMenuProps) {
           onClick={onClose}
         />
       )}
-      
+
       {/* Slide Menu */}
       <div className={`absolute top-0 right-0 h-full w-4/5 max-w-xs bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-50 ${
         isOpen ? 'translate-x-0' : 'translate-x-full'
@@ -40,7 +39,7 @@ function SlideMenu({ isOpen, onClose }: SlideMenuProps) {
               <X size={24} />
             </button>
           </div>
-          
+
           <nav className="space-y-4">
             <button onClick={() => handleNavigation('#')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
               Questionnaires
@@ -48,7 +47,7 @@ function SlideMenu({ isOpen, onClose }: SlideMenuProps) {
             <button onClick={() => handleNavigation('/quiz')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
               Quizzes
             </button>
-            <button onClick={() => handleNavigation('#')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
+            <button onClick={() => handleNavigation('/points')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
               Points
             </button>
             <button onClick={() => handleNavigation('#')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">

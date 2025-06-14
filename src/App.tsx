@@ -10,13 +10,16 @@ import Quiz from "@/pages/Quiz";
 import LifestyleQuestionnaire from "@/pages/LifestyleQuestionnaire";
 import DigitalQuestionnaire from "@/pages/DigitalQuestionnaire";
 import FoodQuestionnaire from "@/pages/FoodQuestionnaire";
+import Points from "@/pages/Points";
 import ErrorPage from "@/pages/ErrorPage";
 import { CartProvider } from "@/contexts/CartContext";
+import { PointsProvider } from "@/contexts/PointsContext";
 
 export default function App() {
   return (
     <CartProvider>
-      <Layout>
+      <PointsProvider>
+        <Layout>
         <main className="flex-grow">
           <Switch>
             <Route path="/" component={Home} /> {/* Set Home as the default route */}
@@ -27,6 +30,7 @@ export default function App() {
             <Route path="/questionnaire/lifestyle" component={LifestyleQuestionnaire} />
             <Route path="/questionnaire/digital" component={DigitalQuestionnaire} />
             <Route path="/questionnaire/food" component={FoodQuestionnaire} />
+            <Route path="/points" component={Points} />
             <Route path="/listings" component={Listings} />
             <Route path="/listing/:id">
               <Listing />
@@ -40,6 +44,7 @@ export default function App() {
           </Switch>
         </main>
       </Layout>
+      </PointsProvider>
     </CartProvider>
   );
 }

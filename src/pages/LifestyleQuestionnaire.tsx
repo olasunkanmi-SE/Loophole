@@ -2,6 +2,7 @@
 import { useState } from "react";
 import MobileHeader from "../components/MobileHeader";
 import { useLocation } from "wouter";
+import { usePoints } from "../contexts/PointsContext";
 
 interface Question {
   id: string;
@@ -47,6 +48,7 @@ export default function LifestyleQuestionnaire() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string[] | string>>({});
   const [, setLocation] = useLocation();
+  const { addPoints } = usePoints();
 
   const currentQ = questions[currentQuestion];
   const progress = ((currentQuestion + 1) / questions.length) * 100;
@@ -63,12 +65,30 @@ export default function LifestyleQuestionnaire() {
     }
   };
 
+  const calculatePoints = () => {
+    let points = 0;
+    
+    // Award points based on answers
+    Object.values(answers).forEach(answer => {
+      if (Array.isArray(answer)) {
+        points += answer.length * 0.5; // Multi-select: 0.5 points per selection
+      } else {
+        points += 2; // Single select: 2 points per answer
+      }
+    });
+    
+    // Ensure points are between 1-10
+    return Math.min(Math.max(Math.round(points), 1), 10);
+  };
+
   const handleNext = () => {
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(prev => prev + 1);
     } else {
-      // Questionnaire completed
-      setLocation('/quiz');
+      // Questionnaire completed - calculate and award points
+      const earnedPoints = calculatePoints();
+      addPoints('lifestyle', earnedPoints);
+      setLocation('/points');
     }
   };
 

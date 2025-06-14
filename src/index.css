@@ -1,6 +1,11 @@
 @import "tailwindcss";
+@import 'leaflet/dist/leaflet.css';
 
-/* Add any other global styles below */
-body {
-  font-family: sans-serif; /* Example global font */
+/* Custom utilities */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;

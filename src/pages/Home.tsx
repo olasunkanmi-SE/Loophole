@@ -24,6 +24,7 @@ const mapContainerStyle = {
   width: "100%",
 };
 
+
 // Default center (e.g., a central point in Malaysia or a global default)
 const defaultCenter = { lat: 3.1390, lng: 101.6869 }; // Kuala Lumpur
 

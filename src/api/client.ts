@@ -1,5 +1,7 @@
 
-const API_BASE = 'http://localhost:3001';
+const API_BASE = window.location.hostname.includes('replit') 
+  ? `${window.location.protocol}//${window.location.hostname}:3001`
+  : 'http://localhost:3001';
 
 interface User {
   id: string;

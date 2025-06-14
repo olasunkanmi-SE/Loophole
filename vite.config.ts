@@ -19,5 +19,11 @@ export default defineConfig({
       ".repl.co",
       "2a51dba2-a7a2-4a09-82fd-2d445191ddb9-00-2su0owhisv2au.spock.replit.dev"
     ],
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
   },
 });

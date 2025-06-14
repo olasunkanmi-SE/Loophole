@@ -6,7 +6,7 @@ import { useCart } from "../contexts/CartContext";
 
 export default function OrderSummary() {
   const [, setLocation] = useLocation();
-  const [showSelectedItems, setShowSelectedItems] = useState(true);
+  
   const { cartItems, updateQuantity, removeFromCart, clearCart, getTotalPrice } = useCart();
 
   const handlePlaceOrder = () => {
@@ -69,38 +69,7 @@ export default function OrderSummary() {
       </div>
 
       <div className="p-4">
-        {/* Selected Items Header - Only show when showSelectedItems is true */}
-        {showSelectedItems && (
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-gray-600 font-medium">SELECTED ITEMS</h2>
-            <div className="flex gap-2">
-              <button 
-                onClick={clearCart}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-600 text-sm"
-              >
-                CLEAR ALL
-              </button>
-              <button 
-                onClick={() => setShowSelectedItems(!showSelectedItems)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm"
-              >
-                CONFIRM
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Show Items button when header is hidden */}
-        {!showSelectedItems && (
-          <div className="flex justify-center mb-6">
-            <button 
-              onClick={() => setShowSelectedItems(!showSelectedItems)}
-              className="px-6 py-2 bg-green-600 text-white rounded-lg text-sm"
-            >
-              SHOW ITEMS
-            </button>
-          </div>
-        )}
+        
 
         {/* Cart Items - Always visible */}
         <div className="space-y-6">

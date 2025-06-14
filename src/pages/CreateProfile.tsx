@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Layout from "../components/Layout";
 import MobileHeader from "../components/MobileHeader";
@@ -27,7 +26,7 @@ export default function CreateProfile() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  
+
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -71,10 +70,10 @@ export default function CreateProfile() {
       }
 
       console.log("Profile created successfully:", data);
-      
+
       // Refresh the user profile in context
       await refreshProfile();
-      
+
       // Navigate to home page after creation
       setLocation('/');
     } catch (err: any) {
@@ -123,7 +122,7 @@ export default function CreateProfile() {
         {/* Form Fields */}
         <div className="bg-white rounded-xl p-6 space-y-4">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Personal Information</h2>
-          
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -137,7 +136,7 @@ export default function CreateProfile() {
                 placeholder="John"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Last Name *
@@ -157,13 +156,14 @@ export default function CreateProfile() {
               Email *
             </label>
             <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="john.doe@example.com"
-            />
-            
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value.trim())}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="john.doe@example.com"
+                autoComplete="email"
+              />
+
           </div>
 
           {!user && (

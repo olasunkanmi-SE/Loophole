@@ -3,6 +3,7 @@ import { ArrowLeft, ShoppingCart, Menu } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState } from "react";
 import SlideMenu from "./SlideMenu";
+import { useCart } from "../contexts/CartContext";
 
 interface MobileHeaderProps {
   title?: string;
@@ -13,6 +14,7 @@ interface MobileHeaderProps {
 export default function MobileHeader({ title = "Back", onBack, cartCount = 0 }: MobileHeaderProps) {
   const [, setLocation] = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { getTotalItems } = useCart();
   
   return (
     <>
@@ -28,7 +30,14 @@ export default function MobileHeader({ title = "Back", onBack, cartCount = 0 }: 
         <div className="flex items-center gap-2">
           <div className="relative">
             <button 
-              onClick={() => setLocation('/order-summary')}
+              onClick={() => {
+                const totalItems = getTotalItems();
+                if (totalItems === 0) {
+                  setLocation('/menu');
+                } else {
+                  setLocation('/order-summary');
+                }
+              }}
               className="p-2 bg-gray-100 rounded-full"
             >
               <ShoppingCart size={20} className="text-gray-600" />

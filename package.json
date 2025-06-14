@@ -12,13 +12,9 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.50.0",
     "@tailwindcss/postcss": "^4.1.10",
-    "@types/pg": "^8.15.4",
-    "drizzle-kit": "^0.31.1",
-    "drizzle-orm": "^0.44.2",
     "json-server": "^1.0.0-beta.3",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.515.0",
-    "postgres": "^3.4.7",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-leaflet": "^5.0.0",

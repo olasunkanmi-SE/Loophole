@@ -49,13 +49,13 @@ export default function CreateProfile() {
 
       // Save profile data to database
       const data = await createProfile({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
         email: formData.email,
         phone: formData.phone,
         location: formData.location,
         bio: formData.bio,
-        profileImageUrl: profileImage
+        profile_image_url: profileImage
       });
 
       console.log("Profile created successfully:", data);

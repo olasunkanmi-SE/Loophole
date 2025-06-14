@@ -1,5 +1,6 @@
 
 import { Plus } from "lucide-react";
+import { useLocation } from "wouter";
 
 interface MenuItemProps {
   id: string;
@@ -11,8 +12,17 @@ interface MenuItemProps {
 }
 
 export default function MenuItem({ id, name, description, price, image, onAddToCart }: MenuItemProps) {
+  const [, setLocation] = useLocation();
+
+  const handleItemClick = () => {
+    setLocation(`/menu/${id}`);
+  };
+
   return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-sm mb-4">
+    <div 
+      className="bg-white rounded-2xl overflow-hidden shadow-sm mb-4 cursor-pointer"
+      onClick={handleItemClick}
+    >
       <div className="aspect-square relative">
         <img 
           src={image} 
@@ -34,7 +44,10 @@ export default function MenuItem({ id, name, description, price, image, onAddToC
             RM {price}
           </span>
           <button
-            onClick={() => onAddToCart?.(id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddToCart?.(id);
+            }}
             className="bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-full transition-colors"
           >
             <Plus size={16} />

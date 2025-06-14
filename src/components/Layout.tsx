@@ -5,5 +5,11 @@ interface LayoutProps {
 }
 
 export default function Layout({ children }: LayoutProps) {
-  return <div className="flex flex-col h-screen">{children}</div>;
+  return (
+    <div className="flex flex-col min-h-screen">
+      {/* Header can go here if needed in the future */}
+      <main className="flex-grow container mx-auto p-4">{children}</main>
+      {/* Footer can go here if needed in the future */}
+    </div>
+  );
 }

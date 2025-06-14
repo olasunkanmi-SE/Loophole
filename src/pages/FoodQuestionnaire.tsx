@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MobileHeader from "../components/MobileHeader";
 import { useLocation } from "wouter";
 import { usePoints } from "../contexts/PointsContext";
@@ -47,6 +47,7 @@ const questions: Question[] = [
 export default function FoodQuestionnaire() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string[] | string>>({});
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [, setLocation] = useLocation();
   const { addPoints } = usePoints();
 
@@ -88,9 +89,18 @@ export default function FoodQuestionnaire() {
       // Questionnaire completed - calculate and award points
       const earnedPoints = calculatePoints();
       addPoints('food', earnedPoints);
-      setLocation('/points');
+      setShowCompletionModal(true);
     }
   };
+
+  useEffect(() => {
+    if (showCompletionModal) {
+      const timer = setTimeout(() => {
+        setLocation('/quiz');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showCompletionModal, setLocation]);
 
   const handlePrevious = () => {
     if (currentQuestion > 0) {
@@ -189,6 +199,22 @@ export default function FoodQuestionnaire() {
           </button>
         </div>
       </div>
+
+      {/* Completion Modal */}
+      {showCompletionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 m-6 text-center animate-bounce">
+            <div className="text-6xl mb-4 animate-pulse">🎉</div>
+            <h2 className="text-2xl font-bold text-green-600 mb-2">Yay! Completed!</h2>
+            <p className="text-gray-600 mb-4">You've successfully completed the Food & Dining questionnaire!</p>
+            <div className="flex justify-center items-center space-x-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

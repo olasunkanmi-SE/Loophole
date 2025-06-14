@@ -3,6 +3,7 @@ import { useState } from "react";
 import MobileHeader from "../components/MobileHeader";
 import { useLocation } from "wouter";
 import { User, Camera } from "lucide-react";
+import { supabase } from "../supabase/client";
 
 export default function CreateProfile() {
   const [, setLocation] = useLocation();
@@ -15,6 +16,8 @@ export default function CreateProfile() {
     bio: ""
   });
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -31,11 +34,40 @@ export default function CreateProfile() {
     }
   };
 
-  const handleCreateProfile = () => {
-    // Here you would typically save to your backend
-    console.log("Profile created:", formData);
-    // Navigate to profile page after creation
-    setLocation('/profile');
+  const handleCreateProfile = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Save profile data to database
+      const { data, error: supabaseError } = await supabase
+        .from('user_profiles')
+        .insert([
+          {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            email: formData.email,
+            phone: formData.phone,
+            location: formData.location,
+            bio: formData.bio,
+            profile_image_url: profileImage // For now, saving as base64. In production, you'd upload to storage first
+          }
+        ])
+        .select();
+
+      if (supabaseError) {
+        throw supabaseError;
+      }
+
+      console.log("Profile created successfully:", data);
+      // Navigate to profile page after creation
+      setLocation('/profile');
+    } catch (err: any) {
+      setError(err.message);
+      console.error("Error creating profile:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const isFormValid = formData.firstName && formData.lastName && formData.email;
@@ -157,17 +189,24 @@ export default function CreateProfile() {
           </div>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+            <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        )}
+
         {/* Create Button */}
         <button
           onClick={handleCreateProfile}
-          disabled={!isFormValid}
+          disabled={!isFormValid || isLoading}
           className={`w-full py-3 rounded-xl font-medium transition-colors ${
-            isFormValid
+            isFormValid && !isLoading
               ? 'bg-blue-600 text-white hover:bg-blue-700'
               : 'bg-gray-200 text-gray-400 cursor-not-allowed'
           }`}
         >
-          Create Profile
+          {isLoading ? 'Creating Profile...' : 'Create Profile'}
         </button>
 
         <p className="text-xs text-gray-500 text-center">

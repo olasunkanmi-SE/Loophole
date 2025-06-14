@@ -69,28 +69,41 @@ export default function OrderSummary() {
       </div>
 
       <div className="p-4">
-        {/* Selected Items Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-gray-600 font-medium">SELECTED ITEMS</h2>
-          <div className="flex gap-2">
-            <button 
-              onClick={clearCart}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-600 text-sm"
-            >
-              CLEAR ALL
-            </button>
+        {/* Selected Items Header - Only show when showSelectedItems is true */}
+        {showSelectedItems && (
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-gray-600 font-medium">SELECTED ITEMS</h2>
+            <div className="flex gap-2">
+              <button 
+                onClick={clearCart}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-600 text-sm"
+              >
+                CLEAR ALL
+              </button>
+              <button 
+                onClick={() => setShowSelectedItems(!showSelectedItems)}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm"
+              >
+                CONFIRM
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Show Items button when header is hidden */}
+        {!showSelectedItems && (
+          <div className="flex justify-center mb-6">
             <button 
               onClick={() => setShowSelectedItems(!showSelectedItems)}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm"
+              className="px-6 py-2 bg-green-600 text-white rounded-lg text-sm"
             >
-              {showSelectedItems ? 'CONFIRM' : 'SHOW ITEMS'}
+              SHOW ITEMS
             </button>
           </div>
-        </div>
+        )}
 
-        {/* Cart Items - Only show when showSelectedItems is true */}
-        {showSelectedItems && (
-          <div className="space-y-6">
+        {/* Cart Items - Always visible */}
+        <div className="space-y-6">
           {cartItems.map((item) => (
             <div key={item.id} className="bg-white rounded-lg p-4 shadow-sm">
               {/* Main Item */}
@@ -139,8 +152,7 @@ export default function OrderSummary() {
               </div>
             </div>
           ))}
-          </div>
-        )}
+        </div>
 
         {/* Total */}
         <div className="mt-8 mb-4">

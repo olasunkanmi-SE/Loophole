@@ -7,6 +7,9 @@ import FoodMenu from "@/pages/FoodMenu";
 import MenuItemDetail from "@/pages/MenuItemDetail";
 import OrderSummary from "@/pages/OrderSummary";
 import Quiz from "@/pages/Quiz";
+import LifestyleQuestionnaire from "@/pages/LifestyleQuestionnaire";
+import DigitalQuestionnaire from "@/pages/DigitalQuestionnaire";
+import FoodQuestionnaire from "@/pages/FoodQuestionnaire";
 import ErrorPage from "@/pages/ErrorPage";
 import { CartProvider } from "@/contexts/CartContext";
 
@@ -21,6 +24,9 @@ export default function App() {
             <Route path="/menu/:id" component={MenuItemDetail} />
             <Route path="/order-summary" component={OrderSummary} />
             <Route path="/quiz" component={Quiz} />
+            <Route path="/questionnaire/lifestyle" component={LifestyleQuestionnaire} />
+            <Route path="/questionnaire/digital" component={DigitalQuestionnaire} />
+            <Route path="/questionnaire/food" component={FoodQuestionnaire} />
             <Route path="/listings" component={Listings} />
             <Route path="/listing/:id">
               <Listing />

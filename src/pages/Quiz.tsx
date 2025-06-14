@@ -1,5 +1,6 @@
 import { useState } from "react";
 import MobileHeader from "../components/MobileHeader";
+import { useLocation } from "wouter";
 
 interface CategoryCard {
   id: string;
@@ -29,19 +30,28 @@ const categories: CategoryCard[] = [
   }
 ];
 
+const categoryRoutes: Record<string, string> = {
+  lifestyle: "/questionnaire/lifestyle",
+  digital: "/questionnaire/digital",
+  food: "/questionnaire/food"
+};
+
 interface CategoryCardProps {
   category: CategoryCard;
   isSelected: boolean;
   onSelect: (categoryId: string) => void;
+  onNavigate: (categoryId: string) => void;
 }
 
-function CategoryCardComponent({ category, isSelected, onSelect }: CategoryCardProps) {
+function CategoryCardComponent({ category, isSelected, onSelect, onNavigate }: CategoryCardProps) {
+  const handleClick = () => {
+    onNavigate(category.id);
+  };
+
   return (
     <div 
-      className={`w-full cursor-pointer transition-all duration-200 ${
-        isSelected ? 'transform scale-[1.02]' : 'hover:transform hover:scale-[1.01]'
-      }`}
-      onClick={() => onSelect(category.id)}
+      className={`w-full cursor-pointer transition-all duration-200 hover:transform hover:scale-[1.01]`}
+      onClick={handleClick}
     >
       <div className={`relative w-full rounded-lg border p-6 text-center ${
         isSelected 
@@ -66,6 +76,7 @@ function CategoryCardComponent({ category, isSelected, onSelect }: CategoryCardP
 
 export default function Quiz() {
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
+  const [, setLocation] = useLocation();
 
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategories(prev => {
@@ -77,6 +88,13 @@ export default function Quiz() {
       }
       return newSet;
     });
+  };
+
+  const handleCategoryNavigate = (categoryId: string) => {
+    const route = categoryRoutes[categoryId];
+    if (route) {
+      setLocation(route);
+    }
   };
 
   return (
@@ -105,6 +123,7 @@ export default function Quiz() {
               category={category}
               isSelected={selectedCategories.has(category.id)}
               onSelect={handleCategorySelect}
+              onNavigate={handleCategoryNavigate}
             />
           ))}
         </div>

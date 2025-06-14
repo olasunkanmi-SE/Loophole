@@ -1,5 +1,6 @@
 
 import { ArrowLeft, ShoppingCart } from "lucide-react";
+import { useLocation } from "wouter";
 
 interface MobileHeaderProps {
   title?: string;
@@ -8,6 +9,8 @@ interface MobileHeaderProps {
 }
 
 export default function MobileHeader({ title = "Back", onBack, cartCount = 0 }: MobileHeaderProps) {
+  const [, setLocation] = useLocation();
+  
   return (
     <header className="flex items-center justify-between p-4 bg-white border-b border-gray-200">
       <button 
@@ -19,7 +22,10 @@ export default function MobileHeader({ title = "Back", onBack, cartCount = 0 }: 
       </button>
       
       <div className="relative">
-        <button className="p-2 bg-gray-100 rounded-full">
+        <button 
+          onClick={() => setLocation('/order-summary')}
+          className="p-2 bg-gray-100 rounded-full"
+        >
           <ShoppingCart size={20} className="text-gray-600" />
         </button>
         {cartCount > 0 && (

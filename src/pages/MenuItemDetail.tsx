@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRoute } from "wouter";
 import { ArrowLeft, Plus, Minus, ShoppingCart } from "lucide-react";
 import { useLocation } from "wouter";
+import { useCart } from "../contexts/CartContext";
 
 interface MenuItem {
   id: string;
@@ -170,6 +171,7 @@ export default function MenuItemDetail() {
   const [quantity, setQuantity] = useState(1);
   const [selectedAddOns, setSelectedAddOns] = useState<Record<string, number>>({});
   const [portionSize, setPortionSize] = useState("More Portion");
+  const { addToCart, getTotalItems } = useCart();
 
   if (!match || !params?.id) return null;
 
@@ -222,12 +224,17 @@ export default function MenuItemDetail() {
           <ArrowLeft size={20} className="mr-2" />
           Back
         </button>
-        <div className="relative">
+        <button 
+          onClick={() => setLocation('/order-summary')}
+          className="relative"
+        >
           <ShoppingCart size={24} className="text-gray-600" />
-          <span className="absolute -top-2 -right-2 bg-green-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-            2
-          </span>
-        </div>
+          {getTotalItems() > 0 && (
+            <span className="absolute -top-2 -right-2 bg-green-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              {getTotalItems()}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Main Content */}
@@ -323,7 +330,29 @@ export default function MenuItemDetail() {
           
           <button 
             className="bg-green-600 text-white px-6 py-3 rounded-lg font-medium flex-1 ml-6"
-            onClick={() => alert('Added to cart!')}
+            onClick={() => {
+              const cartItem = {
+                id: menuItem.id,
+                name: menuItem.name,
+                price: menuItem.price,
+                quantity: quantity,
+                image: menuItem.image,
+                addOns: Object.entries(selectedAddOns)
+                  .filter(([_, qty]) => qty > 0)
+                  .map(([addOnId, qty]) => {
+                    const addOn = addOns.find(a => a.id === addOnId);
+                    return {
+                      id: addOnId,
+                      name: addOn?.name || '',
+                      price: addOn?.price || 0,
+                      quantity: qty
+                    };
+                  })
+              };
+              addToCart(cartItem);
+              alert('Added to cart!');
+              setLocation('/menu');
+            }}
           >
             ADD TO CART RM {calculateTotal()}
           </button>

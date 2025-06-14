@@ -1,6 +1,5 @@
 import { useRoute } from "wouter";
 import { useEffect, useState } from "react";
-import { supabase } from "../supabase/client";
 
 interface Bridge {
   id: number;
@@ -28,16 +27,8 @@ export default function Listing() {
       setLoading(true);
       setError(null);
       try {
-        const { data, error: supabaseError } = await supabase
-          .from("bridges")
-          .select("*")
-          .eq("id", params.id)
-          .single();
-
-        if (supabaseError) {
-          throw supabaseError;
-        }
-        setBridge(data);
+        // Bridge functionality removed - using food ordering app instead
+        setBridge(null);
       } catch (err: any) {
         setError(err.message);
         console.error("Error fetching bridge:", err);

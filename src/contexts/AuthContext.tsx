@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { getCurrentUser, getProfile, signOut as apiSignOut } from '../api/client';
+import { getCurrentUser, getProfile, signOut as apiSignOut, signIn as apiSignIn, signUp as apiSignUp } from '../api/client';
 
 interface UserProfile {
   id: number;
@@ -21,6 +21,8 @@ interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -41,6 +43,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error fetching user profile:', error);
     }
+  };
+
+  const signIn = async (email: string, password: string) => {
+    const user = await apiSignIn(email, password);
+    setUser(user);
+  };
+
+  const signUp = async (email: string, password: string) => {
+    const user = await apiSignUp(email, password);
+    setUser(user);
   };
 
   const signOut = async () => {
@@ -70,6 +82,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     userProfile,
     loading,
+    signIn,
+    signUp,
     signOut,
     refreshProfile
   };

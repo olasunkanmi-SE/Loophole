@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../supabase/client";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -105,26 +104,12 @@ export default function Home() {
     }
 
     try {
-      const { data, error } = await supabase
-        .from("bridges")
-        .insert([{ 
-          title: newBridgeTitle, 
-          note: newBridgeNote, 
-          latitude: lat, 
-          longitude: lng 
-          // image_url would be handled by file upload logic
-        }])
-        .select();
-
-      if (error) throw error;
-
-      if (data) {
-        setBridges([...bridges, ...data]); // Add new bridge to local state
-      }
+      // Bridge functionality removed - redirecting to food menu instead
+      alert("Bridge functionality has been removed. Redirecting to food menu.");
       handleClosePopup();
     } catch (error: any) {
-      console.error("Error saving bridge:", error);
-      alert("Failed to save bridge: " + error.message);
+      console.error("Error:", error);
+      alert("Operation failed: " + error.message);
     }
   };
 

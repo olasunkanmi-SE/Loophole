@@ -16,7 +16,7 @@ localPort = 5173
 externalPort = 80
 
 [workflows]
-runButton = "Run with JSON Server"
+runButton = "Run with PostgreSQL"
 
 [[workflows.workflow]]
 name = "Run with JSON Server"
@@ -26,6 +26,23 @@ mode = "parallel"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npx json-server --watch db.json --port 3001 --host 0.0.0.0 --middlewares ./cors.js"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+
+[[workflows.workflow]]
+name = "Run with PostgreSQL"
+author = 22621996
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx drizzle-kit generate:pg"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx tsx scripts/setup-db.ts"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"

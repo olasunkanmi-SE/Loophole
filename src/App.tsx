@@ -6,6 +6,7 @@ import Home from "@/pages/Home"; // Import Home
 import FoodMenu from "@/pages/FoodMenu";
 import MenuItemDetail from "@/pages/MenuItemDetail";
 import OrderSummary from "@/pages/OrderSummary";
+import Quiz from "@/pages/Quiz";
 import ErrorPage from "@/pages/ErrorPage";
 import { CartProvider } from "@/contexts/CartContext";
 
@@ -19,6 +20,7 @@ export default function App() {
             <Route path="/menu" component={FoodMenu} />
             <Route path="/menu/:id" component={MenuItemDetail} />
             <Route path="/order-summary" component={OrderSummary} />
+            <Route path="/quiz" component={Quiz} />
             <Route path="/listings" component={Listings} />
             <Route path="/listing/:id">
               <Listing />

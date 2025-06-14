@@ -1,4 +1,3 @@
-
 import { type ReactNode } from "react";
 
 interface MobileContainerProps {
@@ -8,7 +7,7 @@ interface MobileContainerProps {
 
 export default function MobileContainer({ children, className = "" }: MobileContainerProps) {
   return (
-    <div className={`max-w-md mx-auto bg-white min-h-screen shadow-xl ${className}`}>
+    <div className={`w-full mx-auto bg-white min-h-screen shadow-xl ${className}`}>
       {children}
     </div>
   );

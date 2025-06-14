@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import 'leaflet/dist/leaflet.css';
 
 /* Custom utilities */
 .scrollbar-hide {
@@ -9,3 +8,16 @@
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Override default width of Place List UI Kit elements */
+/* Make overlay and list-container full width */
+gmp-map .overlay {
+  width: 100% !important;
+  left: 0 !important;
+}
+gmp-map .overlay .list-container,
+gmp-place-list {
+  width: 100% !important;
+  max-width: none !important;
+}

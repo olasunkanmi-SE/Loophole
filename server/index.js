@@ -174,6 +174,80 @@ app.post('/api/reset-password', checkDbConnection, async (req, res) => {
   }
 });
 
+// Payment processing endpoints
+app.post('/api/process-payment', checkDbConnection, async (req, res) => {
+  try {
+    const { amount, paymentMethod, orderId, userEmail } = req.body;
+    
+    // Simulate payment processing based on method type
+    const paymentResult = {
+      success: false,
+      transactionId: null,
+      error: null
+    };
+    
+    switch (paymentMethod.type) {
+      case 'grabpay':
+        // Simulate GrabPay API integration
+        paymentResult.success = Math.random() > 0.1; // 90% success rate
+        paymentResult.transactionId = `grab_${Date.now()}`;
+        break;
+        
+      case 'touchngo':
+        // Simulate Touch 'n Go API integration
+        paymentResult.success = Math.random() > 0.1; // 90% success rate
+        paymentResult.transactionId = `tng_${Date.now()}`;
+        break;
+        
+      case 'bank_transfer':
+        // Simulate FPX bank transfer
+        paymentResult.success = Math.random() > 0.05; // 95% success rate
+        paymentResult.transactionId = `fpx_${Date.now()}`;
+        break;
+        
+      default:
+        paymentResult.error = 'Unsupported payment method';
+    }
+    
+    // Store payment record
+    if (paymentResult.success) {
+      const paymentsCollection = db.collection('payments');
+      await paymentsCollection.insertOne({
+        transactionId: paymentResult.transactionId,
+        amount,
+        paymentMethod: paymentMethod.type,
+        orderId,
+        userEmail,
+        status: 'completed',
+        created_at: new Date().toISOString()
+      });
+    }
+    
+    res.json(paymentResult);
+  } catch (error) {
+    console.error('Payment processing error:', error);
+    res.status(500).json({ error: 'Payment processing failed' });
+  }
+});
+
+app.get('/api/payment-history/:email', checkDbConnection, async (req, res) => {
+  try {
+    const { email } = req.params;
+    
+    const paymentsCollection = db.collection('payments');
+    const payments = await paymentsCollection
+      .find({ userEmail: email })
+      .sort({ created_at: -1 })
+      .limit(50)
+      .toArray();
+    
+    res.json(payments);
+  } catch (error) {
+    console.error('Get payment history error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);
 });

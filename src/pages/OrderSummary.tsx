@@ -4,29 +4,67 @@ import { useLocation } from "wouter";
 import { ArrowLeft, Plus, Minus, X } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
 import { usePoints } from "../contexts/PointsContext";
+import { usePayment, PaymentMethod } from "../contexts/PaymentContext";
+import PaymentMethodSelector from "../components/PaymentMethodSelector";
+import PaymentProcessing from "../components/PaymentProcessing";
 
 export default function OrderSummary() {
   const [, setLocation] = useLocation();
   const [showInsufficientFunds, setShowInsufficientFunds] = useState(false);
+  const [showPaymentProcessing, setShowPaymentProcessing] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState<boolean | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
   
   const { cartItems, updateQuantity, removeFromCart, clearCart, getTotalPrice } = useCart();
   const { canAfford, deductRM, getFormattedRM, getTotalPoints } = usePoints();
+  const { processPayment, isProcessing } = usePayment();
 
-  const handlePlaceOrder = () => {
-    const orderTotal = parseFloat(getTotalPrice());
-    
-    if (!canAfford(orderTotal)) {
-      setShowInsufficientFunds(true);
+  const handlePaymentMethodSelect = (method: PaymentMethod) => {
+    setSelectedPaymentMethod(method);
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!selectedPaymentMethod) {
+      alert('Please select a payment method');
       return;
     }
+
+    const orderTotal = parseFloat(getTotalPrice());
     
-    if (deductRM(orderTotal)) {
-      alert(`Order placed successfully! Total: RM ${getTotalPrice()}`);
-      clearCart();
-      setLocation("/");
+    if (selectedPaymentMethod.type === 'points') {
+      if (!canAfford(orderTotal)) {
+        setShowInsufficientFunds(true);
+        return;
+      }
+      
+      if (deductRM(orderTotal)) {
+        setPaymentSuccess(true);
+        setShowPaymentProcessing(true);
+        setTimeout(() => {
+          clearCart();
+          setLocation("/");
+        }, 2000);
+      } else {
+        setShowInsufficientFunds(true);
+      }
     } else {
-      setShowInsufficientFunds(true);
+      // Handle other payment methods
+      setShowPaymentProcessing(true);
+      const success = await processPayment(orderTotal, selectedPaymentMethod);
+      setPaymentSuccess(success);
+      
+      if (success) {
+        setTimeout(() => {
+          clearCart();
+          setLocation("/");
+        }, 2000);
+      }
     }
+  };
+
+  const handlePaymentRetry = () => {
+    setPaymentSuccess(null);
+    setShowPaymentProcessing(false);
   };
 
   const getItemTotalPrice = (item: any) => {
@@ -156,12 +194,25 @@ export default function OrderSummary() {
           </div>
         </div>
 
+        {/* Payment Method Selection */}
+        <div className="mt-6">
+          <PaymentMethodSelector 
+            totalAmount={parseFloat(getTotalPrice())}
+            onPaymentMethodSelect={handlePaymentMethodSelect}
+          />
+        </div>
+
         {/* Place Order Button */}
         <button 
           onClick={handlePlaceOrder}
-          className="w-full bg-green-600 text-white py-4 rounded-lg font-medium text-lg"
+          disabled={!selectedPaymentMethod || isProcessing}
+          className={`w-full py-4 rounded-lg font-medium text-lg mt-6 ${
+            selectedPaymentMethod && !isProcessing
+              ? 'bg-green-600 text-white hover:bg-green-700'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          }`}
         >
-          PLACE ORDER RM{getTotalPrice()}
+          {isProcessing ? 'PROCESSING...' : `PLACE ORDER RM${getTotalPrice()}`}
         </button>
       </div>
 
@@ -218,6 +269,20 @@ export default function OrderSummary() {
           </div>
         </div>
       )}
+
+      {/* Payment Processing Modal */}
+      <PaymentProcessing
+        isOpen={showPaymentProcessing}
+        isProcessing={isProcessing}
+        paymentSuccess={paymentSuccess}
+        paymentMethod={selectedPaymentMethod?.name || ''}
+        amount={parseFloat(getTotalPrice())}
+        onClose={() => {
+          setShowPaymentProcessing(false);
+          setPaymentSuccess(null);
+        }}
+        onRetry={handlePaymentRetry}
+      />
     </div>
   );
 }

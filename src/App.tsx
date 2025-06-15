@@ -34,178 +34,181 @@ import Chat from "@/pages/Chat";
 import Housing from './pages/Housing';
 import NotFound from "@/pages/NotFound";
 import Questionnaire from "@/pages/Questionnaire";
+import { PaymentProvider } from "@/contexts/PaymentContext";
 
 function App() {
   return (
     <AuthProvider>
       <CartProvider>
         <PointsProvider>
-          <Switch>
-            {/* Public routes */}
-            <Route path="/signin">
-              <SignIn />
-            </Route>
-            <Route path="/signup">
-              <SignUp />
-            </Route>
-            <Route path="/create-profile">
-              <CreateProfile />
-            </Route>
-            <Route path="/reset-password">
-              <ResetPassword />
-            </Route>
+          <PaymentProvider>
+            <Switch>
+              {/* Public routes */}
+              <Route path="/signin">
+                <SignIn />
+              </Route>
+              <Route path="/signup">
+                <SignUp />
+              </Route>
+              <Route path="/create-profile">
+                <CreateProfile />
+              </Route>
+              <Route path="/reset-password">
+                <ResetPassword />
+              </Route>
 
-            {/* Protected routes */}
-            <Route path="/">
-              <ProtectedRoute>
-                <NewHome />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/quiz">
-              <ProtectedRoute>
-                <Home />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/home">
-              <ProtectedRoute>
-                <NewHome />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/lifestyle">
-              <ProtectedRoute>
-                <LifestyleQuestionnaire />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/digital">
-              <ProtectedRoute>
-                <DigitalQuestionnaire />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/food">
-              <ProtectedRoute>
-                <FoodQuestionnaire />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/questionnaire">
-              <ProtectedRoute>
-                <Questionnaire />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/questionnaire/lifestyle">
-              <ProtectedRoute>
-                <LifestyleQuestionnaire />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/questionnaire/digital">
-              <ProtectedRoute>
-                <DigitalQuestionnaire />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/questionnaire/food">
-              <ProtectedRoute>
-                <FoodQuestionnaire />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/questionnaire/entertainment">
-              <ProtectedRoute>
-                <EntertainmentQuestionnaire />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/questionnaire/travel">
-              <ProtectedRoute>
-                <TravelQuestionnaire />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/questionnaire/health">
-              <ProtectedRoute>
-                <HealthQuestionnaire />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/questionnaire/education">
-              <ProtectedRoute>
-                <EducationQuestionnaire />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/questionnaire/finance">
-              <ProtectedRoute>
-                <FinanceQuestionnaire />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/food-menu">
-              <ProtectedRoute>
-                <FoodMenu />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/menu">
-              <ProtectedRoute>
-                <FoodMenu />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/menu/:id">
-              {(params) => (
+              {/* Protected routes */}
+              <Route path="/">
                 <ProtectedRoute>
-                  <MenuItemDetail id={params.id} />
+                  <NewHome />
                 </ProtectedRoute>
-              )}
-            </Route>
-            <Route path="/order-summary">
-              <ProtectedRoute>
-                <OrderSummary />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/points">
-              <ProtectedRoute>
-                <Points />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/location">
-              <ProtectedRoute>
-                <NewHome />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/profile">
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/settings">
-              <ProtectedRoute>
-                <Settings />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/listings">
-              <ProtectedRoute>
-                <Listings />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/listing/:id">
-              {(params) => (
+              </Route>
+              <Route path="/quiz">
                 <ProtectedRoute>
-                  <Listing id={params.id} />
+                  <Home />
                 </ProtectedRoute>
-              )}
-            </Route>
-            <Route path="/chat">
-              <ProtectedRoute>
-                <Chat />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/housing">
-              <ProtectedRoute>
-                <Housing />
-              </ProtectedRoute>
-            </Route>
+              </Route>
+              <Route path="/home">
+                <ProtectedRoute>
+                  <NewHome />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/lifestyle">
+                <ProtectedRoute>
+                  <LifestyleQuestionnaire />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/digital">
+                <ProtectedRoute>
+                  <DigitalQuestionnaire />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/food">
+                <ProtectedRoute>
+                  <FoodQuestionnaire />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/questionnaire">
+                <ProtectedRoute>
+                  <Questionnaire />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/questionnaire/lifestyle">
+                <ProtectedRoute>
+                  <LifestyleQuestionnaire />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/questionnaire/digital">
+                <ProtectedRoute>
+                  <DigitalQuestionnaire />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/questionnaire/food">
+                <ProtectedRoute>
+                  <FoodQuestionnaire />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/questionnaire/entertainment">
+                <ProtectedRoute>
+                  <EntertainmentQuestionnaire />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/questionnaire/travel">
+                <ProtectedRoute>
+                  <TravelQuestionnaire />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/questionnaire/health">
+                <ProtectedRoute>
+                  <HealthQuestionnaire />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/questionnaire/education">
+                <ProtectedRoute>
+                  <EducationQuestionnaire />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/questionnaire/finance">
+                <ProtectedRoute>
+                  <FinanceQuestionnaire />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/food-menu">
+                <ProtectedRoute>
+                  <FoodMenu />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/menu">
+                <ProtectedRoute>
+                  <FoodMenu />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/menu/:id">
+                {(params) => (
+                  <ProtectedRoute>
+                    <MenuItemDetail id={params.id} />
+                  </ProtectedRoute>
+                )}
+              </Route>
+              <Route path="/order-summary">
+                <ProtectedRoute>
+                  <OrderSummary />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/points">
+                <ProtectedRoute>
+                  <Points />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/location">
+                <ProtectedRoute>
+                  <NewHome />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/profile">
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/settings">
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/listings">
+                <ProtectedRoute>
+                  <Listings />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/listing/:id">
+                {(params) => (
+                  <ProtectedRoute>
+                    <Listing id={params.id} />
+                  </ProtectedRoute>
+                )}
+              </Route>
+              <Route path="/chat">
+                <ProtectedRoute>
+                  <Chat />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/housing">
+                <ProtectedRoute>
+                  <Housing />
+                </ProtectedRoute>
+              </Route>
 
-            {/* Catch-all route for 404 - must be last */}
-            <Route>
-              <ProtectedRoute>
-                <NotFound />
-              </ProtectedRoute>
-            </Route>
-          </Switch>
+              {/* Catch-all route for 404 - must be last */}
+              <Route>
+                <ProtectedRoute>
+                  <NotFound />
+                </ProtectedRoute>
+              </Route>
+            </Switch>
 
-          {/* Floating Chat Icon - appears on all protected routes */}
-          <FloatingChatIcon />
+            {/* Floating Chat Icon - appears on all protected routes */}
+            <FloatingChatIcon />
+          </PaymentProvider>
         </PointsProvider>
       </CartProvider>
     </AuthProvider>

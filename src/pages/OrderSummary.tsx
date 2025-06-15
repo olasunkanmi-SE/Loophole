@@ -6,6 +6,7 @@ import { usePoints } from "../contexts/PointsContext";
 import { usePayment } from "../contexts/PaymentContext";
 import type { PaymentMethod } from "../contexts/PaymentContext";
 import { useAuth } from "../contexts/AuthContext";
+import { useNotifications } from "../contexts/NotificationContext";
 import PaymentMethodSelector from "../components/PaymentMethodSelector";
 import PaymentProcessing from "../components/PaymentProcessing";
 
@@ -16,6 +17,7 @@ export default function OrderSummary() {
   const [paymentSuccess, setPaymentSuccess] = useState<boolean | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<PaymentMethod | null>(null);
+  const { addNotification } = useNotifications();
 
   const {
     cartItems,
@@ -60,7 +62,7 @@ export default function OrderSummary() {
 
       if (response.ok) {
         const order = await response.json();
-        
+
         // Update order status based on payment success
         await fetch('/api/update-order-status', {
           method: 'PUT',
@@ -83,7 +85,11 @@ export default function OrderSummary() {
 
   const handlePlaceOrder = async () => {
     if (!selectedPaymentMethod) {
-      alert("Please select a payment method");
+        addNotification({
+            type: 'warning',
+            title: 'Payment Method Required 💳',
+            message: 'Please select a payment method to continue',
+        });
       return;
     }
 
@@ -97,6 +103,11 @@ export default function OrderSummary() {
 
       if (deductRM(orderTotal)) {
         await createOrder(true);
+                addNotification({
+                    type: 'success',
+                    title: 'Payment Successful! 🎉',
+                    message: 'Your order has been placed successfully',
+                });
         setPaymentSuccess(true);
         setShowPaymentProcessing(true);
         setTimeout(() => {
@@ -115,6 +126,11 @@ export default function OrderSummary() {
       if (success) {
         // Create order with transaction ID from payment processing
         await createOrder(success, `txn_${Date.now()}`);
+                addNotification({
+                    type: 'success',
+                    title: 'Payment Successful! 🎉',
+                    message: 'Your order has been placed successfully',
+                });
         setTimeout(() => {
           clearCart();
           setLocation("/");
@@ -122,6 +138,11 @@ export default function OrderSummary() {
       } else {
         // Create order as cancelled
         await createOrder(false);
+                addNotification({
+                    type: 'error',
+                    title: 'Payment Failed 😞',
+                    message: 'Payment could not be processed. Please try again.',
+                });
       }
     }
   };

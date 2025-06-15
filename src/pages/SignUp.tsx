@@ -1,17 +1,18 @@
-
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import Layout from '../components/Layout';
 
 export default function SignUp() {
   const [, setLocation] = useLocation();
+  const { signUp } = useAuth();
+  const { addNotification } = useNotifications();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

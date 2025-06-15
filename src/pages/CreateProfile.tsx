@@ -5,18 +5,20 @@ import { useLocation } from "wouter";
 import { User, Camera, Lock } from "lucide-react";
 import { signUp, createProfile } from "../api/client";
 import { useAuth } from "../contexts/AuthContext";
+import { useNotifications } from "../contexts/NotificationContext";
 
 export default function CreateProfile() {
   const [, setLocation] = useLocation();
   const { user, refreshProfile } = useAuth();
-  
+  const { addNotification } = useNotifications();
+
   // Redirect authenticated users to home page
   useEffect(() => {
     if (user) {
       setLocation('/');
     }
   }, [user, setLocation]);
-  
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",

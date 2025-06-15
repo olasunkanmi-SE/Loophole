@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { usePayment } from '../contexts/PaymentContext';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import jsPDF from 'jspdf';
+import { useNotifications } from "../contexts/NotificationContext";
 
 interface Message {
   id: string;
@@ -26,6 +27,7 @@ interface QuickAction {
 
 export default function Chat() {
   const [, setLocation] = useLocation();
+  const { addNotification } = useNotifications();
   const [messages, setMessages] = useState<Message[]>(() => {
     // Load chat history from localStorage on initialization
     const savedMessages = localStorage.getItem('chatHistory');
@@ -506,7 +508,7 @@ export default function Chat() {
           const data = await response.json();
           return data;
         }
-        
+
         // Fallback: check for local knowledge updates
         try {
           const localUpdatesResponse = await fetch('/knowledge-updates.json');
@@ -523,7 +525,7 @@ export default function Chat() {
         } catch (localError) {
           console.log('No local knowledge updates found');
         }
-        
+
         return null;
       } catch (error) {
         console.error('Error fetching knowledge context:', error);
@@ -819,7 +821,7 @@ export default function Chat() {
       // Payment method preferences
       const paymentMethods = orders.reduce((acc: any, order: any) => {
         const method = order.paymentMethod.type;
-        acc[method] = (acc[method] || 0)<previous_generation>+ 1;
+        acc[method] = (acc[method] || 0) + 1;
         return acc;
       }, {});
 
@@ -1103,7 +1105,13 @@ Provide a helpful response based on the user's request.`;
       const finalMessages = [...messages, userMessage, assistantMessage];
       setMessages(finalMessages);
       saveChatHistory(finalMessages);
-    }
+
+        addNotification({
+          type: 'error',
+          title: 'Chat Error 🤖',
+          message: 'Unable to connect to chat service. Please try again.',
+        });
+      }
   };
 
   const formatAnalyticsResponse = (content: string) => {

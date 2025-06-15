@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useRoute } from "wouter";
 import { ArrowLeft, Plus, Minus, ShoppingCart } from "lucide-react";
@@ -60,33 +59,25 @@ const menuItems: MenuItem[] = [
   {
     id: "2", 
     name: "Maple Bourbon Glazed Salmon",
-    description: "A classic combination of sweet and savory never...",
-    price: 20,
+    description: "Fresh Atlantic salmon with maple bourbon glaze and vegetables",
+    price: 26,
     image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=400&fit=crop",
     category: "seafood"
   },
   {
     id: "3",
-    name: "Garlic Butter Clams",
-    description: "better than garlic butter clams you can't find...",
-    price: 15,
+    name: "Garlic Butter Prawns",
+    description: "Fresh prawns sautéed in garlic butter with herbs",
+    price: 18,
     image: "https://images.unsplash.com/photo-1559847844-5315695dadae?w=400&h=400&fit=crop",
     category: "seafood"
   },
   {
     id: "8",
-    name: "Grilled Lobster Tail",
-    description: "Fresh lobster tail with lemon butter sauce",
-    price: 32,
+    name: "Grilled Fish & Chips",
+    description: "Beer-battered fish with crispy fries and tartar sauce",
+    price: 16,
     image: "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=400&h=400&fit=crop",
-    category: "seafood"
-  },
-  {
-    id: "9",
-    name: "Pan-Seared Scallops",
-    description: "Perfectly seared scallops with cauliflower puree",
-    price: 24,
-    image: "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=400&h=400&fit=crop",
     category: "seafood"
   },
 
@@ -94,32 +85,32 @@ const menuItems: MenuItem[] = [
   {
     id: "10",
     name: "Herb Roasted Chicken",
-    description: "Free-range chicken with rosemary and thyme",
-    price: 16,
+    description: "Half roasted chicken with rosemary, thyme and roasted vegetables",
+    price: 18,
     image: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=400&fit=crop",
     category: "chicken"
   },
   {
     id: "11",
     name: "Chicken Tikka Masala",
-    description: "Creamy tomato curry with tender chicken pieces",
-    price: 14,
+    description: "Tender chicken in creamy tomato curry with basmati rice",
+    price: 16,
     image: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400&h=400&fit=crop",
     category: "chicken"
   },
   {
     id: "12",
     name: "Buffalo Chicken Wings",
-    description: "Crispy wings tossed in spicy buffalo sauce",
-    price: 12,
+    description: "Crispy wings tossed in spicy buffalo sauce with celery sticks",
+    price: 14,
     image: "https://images.unsplash.com/photo-1527477396000-e27163b481c2?w=400&h=400&fit=crop",
     category: "chicken"
   },
   {
     id: "13",
-    name: "Chicken Cordon Bleu",
-    description: "Stuffed chicken breast with ham and swiss cheese",
-    price: 18,
+    name: "Chicken Parmigiana",
+    description: "Breaded chicken breast with marinara sauce and melted cheese",
+    price: 19,
     image: "https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400&h=400&fit=crop",
     category: "chicken"
   },
@@ -127,33 +118,33 @@ const menuItems: MenuItem[] = [
   // Drink Category
   {
     id: "4",
-    name: "Blood Orange Cocktail",
-    description: "This blood orange cocktail with mezcal is nothing short of mouthwatering",
-    price: 80,
+    name: "Fresh Orange Juice",
+    description: "Freshly squeezed orange juice with pulp",
+    price: 6,
     image: "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&h=400&fit=crop",
     category: "drink"
   },
   {
     id: "14",
-    name: "Classic Mojito",
-    description: "Fresh mint, lime, and white rum over ice",
-    price: 10,
+    name: "Iced Coffee",
+    description: "Cold brew coffee served over ice with milk",
+    price: 5,
     image: "https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=400&h=400&fit=crop",
     category: "drink"
   },
   {
     id: "15",
-    name: "Espresso Martini",
-    description: "Coffee cocktail with vodka and coffee liqueur",
-    price: 14,
+    name: "Green Tea",
+    description: "Premium jasmine green tea served hot",
+    price: 4,
     image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=400&fit=crop",
     category: "drink"
   },
   {
     id: "16",
-    name: "Tropical Paradise",
-    description: "Pineapple, coconut, and passion fruit blend",
-    price: 11,
+    name: "Mango Smoothie",
+    description: "Fresh mango blended with yogurt and honey",
+    price: 7,
     image: "https://images.unsplash.com/photo-1536935338788-846bb9981813?w=400&h=400&fit=crop",
     category: "drink"
   },
@@ -182,12 +173,12 @@ export default function MenuItemDetail() {
     setSelectedAddOns(prev => {
       const currentQuantity = prev[addOnId] || 0;
       const newQuantity = Math.max(0, currentQuantity + change);
-      
+
       if (newQuantity === 0) {
         const { [addOnId]: removed, ...rest } = prev;
         return rest;
       }
-      
+
       return { ...prev, [addOnId]: newQuantity };
     });
   };
@@ -209,7 +200,7 @@ export default function MenuItemDetail() {
         return addOn ? `+ ${addOn.name.toLowerCase()} x ${qty}` : '';
       })
       .filter(Boolean);
-    
+
     return selected.length > 0 ? selected.join('  ') : '';
   };
 
@@ -268,7 +259,7 @@ export default function MenuItemDetail() {
           <div className="bg-orange-200 text-orange-800 px-3 py-1 rounded-full inline-block text-sm font-medium mb-4">
             {portionSize}
           </div>
-          
+
           <div className="flex items-center justify-between py-3 border-b border-gray-200">
             <div className="flex items-center">
               <div className="w-6 h-6 bg-gray-200 rounded-full mr-3"></div>
@@ -327,7 +318,7 @@ export default function MenuItemDetail() {
               <Plus size={16} />
             </button>
           </div>
-          
+
           <button 
             className="bg-green-600 text-white px-6 py-3 rounded-lg font-medium flex-1 ml-6"
             onClick={() => {

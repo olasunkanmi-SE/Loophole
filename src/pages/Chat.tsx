@@ -80,15 +80,15 @@ export default function Chat() {
   // Food ordering functions
   const handleOrderConfirmation = async (orderItems: any[]) => {
     const orderTotal = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    
+
     setPendingOrder({
       items: orderItems,
       total: orderTotal,
       timestamp: new Date()
     });
-    
+
     setShowPaymentOptions(true);
-    
+
     // Add assistant message asking for payment method
     const assistantMessage: Message = {
       id: Date.now().toString(),
@@ -96,7 +96,7 @@ export default function Chat() {
       sender: 'assistant',
       timestamp: new Date()
     };
-    
+
     const updatedMessages = [...messages, assistantMessage];
     setMessages(updatedMessages);
     saveChatHistory(updatedMessages);
@@ -104,13 +104,13 @@ export default function Chat() {
 
   const handlePaymentSelection = async (paymentMethod: 'points' | 'card' | 'grabpay' | 'touchngo') => {
     if (!pendingOrder) return;
-    
+
     setOrderProcessing(true);
     setShowPaymentOptions(false);
-    
+
     let paymentSuccess = false;
     let paymentMessage = '';
-    
+
     try {
       if (paymentMethod === 'points') {
         if (!canAfford(pendingOrder.total)) {
@@ -128,10 +128,10 @@ export default function Chat() {
           grabpay: { type: 'grabpay', name: 'GrabPay' },
           touchngo: { type: 'touchngo', name: "Touch 'n Go" }
         };
-        
+
         const selectedMethod = paymentMethodMap[paymentMethod];
         const result = await processPayment(pendingOrder.total, selectedMethod);
-        
+
         if (result) {
           paymentSuccess = true;
           paymentMessage = `✅ **Payment Successful!**\n\nPaid RM ${pendingOrder.total.toFixed(2)} using ${selectedMethod.name}.\n\nYour order has been placed and will be prepared shortly!\n\n📄 Your receipt is ready for download.`;
@@ -139,19 +139,19 @@ export default function Chat() {
           paymentMessage = `❌ **Payment Failed**\n\nThere was an issue processing your ${selectedMethod.name} payment. Please try again or use a different payment method.`;
         }
       }
-      
+
       if (paymentSuccess) {
         // Create order in database
         await createChatOrder(pendingOrder, paymentMethod);
-        
+
         // Clear pending order
         setPendingOrder(null);
       }
-      
+
     } catch (error) {
       paymentMessage = `❌ **Payment Error**\n\nAn unexpected error occurred. Please try again.`;
     }
-    
+
     // Add payment result message
     const paymentResultMessage: Message = {
       id: Date.now().toString(),
@@ -159,11 +159,11 @@ export default function Chat() {
       sender: 'assistant',
       timestamp: new Date()
     };
-    
+
     const updatedMessages = [...messages, paymentResultMessage];
     setMessages(updatedMessages);
     saveChatHistory(updatedMessages);
-    
+
     setOrderProcessing(false);
   };
 
@@ -195,7 +195,7 @@ export default function Chat() {
 
       if (response.ok) {
         const createdOrder = await response.json();
-        
+
         // Update order status to completed
         const transactionId = `chat_${Date.now()}`;
         await fetch('/api/update-order-status', {
@@ -217,7 +217,7 @@ export default function Chat() {
           transactionId: transactionId,
           created_at: new Date().toISOString()
         };
-        
+
         setCompletedOrders(prev => [completedOrder, ...prev]);
       }
     } catch (error) {
@@ -227,32 +227,32 @@ export default function Chat() {
 
   const generateOrderReceipt = (order: any) => {
     const pdf = new jsPDF();
-    
+
     // Simple black text throughout
     pdf.setTextColor(0, 0, 0);
-    
+
     // Clean header
     pdf.setFontSize(18);
     pdf.setFont('helvetica', 'bold');
     pdf.text('EarnEats', 105, 20, { align: 'center' });
-    
+
     pdf.setFontSize(10);
     pdf.setFont('helvetica', 'normal');
     pdf.text('Digital Receipt', 105, 28, { align: 'center' });
-    
+
     // Simple line separator
     pdf.setLineWidth(0.5);
     pdf.line(30, 35, 180, 35);
-    
+
     let yPosition = 45;
-    
+
     // Order details
     pdf.setFontSize(9);
     pdf.setFont('helvetica', 'normal');
-    
+
     pdf.text(`Order ID: ${order.orderId}`, 30, yPosition);
     yPosition += 6;
-    
+
     pdf.text(`Date: ${new Date(order.created_at).toLocaleDateString('en-MY', {
       year: 'numeric',
       month: 'short',
@@ -261,25 +261,25 @@ export default function Chat() {
       minute: '2-digit'
     })}`, 30, yPosition);
     yPosition += 6;
-    
+
     pdf.text(`Customer: ${order.userEmail}`, 30, yPosition);
     yPosition += 6;
-    
+
     pdf.text(`Status: ${order.status.toUpperCase()}`, 30, yPosition);
     yPosition += 15;
-    
+
     // Items section
     pdf.setFont('helvetica', 'bold');
     pdf.text('ITEMS:', 30, yPosition);
     yPosition += 8;
-    
+
     pdf.setFont('helvetica', 'normal');
     order.items.forEach((item: any) => {
       const itemTotal = item.price * item.quantity;
       pdf.text(`${item.quantity}x ${item.name}`, 30, yPosition);
       pdf.text(`RM ${itemTotal.toFixed(2)}`, 150, yPosition, { align: 'right' });
       yPosition += 6;
-      
+
       // Add-ons
       if (item.addOns && item.addOns.length > 0) {
         item.addOns.forEach((addOn: any) => {
@@ -291,37 +291,37 @@ export default function Chat() {
       }
       yPosition += 3;
     });
-    
+
     // Payment details
     yPosition += 8;
     pdf.setFont('helvetica', 'bold');
     pdf.text('PAYMENT:', 30, yPosition);
     yPosition += 8;
-    
+
     pdf.setFont('helvetica', 'normal');
     const paymentMethodName = order.paymentMethod.type === 'points' ? 'EarnEats Points' : 
                              order.paymentMethod.type === 'grabpay' ? 'GrabPay' :
                              order.paymentMethod.type === 'touchngo' ? "Touch 'n Go" :
                              order.paymentMethod.type === 'card' ? 'Bank Transfer' : order.paymentMethod.type;
-    
+
     pdf.text(`Method: ${paymentMethodName}`, 30, yPosition);
     yPosition += 6;
-    
+
     if (order.transactionId) {
       pdf.text(`Transaction: ${order.transactionId}`, 30, yPosition);
       yPosition += 6;
     }
-    
+
     // Total with simple line
     yPosition += 8;
     pdf.line(30, yPosition, 180, yPosition);
     yPosition += 10;
-    
+
     pdf.setFontSize(12);
     pdf.setFont('helvetica', 'bold');
     pdf.text('TOTAL:', 30, yPosition);
     pdf.text(`RM ${order.totalAmount.toFixed(2)}`, 150, yPosition, { align: 'right' });
-    
+
     // Simple footer
     yPosition += 20;
     pdf.setFontSize(8);
@@ -329,39 +329,39 @@ export default function Chat() {
     pdf.text('Thank you for your order.', 105, yPosition, { align: 'center' });
     yPosition += 5;
     pdf.text('support@earneats.com', 105, yPosition, { align: 'center' });
-    
+
     // Save the PDF
     pdf.save(`EarnEats_Receipt_${order.orderId}.pdf`);
   };
 
   const generateChatOrderReceipt = (order: any) => {
     const pdf = new jsPDF();
-    
+
     // Simple black text throughout
     pdf.setTextColor(0, 0, 0);
-    
+
     // Clean header
     pdf.setFontSize(18);
     pdf.setFont('helvetica', 'bold');
     pdf.text('EarnEats', 105, 20, { align: 'center' });
-    
+
     pdf.setFontSize(10);
     pdf.setFont('helvetica', 'normal');
     pdf.text('Chat Order Receipt', 105, 28, { align: 'center' });
-    
+
     // Simple line separator
     pdf.setLineWidth(0.5);
     pdf.line(30, 35, 180, 35);
-    
+
     let yPosition = 45;
-    
+
     // Order details
     pdf.setFontSize(9);
     pdf.setFont('helvetica', 'normal');
-    
+
     pdf.text(`Order ID: ${order.orderId}`, 30, yPosition);
     yPosition += 6;
-    
+
     pdf.text(`Date: ${new Date(order.created_at).toLocaleDateString('en-MY', {
       year: 'numeric',
       month: 'short',
@@ -370,18 +370,18 @@ export default function Chat() {
       minute: '2-digit'
     })}`, 30, yPosition);
     yPosition += 6;
-    
+
     pdf.text(`Customer: ${order.userEmail}`, 30, yPosition);
     yPosition += 6;
-    
+
     pdf.text(`Method: AI Chat Assistant`, 30, yPosition);
     yPosition += 15;
-    
+
     // Items section
     pdf.setFont('helvetica', 'bold');
     pdf.text('ITEMS:', 30, yPosition);
     yPosition += 8;
-    
+
     pdf.setFont('helvetica', 'normal');
     order.items.forEach((item: any) => {
       const itemTotal = item.price * item.quantity;
@@ -389,39 +389,39 @@ export default function Chat() {
       pdf.text(`RM ${itemTotal.toFixed(2)}`, 150, yPosition, { align: 'right' });
       yPosition += 6;
     });
-    
+
     // Payment details
     yPosition += 8;
     pdf.setFont('helvetica', 'bold');
     pdf.text('PAYMENT:', 30, yPosition);
     yPosition += 8;
-    
+
     pdf.setFont('helvetica', 'normal');
     const paymentMethodName = order.paymentMethod.type === 'points' ? 'EarnEats Points' : 
                              order.paymentMethod.type === 'grabpay' ? 'GrabPay' :
                              order.paymentMethod.type === 'touchngo' ? "Touch 'n Go" :
                              order.paymentMethod.type === 'card' ? 'Bank Transfer' : order.paymentMethod.type;
-    
+
     pdf.text(`Method: ${paymentMethodName}`, 30, yPosition);
     yPosition += 6;
-    
+
     if (order.transactionId) {
       pdf.text(`Transaction: ${order.transactionId}`, 30, yPosition);
       yPosition += 6;
     }
-    
+
     pdf.text(`Status: ${order.status.toUpperCase()}`, 30, yPosition);
     yPosition += 8;
-    
+
     // Total with simple line
     pdf.line(30, yPosition, 180, yPosition);
     yPosition += 10;
-    
+
     pdf.setFontSize(12);
     pdf.setFont('helvetica', 'bold');
     pdf.text('TOTAL:', 30, yPosition);
     pdf.text(`RM ${order.totalAmount.toFixed(2)}`, 150, yPosition, { align: 'right' });
-    
+
     // Simple footer
     yPosition += 20;
     pdf.setFontSize(8);
@@ -429,7 +429,7 @@ export default function Chat() {
     pdf.text('Ordered via AI Chat Assistant', 105, yPosition, { align: 'center' });
     yPosition += 5;
     pdf.text('Thank you for your order.', 105, yPosition, { align: 'center' });
-    
+
     // Save the PDF
     pdf.save(`chat_receipt_${order.orderId}.pdf`);
   };
@@ -477,30 +477,25 @@ export default function Chat() {
   ];
 
   // Helper function to extract menu items from AI response
-  const extractMenuItems = (content: string) => {
-    const menuItems = [
-      // Drinks
-      { id: "4", name: "Blood Orange Cocktail", price: 12, category: "drink" },
-      { id: "14", name: "Classic Mojito", price: 10, category: "drink" },
-      { id: "15", name: "Espresso Martini", price: 14, category: "drink" },
-      { id: "16", name: "Tropical Paradise", price: 11, category: "drink" },
-      // Chicken
-      { id: "10", name: "Herb Roasted Chicken", price: 16, category: "chicken" },
-      { id: "11", name: "Chicken Tikka Masala", price: 14, category: "chicken" },
-      { id: "12", name: "Buffalo Chicken Wings", price: 12, category: "chicken" },
-      { id: "13", name: "Chicken Cordon Bleu", price: 18, category: "chicken" },
-      // Seafood
-      { id: "2", name: "Maple Bourbon Glazed Salmon", price: 20, category: "seafood" },
-      { id: "8", name: "Garlic Butter Clams", price: 15, category: "seafood" },
-      { id: "9", name: "Grilled Lobster Tail", price: 32, category: "seafood" },
-      { id: "17", name: "Pan-Seared Scallops", price: 24, category: "seafood" },
-      // Meat
-      { id: "1", name: "Grilled Rack of Lamb", price: 20, category: "meat" },
-      { id: "5", name: "Wagyu Beef Steak", price: 35, category: "meat" },
-      { id: "6", name: "BBQ Pork Ribs", price: 18, category: "meat" },
-      { id: "7", name: "Venison Medallions", price: 28, category: "meat" }
+  const menuItems = [
+      { id: "1", name: "Grilled Rack of Lamb", price: 28, category: "meat" },
+      { id: "5", name: "Wagyu Beef Steak", price: 45, category: "meat" },
+      { id: "6", name: "BBQ Pork Ribs", price: 22, category: "meat" },
+      { id: "2", name: "Maple Bourbon Glazed Salmon", price: 26, category: "seafood" },
+      { id: "3", name: "Garlic Butter Prawns", price: 18, category: "seafood" },
+      { id: "8", name: "Grilled Fish & Chips", price: 16, category: "seafood" },
+      { id: "10", name: "Herb Roasted Chicken", price: 18, category: "chicken" },
+      { id: "11", name: "Chicken Tikka Masala", price: 16, category: "chicken" },
+      { id: "12", name: "Buffalo Chicken Wings", price: 14, category: "chicken" },
+      { id: "13", name: "Chicken Parmigiana", price: 19, category: "chicken" },
+      { id: "4", name: "Fresh Orange Juice", price: 6, category: "drink" },
+      { id: "14", name: "Iced Coffee", price: 5, category: "drink" },
+      { id: "15", name: "Green Tea", price: 4, category: "drink" },
+      { id: "16", name: "Mango Smoothie", price: 7, category: "drink" }
     ];
 
+  // Helper function to extract menu items from AI response
+  const extractMenuItems = (content: string) => {
     const foundItems = menuItems.filter(item => 
       content.toLowerCase().includes(item.name.toLowerCase()) ||
       content.toLowerCase().includes(item.name.split(' ')[0].toLowerCase())
@@ -657,7 +652,7 @@ export default function Chat() {
     if (content.toLowerCase().includes('receipt') || content.toLowerCase().includes('download')) {
       const latestOrder = userOrderHistory.length > 0 ? userOrderHistory[0] : 
                          completedOrders.length > 0 ? completedOrders[0] : null;
-      
+
       if (latestOrder) {
         actions.push({
           text: 'Download Latest Receipt',
@@ -676,15 +671,15 @@ export default function Chat() {
   const parseOrderIntent = (userQuery: string) => {
     const orderKeywords = ['order', 'buy', 'purchase', 'get', 'want', 'need', 'hungry', 'food', 'eat', 'meal'];
     const confirmKeywords = ['yes', 'sure', 'okay', 'ok', 'agree', 'confirm', 'place order', 'lets do it', 'sounds good'];
-    
+
     const hasOrderIntent = orderKeywords.some(keyword => 
       userQuery.toLowerCase().includes(keyword)
     );
-    
+
     const hasConfirmIntent = confirmKeywords.some(keyword => 
       userQuery.toLowerCase().includes(keyword)
     );
-    
+
     return { hasOrderIntent, hasConfirmIntent };
   };
 
@@ -692,28 +687,26 @@ export default function Chat() {
   const getComprehensivePrompt = async (userQuery: string, categoryHint?: string) => {
     const foodMenu = {
       drinks: [
-        { name: "Blood Orange Cocktail", price: 12, description: "Refreshing citrus cocktail" },
-        { name: "Classic Mojito", price: 10, description: "Fresh mint, lime, and white rum" },
-        { name: "Espresso Martini", price: 14, description: "Coffee cocktail with vodka" },
-        { name: "Tropical Paradise", price: 11, description: "Pineapple, coconut, and passion fruit" }
+        { name: "Fresh Orange Juice", price: 6, description: "Refreshing and healthy" },
+        { name: "Iced Coffee", price: 5, description: "Perfect for a caffeine kick" },
+        { name: "Green Tea", price: 4, description: "A healthy and calming option" },
+        { name: "Mango Smoothie", price: 7, description: "Sweet and tropical smoothie" }
       ],
       meat: [
-        { name: "Grilled Rack of Lamb", price: 20, description: "Perfectly seasoned rack of lamb" },
-        { name: "Wagyu Beef Steak", price: 35, description: "Premium wagyu beef, grilled to perfection" },
-        { name: "BBQ Pork Ribs", price: 18, description: "Slow-cooked pork ribs with smoky BBQ sauce" },
-        { name: "Venison Medallions", price: 28, description: "Tender venison with juniper berry sauce" }
+        { name: "Grilled Rack of Lamb", price: 28, description: "Tender rack of lamb with herbs" },
+        { name: "Wagyu Beef Steak", price: 45, description: "Premium Wagyu steak, grilled to perfection" },
+        { name: "BBQ Pork Ribs", price: 22, description: "Smoky BBQ pork ribs, fall-off-the-bone tender" }
       ],
       chicken: [
-        { name: "Herb Roasted Chicken", price: 16, description: "Free-range chicken with rosemary and thyme" },
-        { name: "Chicken Tikka Masala", price: 14, description: "Creamy tomato curry with tender chicken" },
-        { name: "Buffalo Chicken Wings", price: 12, description: "Crispy wings tossed in spicy buffalo sauce" },
-        { name: "Chicken Cordon Bleu", price: 18, description: "Stuffed chicken breast with ham and swiss cheese" }
+        { name: "Herb Roasted Chicken", price: 18, description: "Juicy roasted chicken with herbs" },
+        { name: "Chicken Tikka Masala", price: 16, description: "Creamy and flavorful Indian dish" },
+        { name: "Buffalo Chicken Wings", price: 14, description: "Classic spicy wings with dip" },
+        { name: "Chicken Parmigiana", price: 19, description: "Breaded chicken with tomato sauce and cheese" }
       ],
       seafood: [
-        { name: "Maple Bourbon Glazed Salmon", price: 20, description: "Sweet and savory salmon" },
-        { name: "Garlic Butter Clams", price: 15, description: "Fresh clams in garlic butter sauce" },
-        { name: "Grilled Lobster Tail", price: 32, description: "Fresh lobster tail with lemon butter" },
-        { name: "Pan-Seared Scallops", price: 24, description: "Perfectly seared scallops with cauliflower puree" }
+        { name: "Maple Bourbon Glazed Salmon", price: 26, description: "Salmon with sweet and savory glaze" },
+        { name: "Garlic Butter Prawns", price: 18, description: "Prawns cooked in garlic butter sauce" },
+        { name: "Grilled Fish & Chips", price: 16, description: "Classic battered fish served with chips" }
       ]
     };
 
@@ -815,7 +808,7 @@ USER SPENDING ANALYTICS:
     const analyticsText = analytics ? generateAnalyticsSummary(analytics) : "No order history available for this user.";
 
     const { hasOrderIntent, hasConfirmIntent } = parseOrderIntent(userQuery);
-    
+
     return `You are EarnEats Assistant, a helpful AI for the EarnEats food delivery app in Malaysia.
 
 CURRENT USER STATUS:
@@ -896,15 +889,15 @@ ${categoryHint ? `CONTEXT: This question relates to ${categoryHint}` : ''}
 
       // Check if the response contains an order confirmation
       const orderConfirmationMatch = response.match(/ORDER_CONFIRMATION:\s*(\[.*?\])/);
-      
+
       let assistantContent = response;
-      
+
       if (orderConfirmationMatch) {
         try {
           const orderItems = JSON.parse(orderConfirmationMatch[1]);
           // Remove the ORDER_CONFIRMATION part from the response
           assistantContent = response.replace(/ORDER_CONFIRMATION:\s*\[.*?\]/, '').trim();
-          
+
           // Handle the order confirmation
           setTimeout(() => {
             handleOrderConfirmation(orderItems);

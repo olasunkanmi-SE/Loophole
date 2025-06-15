@@ -497,6 +497,22 @@ export default function Chat() {
     }
   };
 
+    // Knowledge base functions
+    const fetchKnowledgeContext = async () => {
+      try {
+        const response = await fetch('/api/knowledge-context');
+        if (!response.ok) {
+          console.error('Failed to fetch knowledge context:', response.status);
+          return null;
+        }
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error('Error fetching knowledge context:', error);
+        return null;
+      }
+    };
+
   // Helper function to extract menu items from AI response
   const extractMenuItems = (content: string) => {
     const foundItems = menuItems.filter(item => 
@@ -785,7 +801,7 @@ export default function Chat() {
       // Payment method preferences
       const paymentMethods = orders.reduce((acc: any, order: any) => {
         const method = order.paymentMethod.type;
-        acc[method] = (acc[method] || 0) + 1;
+        acc[method] = (acc[method] || 0)<previous_generation>+ 1;
         return acc;
       }, {});
 
@@ -850,6 +866,10 @@ USER SPENDING ANALYTICS:
       ? cartItems.map(item => `- ${item.name} (Qty: ${item.quantity}, Price: RM${item.price})`).join('\n')
       : 'Cart is empty';
 
+    const menuItemsText = Object.entries(foodMenu).map(([category, items]) => 
+        `${category.toUpperCase()}:\n${items.map(item => `- ${item.name}: RM ${item.price} (${item.description})`).join('\n')}`
+      ).join('\n\n');
+
     return `You are EarnEats Assistant, a helpful AI for the EarnEats food delivery app in Malaysia.
 
 CURRENT USER STATUS:
@@ -861,9 +881,7 @@ CURRENT USER STATUS:
 ${analyticsText}
 
 AVAILABLE FOOD MENU:
-${Object.entries(foodMenu).map(([category, items]) => 
-  `${category.toUpperCase()}:\n${items.map(item => `- ${item.name}: RM ${item.price} (${item.description})`).join('\n')}`
-).join('\n\n')}
+${menuItemsText}
 
 HOUSING OPTIONS AVAILABLE:
 ${housingOptions.map(option => `- ${option.type}: ${option.price} (${option.description})`).join('\n')}
@@ -892,11 +910,88 @@ ${hasConfirmIntent && pendingOrder ? `
 - The user seems to be confirming a previous recommendation
 - If they're agreeing to a food recommendation you made, include the ORDER_CONFIRMATION format
 ` : ''}
-
-USER QUESTION: "${userQuery}"
-${categoryHint ? `CONTEXT: This question relates to ${categoryHint}` : ''}
 `;
   };
+
+  // AI Response Generation
+  async function generateAIResponse(userMessage: string, menuItems: any[], userEmail?: string, knowledgeContext?: any): Promise<string> {
+    const menuItemsText = Object.entries(menuItems).map(([category, items]) => 
+        `${category.toUpperCase()}:\n${items.map(item => `- ${item.name}: RM ${item.price} (${item.description})`).join('\n')}`
+      ).join('\n\n');
+
+    // Include knowledge context in system prompt
+    let knowledgeInfo = '';
+    if (knowledgeContext?.currentFiles) {
+      const relevantFiles = knowledgeContext.currentFiles
+        .filter((file: any) => 
+          file.path.includes('Menu') || 
+          file.path.includes('Order') || 
+          file.path.includes('Cart') ||
+          file.path.includes('Payment')
+        )
+        .slice(0, 5);
+
+      if (relevantFiles.length > 0) {
+        knowledgeInfo = `\n\nCURRENT SYSTEM KNOWLEDGE:
+${relevantFiles.map((file: any) => 
+  `- ${file.path}: ${file.summary?.mainPurpose || 'Application component'} (Updated: ${new Date(file.updated_at).toLocaleDateString()})`
+).join('\n')}`;
+      }
+    }
+
+    const systemPrompt = `You are EarnEats AI Assistant, a helpful food recommendation and ordering assistant for the EarnEats platform.
+
+CURRENT AVAILABLE MENU ITEMS:
+${menuItemsText}
+
+USER CONTEXT:
+- User Email: ${userEmail || 'Not provided'}
+- Current Time: ${new Date().toLocaleString()}
+${knowledgeInfo}
+
+CAPABILITIES:
+1. Food Recommendations - Suggest items from the available menu based on preferences, budget, dietary needs
+2. Order Assistance - Help users add items to cart, calculate totals, provide nutritional info
+3. Budget Planning - Suggest meals within user's budget, highlight deals and value options
+4. Dietary Support - Recommend items for specific dietary needs (vegetarian, halal, etc.)
+5. General Questions - Answer questions about the platform, menu items, or ordering process
+6. System Updates - I have access to recent code changes and can provide information about new features
+
+RESPONSE GUIDELINES:
+- Always be helpful, friendly, and conversational
+- Format recommendations with item names, prices, and brief descriptions
+- Include relevant menu item details when making suggestions
+- Use emojis sparingly for a friendly tone
+- Keep responses concise but informative
+- If asked about orders, payments, or account issues, direct users to appropriate sections
+- Always recommend items from the available menu when discussing food
+- If asked about app features or recent changes, use the system knowledge context
+
+Current user message: "${userMessage}"
+
+Provide a helpful response based on the user's request.`;
+
+    console.log('Constructed system prompt:', systemPrompt);
+
+    try {
+      // Get API key
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyCZ2i4mYhfTC59fZSQoAIUsIJJmMqvQ5fE';
+      console.log('Using API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'undefined');
+
+      // Initialize Gemini AI
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-thinking-exp-1219" });
+
+      const result = await model.generateContent(systemPrompt);
+      const response = result.response.text();
+      console.log('AI Response:', response);
+      return response;
+
+    } catch (error) {
+      console.error('Gemini AI error:', error);
+      return "Sorry, I'm having trouble responding right now. Please try again later.";
+    }
+  }
 
   const handleSendMessage = async (categoryHint?: string) => {
     if (!inputValue.trim()) return;

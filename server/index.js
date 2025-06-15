@@ -1180,6 +1180,57 @@ app.post("/api/admin/test-email", checkDbConnection, async (req, res) => {
   }
 });
 
+// Knowledge base endpoints
+app.get('/api/knowledge-context', checkDbConnection, async (req, res) => {
+  try {
+    const contextCollection = db.collection('ai_context');
+    const knowledgeCollection = db.collection('knowledge_base');
+    
+    // Get recent context updates
+    const recentContext = await contextCollection
+      .find({})
+      .sort({ timestamp: -1 })
+      .limit(10)
+      .toArray();
+    
+    // Get current file knowledge
+    const currentKnowledge = await knowledgeCollection
+      .find({})
+      .sort({ updated_at: -1 })
+      .limit(50)
+      .toArray();
+    
+    res.json({
+      recentUpdates: recentContext,
+      currentFiles: currentKnowledge,
+      lastUpdated: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Knowledge context error:', error);
+    res.status(500).json({ error: 'Failed to fetch knowledge context' });
+  }
+});
+
+app.post('/api/knowledge-update', checkDbConnection, async (req, res) => {
+  try {
+    const { files, commitInfo } = req.body;
+    const contextCollection = db.collection('ai_context');
+    
+    const update = {
+      type: 'manual_update',
+      timestamp: new Date().toISOString(),
+      files: files,
+      commitInfo: commitInfo
+    };
+    
+    await contextCollection.insertOne(update);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Knowledge update error:', error);
+    res.status(500).json({ error: 'Failed to update knowledge base' });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);
 });

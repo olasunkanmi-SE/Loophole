@@ -27,13 +27,13 @@ import Settings from './pages/Settings';
 import ErrorPage from "@/pages/ErrorPage";
 import { CartProvider } from "@/contexts/CartContext";
 import { PointsProvider } from "@/contexts/PointsContext";
-import { AuthProvider } from "@/contexts/AuthContext";
 import { PaymentProvider } from "@/contexts/PaymentContext";
 import { NotificationProvider } from './contexts/NotificationContext';
 import { GamificationProvider } from './contexts/GamificationContext';
 import { SocialProvider } from './contexts/SocialContext';
 import { OfflineProvider } from './contexts/OfflineContext';
 import { SurveyProvider } from './contexts/SurveyContext';
+import { FinancialProvider } from './contexts/FinancialContext';
 import ProtectedRoute from "@/components/ProtectedRoute";
 import FloatingChatIcon from "@/components/FloatingChatIcon";
 import Chat from "@/pages/Chat";
@@ -54,6 +54,9 @@ import Notifications from './pages/Notifications';
 import Achievements from './pages/Achievements';
 import Social from './pages/Social';
 import OfflineIndicator from './components/OfflineIndicator';
+import PaymentHistory from './pages/PaymentHistory';
+import FinancialAnalytics from './pages/FinancialAnalytics';
+import BudgetManager from './pages/BudgetManager';
 
 function App() {
   return (
@@ -222,6 +225,21 @@ function App() {
                         <Route path="/chat">
                           <ProtectedRoute>
                             <Chat />
+                          </ProtectedRoute>
+                        </Route>
+                       <Route path="/payment-history">
+                           <ProtectedRoute>
+                            <PaymentHistory />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/financial-analytics">
+                          <ProtectedRoute>
+                            <FinancialAnalytics />
+                          </ProtectedRoute>
+                        </Route>
+                         <Route path="/budget-manager">
+                          <ProtectedRoute>
+                            <BudgetManager />
                           </ProtectedRoute>
                         </Route>
 

@@ -38,19 +38,67 @@ const defaultPaymentMethods: PaymentMethod[] = [
   },
   {
     id: 'touchngo',
-    name: 'Touch \'n Go',
+    name: 'Touch \'n Go eWallet',
     type: 'touchngo',
     icon: '📱',
     enabled: true,
     description: 'Pay with Touch \'n Go eWallet'
   },
   {
-    id: 'bank_transfer',
-    name: 'Bank Transfer',
+    id: 'boost',
+    name: 'Boost',
+    type: 'touchngo',
+    icon: '🚀',
+    enabled: true,
+    description: 'Pay with Boost eWallet'
+  },
+  {
+    id: 'shopeepay',
+    name: 'ShopeePay',
+    type: 'touchngo',
+    icon: '🛍️',
+    enabled: true,
+    description: 'Pay with ShopeePay wallet'
+  },
+  {
+    id: 'maybank_qr',
+    name: 'Maybank QRPay',
     type: 'bank_transfer',
     icon: '🏦',
     enabled: true,
-    description: 'Direct bank transfer (FPX)'
+    description: 'Scan QR to pay with Maybank'
+  },
+  {
+    id: 'cimb_pay',
+    name: 'CIMB Pay',
+    type: 'bank_transfer',
+    icon: '🏛️',
+    enabled: true,
+    description: 'Pay with CIMB Bank'
+  },
+  {
+    id: 'fpx',
+    name: 'Online Banking (FPX)',
+    type: 'bank_transfer',
+    icon: '💳',
+    enabled: true,
+    description: 'Direct bank transfer via FPX'
+  },
+  {
+    id: 'bigpay',
+    name: 'BigPay',
+    type: 'touchngo',
+    icon: '✈️',
+    enabled: true,
+    description: 'Pay with BigPay card or wallet'
+  },
+  {
+    id: 'mcash',
+    name: 'MCash',
+    type: 'touchngo',
+    icon: '📲',
+    enabled: true,
+    description: 'Pay with MCash mobile wallet'
   }
 ];
 

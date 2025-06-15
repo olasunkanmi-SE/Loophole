@@ -34,17 +34,30 @@ interface PointsProviderProps {
 }
 
 export const PointsProvider: React.FC<PointsProviderProps> = ({ children }) => {
-  const [points, setPoints] = useState<CategoryPoints>({
-    lifestyle: 0,
-    digital: 0,
-    food: 0
+  const [points, setPoints] = useState<CategoryPoints>(() => {
+    // Load points from localStorage on initialization
+    const savedPoints = localStorage.getItem('userPoints');
+    if (savedPoints) {
+      try {
+        return JSON.parse(savedPoints);
+      } catch (error) {
+        console.error('Error parsing saved points:', error);
+      }
+    }
+    return {
+      lifestyle: 0,
+      digital: 0,
+      food: 0
+    };
   });
 
   const addPoints = (category: keyof CategoryPoints, newPoints: number) => {
-    setPoints(prev => ({
-      ...prev,
+    const updatedPoints = {
+      ...points,
       [category]: newPoints
-    }));
+    };
+    setPoints(updatedPoints);
+    localStorage.setItem('userPoints', JSON.stringify(updatedPoints));
   };
 
   const getTotalPoints = () => {
@@ -104,6 +117,7 @@ export const PointsProvider: React.FC<PointsProviderProps> = ({ children }) => {
     }
     
     setPoints(newPoints);
+    localStorage.setItem('userPoints', JSON.stringify(newPoints));
     return true;
   };
 

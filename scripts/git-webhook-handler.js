@@ -41,30 +41,150 @@ app.post('/webhook/git-push', async (req, res) => {
 
 async function updateKnowledgeBase(changedFiles, commits) {
   try {
-    // Read changed files and extract relevant information
+    const MAX_TOKENS_PER_BATCH = 8000; // Conservative limit for most LLMs
+    const MAX_FILE_SIZE = 50000; // 50KB max per file
     const updates = [];
+    let currentTokenCount = 0;
     
-    for (const file of changedFiles) {
-      if (fs.existsSync(file)) {
-        const content = fs.readFileSync(file, 'utf-8');
-        const fileInfo = {
-          path: file,
-          content: content,
-          lastModified: new Date().toISOString(),
-          commitInfo: commits[0] // Latest commit info
-        };
-        updates.push(fileInfo);
+    // Process files in priority order
+    const prioritizedFiles = prioritizeFiles(changedFiles);
+    
+    for (const file of prioritizedFiles) {
+      if (!fs.existsSync(file)) continue;
+      
+      const stats = fs.statSync(file);
+      if (stats.size > MAX_FILE_SIZE) {
+        console.log(`Skipping large file: ${file} (${stats.size} bytes)`);
+        continue;
       }
+      
+      const content = fs.readFileSync(file, 'utf-8');
+      const estimatedTokens = estimateTokenCount(content);
+      
+      // If adding this file would exceed token limit, process current batch
+      if (currentTokenCount + estimatedTokens > MAX_TOKENS_PER_BATCH && updates.length > 0) {
+        await processBatch(updates, commits);
+        updates.length = 0;
+        currentTokenCount = 0;
+      }
+      
+      // Extract only relevant changes, not entire file content
+      const relevantChanges = extractRelevantChanges(file, content, commits);
+      
+      const fileInfo = {
+        path: file,
+        changes: relevantChanges,
+        summary: generateFileSummary(content),
+        lastModified: new Date().toISOString(),
+        commitInfo: commits[0],
+        estimatedTokens: estimatedTokens
+      };
+      
+      updates.push(fileInfo);
+      currentTokenCount += estimatedTokens;
     }
-
-    // Store in knowledge base collection
-    await storeKnowledgeUpdates(updates);
     
-    // Generate AI context from changes
-    await generateAIContext(updates);
+    // Process remaining batch
+    if (updates.length > 0) {
+      await processBatch(updates, commits);
+    }
     
   } catch (error) {
     console.error('Knowledge base update error:', error);
+  }
+}
+
+function prioritizeFiles(files) {
+  const priorities = {
+    // High priority - core application files
+    '.tsx': 10, '.ts': 10, '.js': 9, '.jsx': 9,
+    // Medium priority - configuration and docs
+    '.json': 5, '.md': 4, '.yml': 3, '.yaml': 3,
+    // Low priority - assets and generated files
+    '.css': 2, '.scss': 2, '.png': 1, '.jpg': 1
+  };
+  
+  return files.sort((a, b) => {
+    const extA = path.extname(a);
+    const extB = path.extname(b);
+    const priorityA = priorities[extA] || 0;
+    const priorityB = priorities[extB] || 0;
+    return priorityB - priorityA;
+  });
+}
+
+function estimateTokenCount(text) {
+  // Rough estimation: 1 token ≈ 4 characters for English text
+  return Math.ceil(text.length / 4);
+}
+
+function extractRelevantChanges(filePath, content, commits) {
+  // For new files or if git diff isn't available, return structured summary
+  const lines = content.split('\n');
+  
+  // Extract key elements instead of full content
+  const relevantParts = {
+    imports: lines.filter(line => line.includes('import') || line.includes('require')).slice(0, 10),
+    functions: extractFunctionSignatures(content).slice(0, 5),
+    components: extractComponentNames(content).slice(0, 5),
+    exports: lines.filter(line => line.includes('export')).slice(0, 5),
+    apis: extractAPIEndpoints(content),
+    totalLines: lines.length
+  };
+  
+  return relevantParts;
+}
+
+function extractFunctionSignatures(content) {
+  const signatures = [];
+  const functionRegex = /(function\s+\w+\([^)]*\)|const\s+\w+\s*=\s*\([^)]*\)\s*=>|export\s+function\s+\w+\([^)]*\))/g;
+  let match;
+  
+  while ((match = functionRegex.exec(content)) !== null && signatures.length < 10) {
+    signatures.push(match[1].trim());
+  }
+  
+  return signatures;
+}
+
+function extractComponentNames(content) {
+  const components = [];
+  const componentRegex = /(export\s+default\s+function\s+(\w+)|function\s+(\w+)\(\)|const\s+(\w+)\s*=\s*\(\)\s*=>)/g;
+  let match;
+  
+  while ((match = componentRegex.exec(content)) !== null && components.length < 5) {
+    const componentName = match[2] || match[3] || match[4];
+    if (componentName && componentName[0] === componentName[0].toUpperCase()) {
+      components.push(componentName);
+    }
+  }
+  
+  return components;
+}
+
+function generateFileSummary(content) {
+  const lines = content.split('\n');
+  return {
+    lineCount: lines.length,
+    hasReactComponents: content.includes('React') || content.includes('tsx'),
+    hasAPIEndpoints: content.includes('app.') && (content.includes('.get') || content.includes('.post')),
+    hasDatabase: content.includes('mongoose') || content.includes('mongodb') || content.includes('db.'),
+    hasTests: content.includes('test') || content.includes('describe') || content.includes('it('),
+    mainPurpose: inferFilePurpose(content)
+  };
+}
+
+async function processBatch(updates, commits) {
+  try {
+    // Store in knowledge base collection
+    await storeKnowledgeUpdates(updates);
+    
+    // Generate AI context from changes with token-aware processing
+    await generateAIContextBatch(updates, commits);
+    
+    console.log(`Processed batch of ${updates.length} files`);
+  } catch (error) {
+    console.error('Batch processing error:', error);
   }
 }
 
@@ -95,17 +215,25 @@ async function storeKnowledgeUpdates(updates) {
   }
 }
 
-async function generateAIContext(updates) {
-  // Generate structured context for AI assistant
+async function generateAIContextBatch(updates, commits) {
+  // Generate structured context for AI assistant with token awareness
   const context = {
-    type: 'code_update',
+    type: 'code_update_batch',
     timestamp: new Date().toISOString(),
+    batchSize: updates.length,
+    totalEstimatedTokens: updates.reduce((sum, update) => sum + (update.estimatedTokens || 0), 0),
+    commitSummary: {
+      hash: commits[0]?.id || 'unknown',
+      message: commits[0]?.message || 'No message',
+      author: commits[0]?.author?.name || 'Unknown',
+      timestamp: commits[0]?.timestamp || new Date().toISOString()
+    },
     files: updates.map(update => ({
       path: update.path,
-      summary: extractFileSummary(update.content),
-      functions: extractFunctions(update.content),
-      components: extractComponents(update.content),
-      apis: extractAPIEndpoints(update.content)
+      changes: update.changes,
+      summary: update.summary,
+      priority: getFilePriority(update.path),
+      estimatedTokens: update.estimatedTokens
     }))
   };
   
@@ -117,9 +245,30 @@ async function generateAIContext(updates) {
     await client.connect();
     const db = client.db('learn');
     await db.collection('ai_context').insertOne(context);
+    
+    // Also maintain a rolling window of recent contexts (keep last 50)
+    const contextCount = await db.collection('ai_context').countDocuments();
+    if (contextCount > 50) {
+      const oldestContexts = await db.collection('ai_context')
+        .find({})
+        .sort({ timestamp: 1 })
+        .limit(contextCount - 50)
+        .toArray();
+      
+      const idsToDelete = oldestContexts.map(doc => doc._id);
+      await db.collection('ai_context').deleteMany({ _id: { $in: idsToDelete } });
+    }
+    
   } finally {
     await client.close();
   }
+}
+
+function getFilePriority(filePath) {
+  if (filePath.includes('Chat.tsx') || filePath.includes('Menu')) return 'high';
+  if (filePath.includes('Admin') || filePath.includes('server/')) return 'medium';
+  if (filePath.includes('components/') || filePath.includes('contexts/')) return 'medium';
+  return 'low';
 }
 
 function extractFileSummary(content) {

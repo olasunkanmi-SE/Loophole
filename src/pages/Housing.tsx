@@ -362,7 +362,7 @@ export default function Housing() {
       </div>
 
       {/* Detail Modal */}
-        {showDetailModal && selectedListing && (
+      {showDetailModal && selectedListing && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50">
             <div className="bg-white rounded-t-2xl w-full max-h-[85vh] overflow-y-auto">
               {/* Header */}

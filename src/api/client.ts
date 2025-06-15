@@ -130,7 +130,7 @@ export async function getProfile(email: string): Promise<UserProfile | null> {
 
     if (!response.ok) {
       if (response.status === 404) {
-        return null;
+        return null; // Profile doesn't exist
       }
       throw new Error('Failed to fetch profile');
     }
@@ -139,6 +139,28 @@ export async function getProfile(email: string): Promise<UserProfile | null> {
     return profile;
   } catch (error) {
     console.error('Error in getProfile:', error);
+    throw error;
+  }
+}
+
+export async function updateProfile(email: string, profileData: Partial<UserProfile>): Promise<UserProfile> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/profile/${encodeURIComponent(email)}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(profileData),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update profile');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error in updateProfile:', error);
     throw error;
   }
 }

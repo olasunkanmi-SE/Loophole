@@ -13,7 +13,8 @@ import {
   Settings,
   UserCheck,
   Package,
-  CreditCard
+  CreditCard,
+  Home
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -194,6 +195,13 @@ export default function AdminDashboard() {
               >
                 <FileText size={20} />
                 <span className="text-sm font-medium">Content</span>
+              </button>
+              <button
+                onClick={() => setLocation('/admin/housing')}
+                className="flex items-center gap-2 p-3 bg-pink-50 text-pink-700 rounded-lg hover:bg-pink-100 transition-colors"
+              >
+                <Home size={20} />
+                <span className="text-sm font-medium">Housing</span>
               </button>
               <button
                 onClick={() => setLocation('/admin/settings')}

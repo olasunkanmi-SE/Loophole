@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Upload, Eye, EyeOff, Save, X } from 'lucide-react';
 import MobileContainer from '../components/MobileContainer';
@@ -27,48 +26,11 @@ const defaultCategories: Category[] = [
   { id: "seafood", name: "Seafood" },
 ];
 
-const defaultMenuItems: MenuItem[] = [
-  {
-    id: "1",
-    name: "Grilled Rack of Lamb",
-    description: "rack of lamb, perfectly seasoned and marinated...",
-    price: 20,
-    image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&h=400&fit=crop",
-    category: "meat",
-    available: true
-  },
-  {
-    id: "2", 
-    name: "Maple Bourbon Glazed Salmon",
-    description: "A classic combination of sweet and savory never...",
-    price: 20,
-    image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=400&fit=crop",
-    category: "seafood",
-    available: true
-  },
-  {
-    id: "4",
-    name: "Blood Orange Cocktail",
-    description: "This blood orange cocktail is refreshing and...",
-    price: 12,
-    image: "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&h=400&fit=crop",
-    category: "drink",
-    available: true
-  },
-  {
-    id: "10",
-    name: "Herb Roasted Chicken",
-    description: "Free-range chicken with rosemary and thyme",
-    price: 16,
-    image: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=400&fit=crop",
-    category: "chicken",
-    available: true
-  }
-];
+// Menu items will be fetched from database
 
 export default function AdminMenu() {
   const [, setLocation] = useLocation();
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(defaultMenuItems);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>(defaultCategories);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
@@ -86,6 +48,22 @@ export default function AdminMenu() {
     category: 'drink',
     available: true
   });
+
+  useEffect(() => {
+    fetchMenuItems();
+  }, []);
+
+  const fetchMenuItems = async () => {
+    try {
+      const response = await fetch('/api/menu-items');
+      if (response.ok) {
+        const data = await response.json();
+        setMenuItems(data);
+      }
+    } catch (error) {
+      console.error('Error fetching menu items:', error);
+    }
+  };
 
   const filteredItems = menuItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -113,40 +91,119 @@ export default function AdminMenu() {
     setShowItemForm(true);
   };
 
-  const handleSaveItem = () => {
-    if (!itemForm.name || !itemForm.description || itemForm.price <= 0) {
-      alert('Please fill all required fields');
+  const handleSaveItem = async () => {
+    try {
+      // Validate required fields
+      if (!itemForm.name || !itemForm.description || !itemForm.price) {
+        alert('Please fill in all required fields');
+        return;
+      }
+
+      if (editingItem) {
+        // Update existing item
+        const response = await fetch(`/api/menu-items/${editingItem.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(itemForm),
+        });
+
+        if (response.ok) {
+          const updatedItem = await response.json();
+          setMenuItems(prev => prev.map(item => 
+            item.id === editingItem.id ? updatedItem : item
+          ));
+          alert('Menu item updated successfully!');
+        } else {
+          const error = await response.json();
+          alert(`Error updating item: ${error.error || 'Unknown error'}`);
+        }
+      } else {
+        // Create new item
+        const newItem = {
+          ...itemForm,
+          id: Date.now().toString(),
+          image: itemForm.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=400&fit=crop'
+        };
+
+        const response = await fetch('/api/menu-items', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(newItem),
+        });
+
+        if (response.ok) {
+          const createdItem = await response.json();
+          setMenuItems(prev => [...prev, createdItem]);
+          alert('Menu item created successfully!');
+        } else {
+          const error = await response.json();
+          alert(`Error creating item: ${error.error || 'Unknown error'}`);
+        }
+      }
+
+      setShowItemForm(false);
+      setEditingItem(null);
+      fetchMenuItems();
+    } catch (error) {
+      console.error('Error saving menu item:', error);
+      alert('Error saving menu item. Please try again.');
+    }
+  };
+
+  const handleDeleteItem = async (itemId: string) => {
+    const item = menuItems.find(item => item.id === itemId);
+    if (!item) return;
+
+    if (!confirm(`Are you sure you want to delete "${item.name}"? This action cannot be undone.`)) {
       return;
     }
 
-    if (editingItem) {
-      // Update existing item
-      setMenuItems(prev => prev.map(item => 
-        item.id === editingItem.id ? { ...itemForm } : item
-      ));
-    } else {
-      // Add new item
-      const newItem = {
-        ...itemForm,
-        id: Date.now().toString()
-      };
-      setMenuItems(prev => [...prev, newItem]);
-    }
+    try {
+      const response = await fetch(`/api/menu-items/${itemId}`, {
+        method: 'DELETE',
+      });
 
-    setShowItemForm(false);
-    setEditingItem(null);
-  };
-
-  const handleDeleteItem = (id: string) => {
-    if (confirm('Are you sure you want to delete this menu item?')) {
-      setMenuItems(prev => prev.filter(item => item.id !== id));
+      if (response.ok) {
+        setMenuItems(prev => prev.filter(item => item.id !== itemId));
+        alert('Menu item deleted successfully!');
+        fetchMenuItems();
+      } else {
+        const error = await response.json();
+        alert(`Error deleting item: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting menu item:', error);
+      alert('Error deleting menu item. Please try again.');
     }
   };
 
-  const toggleItemAvailability = (id: string) => {
-    setMenuItems(prev => prev.map(item => 
-      item.id === id ? { ...item, available: !item.available } : item
-    ));
+  const toggleItemAvailability = async (itemId: string) => {
+    try {
+      const item = menuItems.find(item => item.id === itemId);
+      if (!item) return;
+
+      const response = await fetch(`/api/menu-items/${itemId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ...item, available: !item.available }),
+      });
+
+      if (response.ok) {
+        const updatedItem = await response.json();
+        setMenuItems(prev => prev.map(item => 
+          item.id === itemId ? updatedItem : item
+        ));
+      }
+      fetchMenuItems();
+    } catch (error) {
+      console.error('Error toggling item availability:', error);
+    }
   };
 
   const handleAddCategory = () => {
@@ -202,7 +259,7 @@ export default function AdminMenu() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-lg"
             />
-            
+
             <div className="flex gap-2">
               <button
                 onClick={handleAddItem}
@@ -283,17 +340,17 @@ export default function AdminMenu() {
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="p-4">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-semibold text-gray-800">{item.name}</h3>
                     <span className="font-bold text-blue-600">RM {item.price}</span>
                   </div>
-                  
+
                   <p className="text-gray-600 text-sm mb-3 line-clamp-2">
                     {item.description}
                   </p>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className={`px-2 py-1 rounded-full text-xs ${
                       item.available 
@@ -302,7 +359,7 @@ export default function AdminMenu() {
                     }`}>
                       {item.available ? 'Available' : 'Unavailable'}
                     </span>
-                    
+
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleEditItem(item)}
@@ -337,7 +394,7 @@ export default function AdminMenu() {
               <h2 className="text-xl font-bold mb-4">
                 {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
               </h2>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Name *</label>
@@ -443,7 +500,7 @@ export default function AdminMenu() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
               <h2 className="text-xl font-bold mb-4">Add New Category</h2>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Category Name *</label>

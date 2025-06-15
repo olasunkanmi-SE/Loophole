@@ -4,11 +4,13 @@ import MobileHeader from "../components/MobileHeader";
 import { useLocation } from "wouter";
 import { signIn, signUp, getProfile } from "../api/client";
 import { useAuth } from "../contexts/AuthContext";
+import { useNotifications } from "../contexts/NotificationContext";
 import { User, Mail, Lock } from "lucide-react";
 
 export default function SignIn() {
   const [, setLocation] = useLocation();
   const { user, loading } = useAuth();
+  const { addNotification } = useNotifications();
   const [formData, setFormData] = useState({
     email: "",
     password: ""
@@ -36,10 +38,20 @@ export default function SignIn() {
       await signIn(formData.email, formData.password);
 
       // Redirect to home page after successful sign-in
+        addNotification({
+          type: 'success',
+          title: 'Welcome Back! 👋',
+          message: 'You have successfully signed in',
+        });
       setLocation('/');
     } catch (err: any) {
       setError(err.message);
       console.error("Error signing in:", err);
+          addNotification({
+        type: 'error',
+        title: 'Sign In Error 💥',
+        message: 'Something went wrong. Please try again.',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -59,6 +71,11 @@ export default function SignIn() {
     } catch (err: any) {
       setError(err.message);
       console.error("Error signing up:", err);
+          addNotification({
+        type: 'error',
+        title: 'Sign In Error 💥',
+        message: 'Something went wrong. Please try again.',
+      });
     } finally {
       setIsLoading(false);
     }

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import MobileHeader from "../components/MobileHeader";
 import { useLocation } from "wouter";
+import { useNotifications } from "../contexts/NotificationContext";
 import { 
   Bell, 
   Moon, 
@@ -15,16 +16,31 @@ import {
 
 export default function Settings() {
   const [, setLocation] = useLocation();
+  const { addNotification } = useNotifications();
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [language, setLanguage] = useState('English');
 
   const handleClearData = () => {
-    if (window.confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
-      // Clear local storage or any cached data
-      localStorage.clear();
-      console.log('Data cleared');
-    }
+    // Show confirmation notification
+    addNotification({
+      type: 'warning',
+      title: 'Clear All Data? ⚠️',
+      message: 'This action cannot be undone. All your data will be permanently deleted.',
+    });
+    
+    // For now, we'll just show the warning. In a real app, you'd implement a confirmation modal
+    // or use a more sophisticated confirmation system
+    setTimeout(() => {
+      if (window.confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
+        localStorage.clear();
+        addNotification({
+          type: 'info',
+          title: 'Data Cleared 🗑️',
+          message: 'All local data has been cleared successfully',
+        });
+      }
+    }, 1000);
   };
 
   return (

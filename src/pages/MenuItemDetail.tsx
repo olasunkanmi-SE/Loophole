@@ -1,9 +1,9 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRoute } from "wouter";
 import { ArrowLeft, Plus, Minus, ShoppingCart } from "lucide-react";
 import { useLocation } from "wouter";
 import { useCart } from "../contexts/CartContext";
+import { useNotifications } from "../contexts/NotificationContext";
 
 interface MenuItem {
   id: string;
@@ -20,144 +20,7 @@ interface AddOn {
   price: number;
 }
 
-// This would typically come from your menu data
-const menuItems: MenuItem[] = [
-  // Meat Category
-  {
-    id: "1",
-    name: "Grilled Rack of Lamb",
-    description: "rack of lamb, perfectly seasoned and marinated...",
-    price: 20,
-    image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&h=400&fit=crop",
-    category: "meat"
-  },
-  {
-    id: "5",
-    name: "Wagyu Beef Steak",
-    description: "Premium wagyu beef, grilled to perfection with herbs",
-    price: 35,
-    image: "https://images.unsplash.com/photo-1558030006-450675393462?w=400&h=400&fit=crop",
-    category: "meat"
-  },
-  {
-    id: "6",
-    name: "BBQ Pork Ribs",
-    description: "Slow-cooked pork ribs with smoky BBQ sauce",
-    price: 18,
-    image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=400&fit=crop",
-    category: "meat"
-  },
-  {
-    id: "7",
-    name: "Venison Medallions",
-    description: "Tender venison with juniper berry sauce",
-    price: 28,
-    image: "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=400&fit=crop",
-    category: "meat"
-  },
-
-  // Seafood Category
-  {
-    id: "2", 
-    name: "Maple Bourbon Glazed Salmon",
-    description: "A classic combination of sweet and savory never...",
-    price: 20,
-    image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=400&fit=crop",
-    category: "seafood"
-  },
-  {
-    id: "3",
-    name: "Garlic Butter Clams",
-    description: "better than garlic butter clams you can't find...",
-    price: 15,
-    image: "https://images.unsplash.com/photo-1559847844-5315695dadae?w=400&h=400&fit=crop",
-    category: "seafood"
-  },
-  {
-    id: "8",
-    name: "Grilled Lobster Tail",
-    description: "Fresh lobster tail with lemon butter sauce",
-    price: 32,
-    image: "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=400&h=400&fit=crop",
-    category: "seafood"
-  },
-  {
-    id: "9",
-    name: "Pan-Seared Scallops",
-    description: "Perfectly seared scallops with cauliflower puree",
-    price: 24,
-    image: "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=400&h=400&fit=crop",
-    category: "seafood"
-  },
-
-  // Chicken Category
-  {
-    id: "10",
-    name: "Herb Roasted Chicken",
-    description: "Free-range chicken with rosemary and thyme",
-    price: 16,
-    image: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=400&fit=crop",
-    category: "chicken"
-  },
-  {
-    id: "11",
-    name: "Chicken Tikka Masala",
-    description: "Creamy tomato curry with tender chicken pieces",
-    price: 14,
-    image: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400&h=400&fit=crop",
-    category: "chicken"
-  },
-  {
-    id: "12",
-    name: "Buffalo Chicken Wings",
-    description: "Crispy wings tossed in spicy buffalo sauce",
-    price: 12,
-    image: "https://images.unsplash.com/photo-1527477396000-e27163b481c2?w=400&h=400&fit=crop",
-    category: "chicken"
-  },
-  {
-    id: "13",
-    name: "Chicken Cordon Bleu",
-    description: "Stuffed chicken breast with ham and swiss cheese",
-    price: 18,
-    image: "https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400&h=400&fit=crop",
-    category: "chicken"
-  },
-
-  // Drink Category
-  {
-    id: "4",
-    name: "Blood Orange Cocktail",
-    description: "This blood orange cocktail with mezcal is nothing short of mouthwatering",
-    price: 80,
-    image: "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&h=400&fit=crop",
-    category: "drink"
-  },
-  {
-    id: "14",
-    name: "Classic Mojito",
-    description: "Fresh mint, lime, and white rum over ice",
-    price: 10,
-    image: "https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=400&h=400&fit=crop",
-    category: "drink"
-  },
-  {
-    id: "15",
-    name: "Espresso Martini",
-    description: "Coffee cocktail with vodka and coffee liqueur",
-    price: 14,
-    image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=400&fit=crop",
-    category: "drink"
-  },
-  {
-    id: "16",
-    name: "Tropical Paradise",
-    description: "Pineapple, coconut, and passion fruit blend",
-    price: 11,
-    image: "https://images.unsplash.com/photo-1536935338788-846bb9981813?w=400&h=400&fit=crop",
-    category: "drink"
-  },
-];
+// Menu items will be fetched from database
 
 const addOns: AddOn[] = [
   { id: "chili", name: "Chili Salt Rim", price: 40 },
@@ -172,22 +35,65 @@ export default function MenuItemDetail() {
   const [selectedAddOns, setSelectedAddOns] = useState<Record<string, number>>({});
   const [portionSize, setPortionSize] = useState("More Portion");
   const { addToCart, getTotalItems } = useCart();
+  const { addNotification } = useNotifications();
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchMenuItems();
+  }, []);
+
+  const fetchMenuItems = async () => {
+    try {
+      const response = await fetch('/api/menu-items');
+      if (response.ok) {
+        const items = await response.json();
+        setMenuItems(items);
+      } else {
+        console.error('Failed to fetch menu items');
+      }
+    } catch (error) {
+      console.error('Error fetching menu items:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!match || !params?.id) return null;
 
   const menuItem = menuItems.find(item => item.id === params.id);
-  if (!menuItem) return <div>Menu item not found</div>;
+
+  if (loading) {
+    return (
+      <div className="bg-gray-50 min-h-screen">
+        <div className="p-4 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-500 mt-2">Loading menu item...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!menuItem) {
+    return (
+      <div className="bg-gray-50 min-h-screen">
+        <div className="p-4">
+          <p>Menu item not found</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleAddOnChange = (addOnId: string, change: number) => {
     setSelectedAddOns(prev => {
       const currentQuantity = prev[addOnId] || 0;
       const newQuantity = Math.max(0, currentQuantity + change);
-      
+
       if (newQuantity === 0) {
         const { [addOnId]: removed, ...rest } = prev;
         return rest;
       }
-      
+
       return { ...prev, [addOnId]: newQuantity };
     });
   };
@@ -209,7 +115,7 @@ export default function MenuItemDetail() {
         return addOn ? `+ ${addOn.name.toLowerCase()} x ${qty}` : '';
       })
       .filter(Boolean);
-    
+
     return selected.length > 0 ? selected.join('  ') : '';
   };
 
@@ -268,7 +174,7 @@ export default function MenuItemDetail() {
           <div className="bg-orange-200 text-orange-800 px-3 py-1 rounded-full inline-block text-sm font-medium mb-4">
             {portionSize}
           </div>
-          
+
           <div className="flex items-center justify-between py-3 border-b border-gray-200">
             <div className="flex items-center">
               <div className="w-6 h-6 bg-gray-200 rounded-full mr-3"></div>
@@ -327,7 +233,7 @@ export default function MenuItemDetail() {
               <Plus size={16} />
             </button>
           </div>
-          
+
           <button 
             className="bg-green-600 text-white px-6 py-3 rounded-lg font-medium flex-1 ml-6"
             onClick={() => {
@@ -350,7 +256,11 @@ export default function MenuItemDetail() {
                   })
               };
               addToCart(cartItem);
-              alert('Added to cart!');
+              addNotification({
+                type: 'success',
+                title: 'Added to Cart! 🛒',
+                message: `${menuItem.name} has been added to your cart`,
+              });
               setLocation('/menu');
             }}
           >

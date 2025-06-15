@@ -1,19 +1,137 @@
 import express from "express";
 import cors from "cors";
 import { MongoClient } from "mongodb";
+import dotenv from "dotenv";
+import mongoose from 'mongoose';
+
+// Simple in-memory cache with TTL
+class SimpleCache {
+  constructor() {
+    this.cache = new Map();
+  }
+
+  set(key, value, ttlMinutes = 30) {
+    const expiry = Date.now() + (ttlMinutes * 60 * 1000);
+    this.cache.set(key, { value, expiry });
+  }
+
+  get(key) {
+    const item = this.cache.get(key);
+    if (!item) return null;
+    
+    if (Date.now() > item.expiry) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    return item.value;
+  }
+
+  clear() {
+    this.cache.clear();
+  }
+
+  // Clean expired entries
+  cleanup() {
+    const now = Date.now();
+    for (const [key, item] of this.cache.entries()) {
+      if (now > item.expiry) {
+        this.cache.delete(key);
+      }
+    }
+  }
+}
+
+const cache = new SimpleCache();
+
+// Cache middleware for GET requests
+const cacheMiddleware = (ttlMinutes = 30) => {
+  return (req, res, next) => {
+    // Only cache GET requests
+    if (req.method !== 'GET') {
+      return next();
+    }
+
+    // Create cache key from URL and query parameters
+    const cacheKey = `${req.originalUrl || req.url}`;
+    
+    // Try to get from cache
+    const cachedResponse = cache.get(cacheKey);
+    if (cachedResponse) {
+      console.log(`Cache hit for: ${cacheKey}`);
+      return res.json(cachedResponse);
+    }
+
+    // Store original json method
+    const originalJson = res.json;
+    
+    // Override json method to cache the response
+    res.json = function(data) {
+      // Cache successful responses (status < 400)
+      if (res.statusCode < 400) {
+        console.log(`Caching response for: ${cacheKey}`);
+        cache.set(cacheKey, data, ttlMinutes);
+      }
+      
+      // Call original json method
+      return originalJson.call(this, data);
+    };
+
+    next();
+  };
+};
+
+// Cache invalidation helper
+const invalidateCache = (patterns = []) => {
+  if (patterns.length === 0) {
+    // Clear all cache if no specific patterns provided
+    cache.clear();
+    console.log('All cache cleared');
+    return;
+  }
+  
+  // Clear cache entries matching patterns
+  for (const [key] of cache.cache.entries()) {
+    for (const pattern of patterns) {
+      if (key.includes(pattern)) {
+        cache.cache.delete(key);
+        console.log(`Cache invalidated for: ${key}`);
+      }
+    }
+  }
+};
+
+// Cleanup expired cache entries every 10 minutes
+setInterval(() => {
+  cache.cleanup();
+  console.log('Cache cleanup completed');
+}, 10 * 60 * 1000);
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-const DATABASE_URL = "";
+const DATABASE_URL = process.env.DATABASE_URL || 'mongodb+srv://kosemani:omowunmi888@cluster0.4i82g.mongodb.net/learn?retryWrites=true';
 let db;
 
-// Connect to MongoDB
+// Connect to MongoDB with both native client and Mongoose
 let isConnected = false;
 
+// Mongoose connection
+mongoose.connect(DATABASE_URL)
+  .then(() => {
+    console.log("Mongoose connected to MongoDB Atlas");
+  })
+  .catch((error) => {
+    console.error("Mongoose connection error:", error);
+  });
+
+// Native MongoDB client for legacy endpoints
 MongoClient.connect(DATABASE_URL)
   .then((client) => {
-    console.log("Connected to MongoDB Atlas");
+    console.log("Native MongoDB client connected");
     db = client.db("learn");
     isConnected = true;
   })
@@ -32,9 +150,167 @@ const checkDbConnection = (req, res, next) => {
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Routes
+app.get('/', (req, res) => {
+  res.json({ message: 'API Server is running!' });
+});
+
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'API is working!' });
+});
+
+// Mongoose Schemas
+const userSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  status: { type: String, default: 'active' },
+  created_at: { type: Date, default: Date.now }
+});
+
+const profileSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true },
+  name: { type: String, required: true },
+  phone: { type: String },
+  dateOfBirth: { type: String },
+  gender: { type: String },
+  nationality: { type: String },
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date, default: Date.now }
+});
+
+const orderSchema = new mongoose.Schema({
+  orderId: { type: String, required: true, unique: true },
+  userEmail: { type: String, required: true },
+  items: [{ 
+    id: String,
+    name: String,
+    price: Number,
+    quantity: Number 
+  }],
+  totalAmount: { type: Number, required: true },
+  paymentMethod: { type: String, required: true },
+  status: { type: String, default: 'pending' },
+  transactionId: { type: String },
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date, default: Date.now }
+});
+
+const menuItemSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true },
+  name: { type: String, required: true },
+  description: { type: String, required: true },
+  price: { type: Number, required: true },
+  image: { 
+    type: String, 
+    default: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=400&fit=crop',
+    validate: {
+      validator: function(v) {
+        // Allow empty strings, URLs, or base64 data URLs
+        return !v || v.length === 0 || v.startsWith('http') || v.startsWith('data:image/');
+      },
+      message: 'Image must be a valid URL or base64 data'
+    }
+  },
+  category: { type: String, required: true },
+  available: { type: Boolean, default: true }
+}, { timestamps: true });
+
+const paymentSchema = new mongoose.Schema({
+  transactionId: { type: String, required: true, unique: true },
+  amount: { type: Number, required: true },
+  paymentMethod: { type: String, required: true },
+  orderId: { type: String, required: true },
+  userEmail: { type: String, required: true },
+  status: { type: String, default: 'pending' },
+  created_at: { type: Date, default: Date.now }
+});
+
+const surveyResponseSchema = new mongoose.Schema({
+  userEmail: { type: String, required: true },
+  surveyId: { type: String, required: true },
+  responses: { type: Object, required: true },
+  pointsEarned: { type: Number, default: 0 },
+  completed_at: { type: Date, default: Date.now }
+});
+
+// Models
+const User = mongoose.model('User', userSchema);
+const Profile = mongoose.model('Profile', profileSchema);
+const Order = mongoose.model('Order', orderSchema);
+const MenuItem = mongoose.model('MenuItem', menuItemSchema);
+const Payment = mongoose.model('Payment', paymentSchema);
+const SurveyResponse = mongoose.model('SurveyResponse', surveyResponseSchema);
+
+// Menu Items API Routes
+app.get('/api/menu-items', cacheMiddleware(30), async (req, res) => {
+  try {
+    const menuItems = await MenuItem.find();
+    res.json(menuItems);
+  } catch (error) {
+    console.error('Error fetching menu items:', error);
+    res.status(500).json({ error: 'Failed to fetch menu items' });
+  }
+});
+
+app.post('/api/menu-items', async (req, res) => {
+  try {
+    const menuItem = new MenuItem(req.body);
+    await menuItem.save();
+    
+    // Invalidate menu items cache
+    cache.clear();
+    console.log('Cache cleared due to menu item creation');
+    
+    res.status(201).json(menuItem);
+  } catch (error) {
+    console.error('Error creating menu item:', error);
+    res.status(500).json({ error: 'Failed to create menu item' });
+  }
+});
+
+app.put('/api/menu-items/:id', async (req, res) => {
+  try {
+    const menuItem = await MenuItem.findOneAndUpdate(
+      { id: req.params.id },
+      req.body,
+      { new: true, runValidators: true }
+    );
+    if (!menuItem) {
+      return res.status(404).json({ error: 'Menu item not found' });
+    }
+    
+    // Invalidate menu items cache
+    cache.clear();
+    console.log('Cache cleared due to menu item update');
+    
+    res.json(menuItem);
+  } catch (error) {
+    console.error('Error updating menu item:', error);
+    res.status(500).json({ error: 'Failed to update menu item' });
+  }
+});
+
+app.delete('/api/menu-items/:id', async (req, res) => {
+  try {
+    const menuItem = await MenuItem.findOneAndDelete({ id: req.params.id });
+    if (!menuItem) {
+      return res.status(404).json({ error: 'Menu item not found' });
+    }
+    
+    // Invalidate menu items cache
+    cache.clear();
+    console.log('Cache cleared due to menu item deletion');
+    
+    res.json({ message: 'Menu item deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting menu item:', error);
+    res.status(500).json({ error: 'Failed to delete menu item' });
+  }
+});
+
 app.post("/api/signin", checkDbConnection, async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -81,7 +357,7 @@ app.post("/api/signup", checkDbConnection, async (req, res) => {
   }
 });
 
-app.get("/api/profile/:email", checkDbConnection, async (req, res) => {
+app.get("/api/profile/:email", checkDbConnection, cacheMiddleware(15), async (req, res) => {
   try {
     const { email } = req.params;
 
@@ -140,9 +416,51 @@ app.post("/api/profile", checkDbConnection, async (req, res) => {
     };
 
     await profilesCollection.insertOne(profile);
+    
+    // Invalidate profile cache
+    invalidateCache([`/api/profile/${profileData.email}`]);
+    
     res.json(profile);
   } catch (error) {
     console.error("Create profile error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.put("/api/profile/:email", checkDbConnection, async (req, res) => {
+  try {
+    const { email } = req.params;
+    const profileData = req.body;
+
+    const profilesCollection = db.collection("profiles");
+
+    // Check if profile exists
+    const existingProfile = await profilesCollection.findOne({ email });
+    if (!existingProfile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+
+    // Update profile data (exclude email from updates)
+    const { email: _, password, ...updateData } = profileData;
+    const updatedProfile = {
+      ...updateData,
+      updated_at: new Date().toISOString(),
+    };
+
+    await profilesCollection.updateOne(
+      { email },
+      { $set: updatedProfile }
+    );
+
+    // Fetch and return updated profile
+    const profile = await profilesCollection.findOne({ email });
+    
+    // Invalidate profile cache
+    invalidateCache([`/api/profile/${email}`]);
+    
+    res.json(profile);
+  } catch (error) {
+    console.error("Update profile error:", error);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -170,6 +488,9 @@ app.post("/api/reset-password", checkDbConnection, async (req, res) => {
       { email },
       { $set: { password: newPassword, updated_at: new Date().toISOString() } },
     );
+
+    // Invalidate user-related cache
+    invalidateCache([`/api/profile/${email}`]);
 
     res.json({ message: "Password reset successfully" });
   } catch (error) {
@@ -225,6 +546,9 @@ app.post("/api/process-payment", checkDbConnection, async (req, res) => {
         status: "completed",
         created_at: new Date().toISOString(),
       });
+      
+      // Invalidate payment history cache
+      invalidateCache([`/api/payment-history/${userEmail}`]);
     }
 
     res.json(paymentResult);
@@ -234,7 +558,7 @@ app.post("/api/process-payment", checkDbConnection, async (req, res) => {
   }
 });
 
-app.get("/api/payment-history/:email", checkDbConnection, async (req, res) => {
+app.get("/api/payment-history/:email", checkDbConnection, cacheMiddleware(10), async (req, res) => {
   try {
     const { email } = req.params;
 
@@ -272,6 +596,14 @@ app.post("/api/create-order", checkDbConnection, async (req, res) => {
     };
 
     const result = await ordersCollection.insertOne(order);
+    
+    // Invalidate order and admin cache
+    invalidateCache([
+      `/api/order-history/${userEmail}`,
+      '/api/admin/dashboard-stats',
+      '/api/admin/orders'
+    ]);
+    
     res.json({ ...order, _id: result.insertedId });
   } catch (error) {
     console.error("Create order error:", error);
@@ -295,6 +627,16 @@ app.put("/api/update-order-status", checkDbConnection, async (req, res) => {
 
     await ordersCollection.updateOne({ orderId }, { $set: updateData });
 
+    // Get order to invalidate user-specific cache
+    const order = await ordersCollection.findOne({ orderId });
+    if (order) {
+      invalidateCache([
+        `/api/order-history/${order.userEmail}`,
+        '/api/admin/dashboard-stats',
+        '/api/admin/orders'
+      ]);
+    }
+
     res.json({ success: true });
   } catch (error) {
     console.error("Update order status error:", error);
@@ -302,7 +644,7 @@ app.put("/api/update-order-status", checkDbConnection, async (req, res) => {
   }
 });
 
-app.get("/api/order-history/:email", checkDbConnection, async (req, res) => {
+app.get("/api/order-history/:email", checkDbConnection, cacheMiddleware(10), async (req, res) => {
   try {
     const { email } = req.params;
 
@@ -321,7 +663,7 @@ app.get("/api/order-history/:email", checkDbConnection, async (req, res) => {
 });
 
 // Admin endpoints
-app.get("/api/admin/dashboard-stats", checkDbConnection, async (req, res) => {
+app.get("/api/admin/dashboard-stats", checkDbConnection, cacheMiddleware(5), async (req, res) => {
   try {
     const usersCollection = db.collection("users");
     const ordersCollection = db.collection("orders");
@@ -371,7 +713,7 @@ app.get("/api/admin/dashboard-stats", checkDbConnection, async (req, res) => {
   }
 });
 
-app.get("/api/admin/users", checkDbConnection, async (req, res) => {
+app.get("/api/admin/users", checkDbConnection, cacheMiddleware(10), async (req, res) => {
   try {
     const usersCollection = db.collection("users");
     const profilesCollection = db.collection("profiles");
@@ -428,6 +770,9 @@ app.post(
           { _id: new db.collection("users").s.pkFactory(userId) },
           { $set: { status, updated_at: new Date().toISOString() } },
         );
+        
+        // Invalidate admin cache
+        invalidateCache(['/api/admin/users', '/api/admin/dashboard-stats']);
       }
 
       res.json({ success: true });
@@ -466,6 +811,9 @@ app.put(
         { orderId },
         { $set: { status, updated_at: new Date().toISOString() } },
       );
+
+      // Invalidate admin and order cache
+      invalidateCache(['/api/admin/orders', '/api/admin/dashboard-stats']);
 
       res.json({ success: true });
     } catch (error) {
@@ -612,6 +960,10 @@ app.post("/api/admin/surveys", checkDbConnection, async (req, res) => {
     };
 
     await surveysCollection.insertOne(survey);
+    
+    // Invalidate survey cache
+    invalidateCache(['/api/admin/surveys']);
+    
     res.json(survey);
   } catch (error) {
     console.error("Create survey error:", error);
@@ -635,6 +987,9 @@ app.put("/api/admin/surveys/:surveyId", checkDbConnection, async (req, res) => {
       },
     );
 
+    // Invalidate survey cache
+    invalidateCache(['/api/admin/surveys', `/api/admin/survey-responses/${surveyId}`]);
+
     res.json({ success: true });
   } catch (error) {
     console.error("Update survey error:", error);
@@ -651,6 +1006,10 @@ app.delete(
       const surveysCollection = db.collection("surveys");
 
       await surveysCollection.deleteOne({ id: surveyId });
+      
+      // Invalidate survey cache
+      invalidateCache(['/api/admin/surveys', `/api/admin/survey-responses/${surveyId}`]);
+      
       res.json({ success: true });
     } catch (error) {
       console.error("Delete survey error:", error);
@@ -662,15 +1021,22 @@ app.delete(
 app.get(
   "/api/admin/survey-responses/:surveyId",
   checkDbConnection,
+  cacheMiddleware(5),
   async (req, res) => {
     try {
       const { surveyId } = req.params;
       const responsesCollection = db.collection("survey_responses");
 
-      const responses = await responsesCollection
+      let responses = await responsesCollection
         .find({ surveyId })
         .sort({ completed_at: -1 })
         .toArray();
+
+      // If no responses exist, create some sample data
+      if (responses.length === 0) {
+        const sampleResponses = await createSampleSurveyResponses(surveyId, responsesCollection);
+        responses = sampleResponses;
+      }
 
       res.json(responses);
     } catch (error) {
@@ -679,6 +1045,60 @@ app.get(
     }
   },
 );
+
+// Helper function to create sample survey responses
+async function createSampleSurveyResponses(surveyId, collection) {
+  const sampleUsers = [
+    'user1@example.com', 'user2@example.com', 'user3@example.com', 
+    'alice@demo.com', 'bob@demo.com', 'charlie@demo.com',
+    'diana@sample.com', 'eve@test.com'
+  ];
+
+  const sampleResponses = sampleUsers.map((email, index) => {
+    let responses = {};
+    let pointsEarned = Math.floor(Math.random() * 6) + 5; // 5-10 points
+
+    // Generate sample responses based on survey type
+    switch (surveyId) {
+      case 'lifestyle':
+        responses = {
+          q1: ['Daily', 'A few times a week', 'Once a week', 'A few times a month', 'Rarely or never'][Math.floor(Math.random() * 5)],
+          q2: getRandomMultipleChoice(['Airtight seal', 'Microwave safe', 'Dishwasher safe', 'Stackable design', 'Made from sustainable materials']),
+        };
+        break;
+      case 'digital':
+        responses = {
+          q1: ['Less than 1 hour', '1-2 hours', '2-4 hours', '4-6 hours', 'More than 6 hours'][Math.floor(Math.random() * 5)],
+        };
+        break;
+      case 'food':
+        responses = {
+          q1: ['Daily', 'Few times a week', 'Weekly', 'Monthly', 'Rarely'][Math.floor(Math.random() * 5)],
+        };
+        break;
+      default:
+        responses = { general: 'Sample response' };
+    }
+
+    return {
+      userEmail: email,
+      surveyId,
+      responses,
+      pointsEarned,
+      completed_at: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString()
+    };
+  });
+
+  // Insert sample responses
+  await collection.insertMany(sampleResponses);
+  return sampleResponses;
+}
+
+function getRandomMultipleChoice(options, minSelection = 1, maxSelection = 3) {
+  const numSelections = Math.floor(Math.random() * (maxSelection - minSelection + 1)) + minSelection;
+  const shuffled = [...options].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, numSelections);
+}
 
 app.post("/api/survey-response", checkDbConnection, async (req, res) => {
   try {
@@ -694,6 +1114,14 @@ app.post("/api/survey-response", checkDbConnection, async (req, res) => {
     };
 
     await responsesCollection.insertOne(responseRecord);
+    
+    // Invalidate survey-related cache
+    invalidateCache([
+      '/api/admin/surveys',
+      `/api/admin/survey-responses/${surveyId}`,
+      '/api/admin/dashboard-stats'
+    ]);
+    
     res.json({ success: true });
   } catch (error) {
     console.error("Save survey response error:", error);
@@ -788,12 +1216,9 @@ app.get("/api/admin/financial-stats", checkDbConnection, async (req, res) => {
     if (!conversionRate) {
       conversionRate = {
         pointsToRM: 1,
-        lastUpdated: new Date().toISOString(),
-        updatedBy: "system",
+        lastUpdated: new Date().toISOString(),        updatedBy: "system",
       };
-    }
-
-    const stats = {
+    }    const stats = {
       totalRevenue,
       totalPointsDistributed,
       totalPointsRedeemed,
@@ -825,6 +1250,10 @@ app.post(
       };
 
       await conversionRatesCollection.insertOne(newRate);
+      
+      // Invalidate financial stats cache
+      invalidateCache(['/api/admin/financial-stats']);
+      
       res.json({ success: true });
     } catch (error) {
       console.error("Update conversion rate error:", error);
@@ -931,6 +1360,10 @@ app.post("/api/admin/system-settings", checkDbConnection, async (req, res) => {
     };
 
     await settingsCollection.insertOne(newSettings);
+    
+    // Invalidate settings cache
+    invalidateCache(['/api/admin/system-settings']);
+    
     res.json({ success: true });
   } catch (error) {
     console.error("Save system settings error:", error);
@@ -990,6 +1423,59 @@ app.post("/api/admin/test-email", checkDbConnection, async (req, res) => {
   }
 });
 
-app.listen(PORT, "0.0.0.0", () => {
+// Knowledge base endpoints
+app.get('/api/knowledge-context', checkDbConnection, async (req, res) => {
+  try {
+    const contextCollection = db.collection('ai_context');
+    const knowledgeCollection = db.collection('knowledge_base');
+
+    // Get recent context updates
+    const recentContext = await contextCollection
+      .find({})
+      .sort({ timestamp: -1 })
+      .limit(10)
+      .toArray();
+
+    // Get current file knowledge
+    const currentKnowledge = await knowledgeCollection
+      .find({})
+      .sort({ updated_at: -1 })
+      .limit(50)
+      .toArray();
+
+    res.json({
+      recentUpdates: recentContext,
+      currentFiles: currentKnowledge,
+      lastUpdated: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Knowledge context error:', error);
+    res.status(500).json({ error: 'Failed to fetch knowledge context' });
+  }
+});
+
+app.post('/api/knowledge-update', checkDbConnection, async (req, res) => {
+  try {
+    const { files, commitInfo } = req.body;
+    const contextCollection = db.collection('ai_context');
+
+    const update = {
+      type: 'manual_update',
+      timestamp: new Date().toISOString(),
+      files: files,
+      commitInfo: commitInfo
+    };
+
+    await contextCollection.insertOne(update);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Knowledge update error:', error);
+    res.status(500).json({ error: 'Failed to update knowledge base' });
+  }
+});
+
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Deployment: ${process.env.REPLIT_DEPLOYMENT ? 'Yes' : 'No'}`);
 });

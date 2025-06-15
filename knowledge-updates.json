@@ -1,0 +1,86 @@
+[
+  {
+    "timestamp": "2025-06-15T13:52:38.708Z",
+    "commit": {
+      "hash": "4dfa134c21022d0e2bec61f5d9ee19e8e78e9cdc",
+      "author": "Oyinlola Olasunkanmi Raymond",
+      "message": "Assistant checkpoint: Enhanced Git webhook handler with token limits",
+      "date": "2025-06-15 13:48:01 +0000"
+    },
+    "relevantFiles": [
+      "scripts/git-webhook-handler.js"
+    ],
+    "totalFiles": 1
+  },
+  {
+    "timestamp": "2025-06-15T13:58:49.090Z",
+    "commit": {
+      "hash": "667650ec4381d57dea8a55a4280a92b492fa8a55",
+      "author": "Oyinlola Olasunkanmi Raymond",
+      "message": "Assistant checkpoint: Added development environment checks to git hooks",
+      "date": "2025-06-15 13:57:44 +0000"
+    },
+    "relevantFiles": [
+      "scripts/check-recent-changes.js",
+      "scripts/env-utils.js",
+      "scripts/git-webhook-handler.js",
+      "server/index.js"
+    ],
+    "totalFiles": 5
+  },
+  {
+    "timestamp": "2025-06-15T14:03:05.042Z",
+    "commit": {
+      "hash": "f89c476ecf4576034c552f26a6bac6cd0c6bcd27",
+      "author": "Oyinlola Olasunkanmi Raymond",
+      "message": "add auto knowledge base",
+      "date": "2025-06-15 14:01:24 +0000"
+    },
+    "relevantFiles": [
+      "knowledge-updates.json"
+    ],
+    "totalFiles": 1
+  },
+  {
+    "timestamp": "2025-06-15T14:31:19.721Z",
+    "commit": {
+      "hash": "6f1038884cd2faccc492438fd76c238a62d69bbe",
+      "author": "Oyinlola Olasunkanmi Raymond",
+      "message": "Assistant checkpoint: Fix missing React import in Notifications page",
+      "date": "2025-06-15 14:31:11 +0000"
+    },
+    "relevantFiles": [
+      "src/pages/Notifications.tsx"
+    ],
+    "totalFiles": 1
+  },
+  {
+    "timestamp": "2025-06-15T14:34:57.835Z",
+    "commit": {
+      "hash": "6a06c678904a402385ad8196787b04fdab6979e8",
+      "author": "Oyinlola Olasunkanmi Raymond",
+      "message": "Assistant checkpoint: Add comprehensive cache invalidation to all POST/PUT/DELETE endpoints",
+      "date": "2025-06-15 14:34:52 +0000"
+    },
+    "relevantFiles": [
+      "server/index.js"
+    ],
+    "totalFiles": 1
+  },
+  {
+    "timestamp": "2025-06-15T14:41:32.483Z",
+    "commit": {
+      "hash": "2ecbb1f723619c859f5b8dadb236d8924551e148",
+      "author": "Oyinlola Olasunkanmi Raymond",
+      "message": "Assistant checkpoint: Enhanced survey system with scheduling, targeting, bonuses, previews, and partial save",
+      "date": "2025-06-15 14:41:23 +0000"
+    },
+    "relevantFiles": [
+      "src/App.tsx",
+      "src/contexts/SurveyContext.tsx",
+      "src/pages/LifestyleQuestionnaire.tsx",
+      "src/pages/Questionnaire.tsx"
+    ],
+    "totalFiles": 4
+  }
+]

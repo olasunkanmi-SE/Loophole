@@ -1,5 +1,5 @@
 {
-  "name": "groundbnb",
+  "name": "ayambroke",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,15 +10,23 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.50.0",
+    "@google/generative-ai": "^0.24.1",
     "@tailwindcss/postcss": "^4.1.10",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "json-server": "^1.0.0-beta.3",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.515.0",
+    "mongodb": "^6.17.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-leaflet": "^5.0.0",
     "wouter": "^3.7.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
     "@tailwindcss/vite": "^4.1.10",
+    "@types/leaflet": "^1.9.18",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.5.2",

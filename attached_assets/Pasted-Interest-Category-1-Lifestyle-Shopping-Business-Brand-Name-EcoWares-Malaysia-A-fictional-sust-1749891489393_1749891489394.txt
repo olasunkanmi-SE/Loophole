@@ -1,0 +1,154 @@
+Interest Category 1: Lifestyle & Shopping
+Business Brand Name: "EcoWares Malaysia" (A fictional sustainable home goods brand)
+
+Context: EcoWares Malaysia is launching a new line of reusable kitchen storage solutions and wants to understand consumer habits and preferences.
+
+Questionnaire Set:
+
+Single Selection:
+Question: How often do you currently purchase or use reusable storage containers (e.g., Tupperware, glass containers, silicone bags) for food in your home?
+Answers:
+a) Daily
+b) A few times a week
+c) Once a week
+d) A few times a month
+e) Rarely or never
+
+Multi-Selection:
+Question: Which of the following features are most important to you when choosing reusable kitchen storage containers? (Select all that apply)
+Answers:
+a) Airtight seal
+b) Microwave safe
+c) Dishwasher safe
+d) Stackable design
+e) Made from sustainable materials (e.g., glass, silicone, bamboo)
+f) Transparent/See-through
+g) Durable/Long-lasting
+h) Affordable price
+Single Selection:
+Question: What is the primary reason you use (or would consider using) reusable storage containers?
+Answers:
+a) To save money in the long run
+b) To reduce plastic waste and be more eco-friendly
+c) They keep food fresher for longer
+d) They are more aesthetically pleasing than disposable options
+e) Convenience for meal prepping
+Single Selection:
+Question: How likely are you to consider purchasing a new set of eco-friendly, reusable kitchen containers from a brand like EcoWares Malaysia in the next 6 months?
+Answers:
+a) Extremely likely
+b) Very likely
+c) Moderately likely
+d) Slightly likely
+e) Not at all likely
+Multi-Selection:
+Question: If EcoWares Malaysia offered a recycling program for old plastic containers when you purchase new sustainable ones, which of these benefits would appeal most to you? (Select all that apply)
+Answers:
+a) Feeling good about contributing to sustainability
+b) Convenience of disposing old containers responsibly
+c) Potential discounts on new purchases
+d) Clearing out clutter at home
+e) No appeal, I'm not interested in such a program
+nterest Category 2: Digital & Tech
+Business Brand Name: "StreamHive" (A fictional new video streaming service)
+
+Context: StreamHive is gathering feedback on potential features and user preferences before a major platform update.
+
+Questionnaire Set:
+
+Single Selection:
+Question: How many hours, on average, do you spend watching video content on streaming platforms (e.g., Netflix, YouTube, Astro Go) per week?
+Answers:
+a) Less than 3 hours
+b) 3-7 hours
+c) 8-15 hours
+d) 16-25 hours
+e) More than 25 hours
+Multi-Selection:
+Question: Which of the following features are most important to you in a video streaming service? (Select all that apply)
+Answers:
+a) Wide variety of movies & TV shows
+b) High-quality video resolution (e.g., 4K, HD)
+c) Offline download capability
+d) Multiple user profiles
+e) Personalized recommendations
+f) Parental controls
+g) Live TV channels
+h) Affordable subscription price
+Single Selection:
+Question: What type of content do you primarily watch on streaming platforms?
+Answers:
+a) Movies (Hollywood/International)
+b) TV Series (Hollywood/International)
+c) Local Malaysian TV series/films
+d) Documentaries/Educational content
+e) User-generated content (e.g., vlogs, short clips)
+Single Selection:
+Question: If StreamHive introduced a new feature allowing users to directly share interesting moments/clips from shows to social media, how useful would this feature be to you?
+Answers:
+a) Extremely useful
+b) Very useful
+c) Moderately useful
+d) Slightly useful
+e) Not at all useful
+Multi-Selection:
+Question: Which of the following additional types of digital content, if offered by StreamHive, would make you more likely to subscribe? (Select all that apply)
+Answers:
+a) Exclusive podcasts
+b) Interactive "choose-your-own-adventure" shows
+c) Live virtual concerts or events
+d) Short-form, vertical video content (similar to TikTok/Reels)
+e) Educational courses or tutorials
+f) None of the above
+
+Interest Category 3: Food & Dining
+Business Brand Name: "MakanLah Delivery" (A fictional new food delivery app focusing on local Malaysian hawkers)
+
+Context: MakanLah Delivery is evaluating its service and exploring new offerings to better serve its customers and local vendors.
+
+Questionnaire Set:
+
+Single Selection:
+Question: How often do you order food for delivery using a mobile app (e.g., GrabFood, FoodPanda, ShopeeFood)?
+Answers:
+a) Daily
+b) 2-3 times a week
+c) Once a week
+d) 2-3 times a month
+e) Less than once a month
+Multi-Selection:
+Question: When choosing a food delivery app, which of the following factors are most important to you? (Select all that apply)
+Answers:
+a) Wide variety of restaurants/stalls
+b) Low delivery fees
+c) Fast delivery time
+d) User-friendly app interface
+e) Reliable customer service
+f) Regular promotions/discounts
+g) Options for self-pickup
+h) Support for local businesses
+Single Selection:
+Question: What is your most common reason for ordering food delivery?
+Answers:
+a) Convenience/too busy to cook
+b) Craving specific food not easily made at home
+c) Social gathering/eating with others
+d) To get discounts or promotions
+e) Trying new restaurants/stalls
+Single Selection:
+Question: MakanLah Delivery is considering adding a feature where you can pre-order from a popular Mamak stall for specific time slots to avoid queues. How appealing would this feature be to you?
+Answers:
+a) Extremely appealing
+b) Very appealing
+c) Moderately appealing
+d) Slightly appealing
+e) Not at all appealing
+Multi-Selection:
+Question: If MakanLah Delivery partnered with local home bakers or small independent food creators, which of these aspects would make you most likely to order from them? (Select all that apply)
+Answers:
+a) Unique or specialty items not found elsewhere
+b) Supporting small local businesses
+c) Higher quality or homemade feel
+d) Potential for lower prices than established restaurants
+e) Specific dietary options (e.g., vegan, gluten-free)
+f) I would not be interested in ordering from them

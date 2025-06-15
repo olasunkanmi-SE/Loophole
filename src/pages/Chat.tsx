@@ -806,7 +806,7 @@ export default function Chat() {
     ];
 
     // Generate user analytics summary
-    const generateAnalyticsSummary = (analytics: any) => {
+    const generateAnalyticsSummary = (analytics: any) => {```python
       if (!analytics || !analytics.orders || !analytics.payments) {
         return "No user data available for analysis.";
       }
@@ -890,6 +890,19 @@ USER SPENDING ANALYTICS:
         `${category.toUpperCase()}:\n${items.map(item => `- ${item.name}: RM ${item.price} (${item.description})`).join('\n')}`
       ).join('\n\n');
 
+    const housingContext = `AVAILABLE HOUSING OPTIONS:
+Budget options (RM 15-25/night):
+- Budget Hostel Dorm Bed: RM 15, Petaling Jaya, shared room, clean and safe for budget travelers
+- Capsule Pod Experience: RM 20, Bukit Bintang, unique capsule hotel
+- Student Housing Single Room: RM 25, USJ, private, study-friendly
+
+Mid-range options (RM 25-45/night):
+- Private Room with Breakfast: RM 35, Subang Jaya, private, includes breakfast
+- Cozy Studio in City Center: RM 45, Kuala Lumpur, entire apartment, modern
+
+Luxury options (RM 45+/night):
+- Luxury Condo with Pool: RM 85, KLCC, entire apartment, stunning views`;
+
     return `You are EarnEats Assistant, a helpful AI for the EarnEats food delivery app in Malaysia.
 
 CURRENT USER STATUS:
@@ -903,8 +916,7 @@ ${analyticsText}
 AVAILABLE FOOD MENU:
 ${menuItemsText}
 
-HOUSING OPTIONS AVAILABLE:
-${housingOptions.map(option => `- ${option.type}: ${option.price} (${option.description})`).join('\n')}
+${housingContext}
 
 CURRENT SHOPPING CART:
 ${cartInfo}

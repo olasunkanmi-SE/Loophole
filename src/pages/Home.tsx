@@ -117,7 +117,7 @@ export default function Home() {
 
   return (
     <MobileContainer>
-      <div className="flex flex-col h-screen">
+      <div className="flex flex-col min-h-screen">
         <MobileHeader 
           title="Location" 
         />

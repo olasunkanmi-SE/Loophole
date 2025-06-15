@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MobileHeader from "../components/MobileHeader";
 import MobileContainer from "../components/MobileContainer";
 import { useLocation } from "wouter";

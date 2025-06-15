@@ -26,7 +26,7 @@ export default function SignIn() {
       // Sign in with Express backend
       await signIn(formData.email, formData.password);
 
-      // Navigate to home and let ProtectedRoute handle profile check
+      // Redirect to home page after successful sign-in
       setLocation('/');
     } catch (err: any) {
       setError(err.message);

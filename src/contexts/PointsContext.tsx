@@ -70,7 +70,11 @@ export const PointsProvider: React.FC<PointsProviderProps> = ({ children }) => {
   };
 
   const getTotalPoints = () => {
-    return points.lifestyle + points.digital + points.food + points.entertainment + points.travel + points.health + points.education + points.finance;
+    const total = Object.values(points).reduce((total, categoryPoints) => {
+      const pointValue = typeof categoryPoints === 'number' && !isNaN(categoryPoints) ? categoryPoints : 0;
+      return total + pointValue;
+    }, 0);
+    return isNaN(total) ? 0 : total;
   };
 
   const getCompletedCategories = () => {
@@ -91,7 +95,10 @@ export const PointsProvider: React.FC<PointsProviderProps> = ({ children }) => {
   };
 
   const getFormattedRM = () => {
-    return formatRM(getAvailableRM());
+    const totalPoints = getTotalPoints();
+    const rmValue = convertPointsToRM(totalPoints);
+    const finalValue = isNaN(rmValue) ? 0 : rmValue;
+    return `RM ${finalValue.toFixed(2)}`;
   };
 
   const canAfford = (amount: number) => {

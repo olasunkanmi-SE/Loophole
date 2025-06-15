@@ -38,7 +38,7 @@ export default function Points() {
         {/* Total Score Card */}
         <div className="bg-white p-6 rounded-2xl shadow-sm text-center border border-gray-100">
           <p className="text-sm text-gray-500 mb-1">Total Score</p>
-          <div className="text-3xl font-light text-gray-900 mb-1">{totalPoints}</div>
+          <div className="text-3xl font-light text-gray-900 mb-1">{isNaN(getTotalPoints()) ? 0 : getTotalPoints()}</div>
           <p className="text-sm font-medium text-green-600 mb-1">{getFormattedRM()}</p>
           <p className="text-xs text-gray-400">
             {completedCategories.length}/3 completed • 1 point = RM 1.00

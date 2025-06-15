@@ -10,7 +10,7 @@ export default function NewHome() {
   const { getTotalPoints, getFormattedRM, getCompletedCategories } = usePoints();
   const [animateCounter, setAnimateCounter] = useState(false);
 
-  const totalPoints = getTotalPoints();
+  const totalPoints = isNaN(getTotalPoints()) ? 0 : getTotalPoints();
   const availableRM = getFormattedRM();
   const completedSurveys = getCompletedCategories().length;
   const totalSurveys = 8; // Updated total survey count

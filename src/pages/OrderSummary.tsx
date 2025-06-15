@@ -3,7 +3,8 @@ import { useLocation } from "wouter";
 import { ArrowLeft, Plus, Minus, X } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
 import { usePoints } from "../contexts/PointsContext";
-import { usePayment, PaymentMethod } from "../contexts/PaymentContext";
+import { usePayment } from "../contexts/PaymentContext";
+import type { PaymentMethod } from "../contexts/PaymentContext";
 import PaymentMethodSelector from "../components/PaymentMethodSelector";
 import PaymentProcessing from "../components/PaymentProcessing";
 
@@ -12,9 +13,16 @@ export default function OrderSummary() {
   const [showInsufficientFunds, setShowInsufficientFunds] = useState(false);
   const [showPaymentProcessing, setShowPaymentProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState<boolean | null>(null);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] =
+    useState<PaymentMethod | null>(null);
 
-  const { cartItems, updateQuantity, removeFromCart, clearCart, getTotalPrice } = useCart();
+  const {
+    cartItems,
+    updateQuantity,
+    removeFromCart,
+    clearCart,
+    getTotalPrice,
+  } = useCart();
   const { canAfford, deductRM, getFormattedRM, getTotalPoints } = usePoints();
   const { processPayment, isProcessing } = usePayment();
 
@@ -24,13 +32,13 @@ export default function OrderSummary() {
 
   const handlePlaceOrder = async () => {
     if (!selectedPaymentMethod) {
-      alert('Please select a payment method');
+      alert("Please select a payment method");
       return;
     }
 
     const orderTotal = parseFloat(getTotalPrice());
 
-    if (selectedPaymentMethod.type === 'points') {
+    if (selectedPaymentMethod.type === "points") {
       if (!canAfford(orderTotal)) {
         setShowInsufficientFunds(true);
         return;
@@ -68,8 +76,9 @@ export default function OrderSummary() {
 
   const getItemTotalPrice = (item: any) => {
     const itemPrice = item.price * item.quantity;
-    const addOnsPrice = item.addOns.reduce((sum: number, addOn: any) => 
-      sum + (addOn.price * addOn.quantity), 0
+    const addOnsPrice = item.addOns.reduce(
+      (sum: number, addOn: any) => sum + addOn.price * addOn.quantity,
+      0,
     );
     return itemPrice + addOnsPrice;
   };
@@ -78,7 +87,7 @@ export default function OrderSummary() {
     return (
       <div className="bg-gray-50 min-h-screen">
         <div className="bg-white p-4 flex items-center justify-between shadow-sm">
-          <button 
+          <button
             onClick={() => setLocation("/menu")}
             className="flex items-center text-gray-600"
           >
@@ -91,7 +100,7 @@ export default function OrderSummary() {
 
         <div className="flex flex-col items-center justify-center h-96">
           <p className="text-gray-500 text-lg">Your cart is empty</p>
-          <button 
+          <button
             onClick={() => setLocation("/menu")}
             className="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg"
           >
@@ -106,7 +115,7 @@ export default function OrderSummary() {
     <div className="bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="bg-white p-4 flex items-center justify-between shadow-sm">
-        <button 
+        <button
           onClick={() => setLocation("/menu")}
           className="flex items-center text-gray-600"
         >
@@ -120,8 +129,6 @@ export default function OrderSummary() {
       </div>
 
       <div className="p-4">
-
-
         {/* Cart Items - Always visible */}
         <div className="space-y-6">
           {cartItems.map((item) => (
@@ -132,7 +139,9 @@ export default function OrderSummary() {
                   <span className="text-gray-600 mr-2">x{item.quantity}</span>
                   <span className="font-medium text-gray-800">{item.name}</span>
                 </div>
-                <span className="font-bold text-gray-800">RM {getItemTotalPrice(item)}</span>
+                <span className="font-bold text-gray-800">
+                  RM {getItemTotalPrice(item)}
+                </span>
               </div>
 
               {/* Add-ons */}
@@ -163,7 +172,7 @@ export default function OrderSummary() {
                     <Plus size={16} />
                   </button>
                 </div>
-                <button 
+                <button
                   onClick={() => setLocation(`/menu/${item.id}`)}
                   className="px-4 py-2 border border-gray-300 rounded-lg text-gray-600 text-sm"
                 >
@@ -195,23 +204,23 @@ export default function OrderSummary() {
 
         {/* Payment Method Selection */}
         <div className="mt-6">
-          <PaymentMethodSelector 
+          <PaymentMethodSelector
             totalAmount={parseFloat(getTotalPrice())}
             onPaymentMethodSelect={handlePaymentMethodSelect}
           />
         </div>
 
         {/* Place Order Button */}
-        <button 
+        <button
           onClick={handlePlaceOrder}
           disabled={!selectedPaymentMethod || isProcessing}
           className={`w-full py-4 rounded-lg font-medium text-lg mt-6 ${
             selectedPaymentMethod && !isProcessing
-              ? 'bg-green-600 text-white hover:bg-green-700'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              ? "bg-green-600 text-white hover:bg-green-700"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
           }`}
         >
-          {isProcessing ? 'PROCESSING...' : `PLACE ORDER RM${getTotalPrice()}`}
+          {isProcessing ? "PROCESSING..." : `PLACE ORDER RM${getTotalPrice()}`}
         </button>
       </div>
 
@@ -231,7 +240,9 @@ export default function OrderSummary() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 mx-6 text-center max-w-sm">
             <div className="text-4xl mb-4">💳</div>
-            <h2 className="text-xl font-bold text-red-600 mb-3">Insufficient Balance</h2>
+            <h2 className="text-xl font-bold text-red-600 mb-3">
+              Insufficient Balance
+            </h2>
             <p className="text-gray-600 text-sm mb-4">
               You don't have enough money to complete this order.
             </p>
@@ -242,7 +253,9 @@ export default function OrderSummary() {
               </p>
               <p className="text-sm">
                 <span className="text-gray-600">Your Balance: </span>
-                <span className="font-bold text-blue-600">{getFormattedRM()}</span>
+                <span className="font-bold text-blue-600">
+                  {getFormattedRM()}
+                </span>
               </p>
             </div>
             <p className="text-sm text-blue-600 mb-4">
@@ -252,7 +265,7 @@ export default function OrderSummary() {
               <button
                 onClick={() => {
                   setShowInsufficientFunds(false);
-                  setLocation('/');
+                  setLocation("/");
                 }}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium"
               >
@@ -274,7 +287,7 @@ export default function OrderSummary() {
         isOpen={showPaymentProcessing}
         isProcessing={isProcessing}
         paymentSuccess={paymentSuccess}
-        paymentMethod={selectedPaymentMethod?.name || ''}
+        paymentMethod={selectedPaymentMethod?.name || ""}
         amount={parseFloat(getTotalPrice())}
         onClose={() => {
           setShowPaymentProcessing(false);

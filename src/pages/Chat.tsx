@@ -48,6 +48,7 @@ export default function Chat() {
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [orderProcessing, setOrderProcessing] = useState(false);
   const [completedOrders, setCompletedOrders] = useState<any[]>([]);
+  const [userOrderHistory, setUserOrderHistory] = useState<any[]>([]);
   const { getTotalPoints, getFormattedRM, getCompletedCategories, canAfford, deductRM } = usePoints();
   const { addToCart, clearCart } = useCart();
   const { processPayment } = usePayment();
@@ -56,6 +57,25 @@ export default function Chat() {
   const totalPoints = getTotalPoints();
   const availableRM = getFormattedRM();
   const completedSurveys = getCompletedCategories().length;
+
+  // Fetch user's order history for receipt downloads
+  useEffect(() => {
+    if (user?.email) {
+      fetchUserOrderHistory();
+    }
+  }, [user]);
+
+  const fetchUserOrderHistory = async () => {
+    try {
+      const response = await fetch(`/api/order-history/${user?.email}`);
+      if (response.ok) {
+        const orders = await response.json();
+        setUserOrderHistory(orders);
+      }
+    } catch (error) {
+      console.error('Error fetching order history:', error);
+    }
+  };
 
   // Food ordering functions
   const handleOrderConfirmation = async (orderItems: any[]) => {
@@ -203,6 +223,107 @@ export default function Chat() {
     } catch (error) {
       console.error('Error creating chat order:', error);
     }
+  };
+
+  const generateOrderReceipt = (order: any) => {
+    const pdf = new jsPDF();
+    
+    // Set font size and style
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    
+    // Header
+    pdf.text('EARNEATS RECEIPT', 105, 20, { align: 'center' });
+    
+    // Draw line under header
+    pdf.setLineWidth(0.5);
+    pdf.line(20, 25, 190, 25);
+    
+    // Order details
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    let yPosition = 35;
+    
+    pdf.text(`Order ID: ${order.orderId}`, 20, yPosition);
+    yPosition += 6;
+    pdf.text(`Date: ${new Date(order.created_at).toLocaleDateString('en-MY', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })}`, 20, yPosition);
+    yPosition += 6;
+    pdf.text(`Customer: ${order.userEmail}`, 20, yPosition);
+    yPosition += 10;
+    
+    // Items section
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('ITEMS ORDERED:', 20, yPosition);
+    yPosition += 8;
+    
+    pdf.setFont('helvetica', 'normal');
+    order.items.forEach((item: any) => {
+      const itemTotal = item.price * item.quantity;
+      pdf.text(`${item.quantity}x ${item.name}`, 25, yPosition);
+      pdf.text(`RM ${itemTotal.toFixed(2)}`, 150, yPosition);
+      yPosition += 5;
+      
+      // Add-ons
+      if (item.addOns && item.addOns.length > 0) {
+        item.addOns.forEach((addOn: any) => {
+          const addOnTotal = addOn.price * addOn.quantity;
+          pdf.text(`   + ${addOn.quantity}x ${addOn.name}`, 30, yPosition);
+          pdf.text(`RM ${addOnTotal.toFixed(2)}`, 150, yPosition);
+          yPosition += 4;
+        });
+      }
+      yPosition += 3;
+    });
+    
+    // Payment details
+    yPosition += 5;
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('PAYMENT DETAILS:', 20, yPosition);
+    yPosition += 8;
+    
+    pdf.setFont('helvetica', 'normal');
+    const paymentMethodName = order.paymentMethod.type === 'points' ? 'EarnEats Points' : 
+                             order.paymentMethod.type === 'grabpay' ? 'GrabPay' :
+                             order.paymentMethod.type === 'touchngo' ? "Touch 'n Go" :
+                             order.paymentMethod.type === 'card' ? 'Bank Transfer' : order.paymentMethod.type;
+    
+    pdf.text(`Payment Method: ${paymentMethodName}`, 20, yPosition);
+    yPosition += 6;
+    
+    if (order.transactionId) {
+      pdf.text(`Transaction ID: ${order.transactionId}`, 20, yPosition);
+      yPosition += 6;
+    }
+    
+    pdf.text(`Status: ${order.status.toUpperCase()}`, 20, yPosition);
+    yPosition += 10;
+    
+    // Total
+    pdf.setLineWidth(0.5);
+    pdf.line(20, yPosition, 190, yPosition);
+    yPosition += 8;
+    
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('TOTAL:', 20, yPosition);
+    pdf.text(`RM ${order.totalAmount.toFixed(2)}`, 150, yPosition);
+    yPosition += 15;
+    
+    // Footer
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Thank you for your order!', 105, yPosition, { align: 'center' });
+    yPosition += 4;
+    pdf.text('Visit us again at EarnEats.', 105, yPosition, { align: 'center' });
+    
+    // Save the PDF
+    pdf.save(`receipt_${order.orderId}.pdf`);
   };
 
   const generateChatOrderReceipt = (order: any) => {
@@ -524,15 +645,18 @@ export default function Chat() {
 
     // Check for receipt/download mentions
     if (content.toLowerCase().includes('receipt') || content.toLowerCase().includes('download')) {
-      actions.push({
-        text: 'Download Latest Receipt',
-        icon: <Download size={16} />,
-        onClick: () => {
-          if (completedOrders.length > 0) {
-            generateChatOrderReceipt(completedOrders[0]);
+      const latestOrder = userOrderHistory.length > 0 ? userOrderHistory[0] : 
+                         completedOrders.length > 0 ? completedOrders[0] : null;
+      
+      if (latestOrder) {
+        actions.push({
+          text: 'Download Latest Receipt',
+          icon: <Download size={16} />,
+          onClick: () => {
+            generateOrderReceipt(latestOrder);
           }
-        }
-      });
+        });
+      }
     }
 
     return actions;
@@ -1182,10 +1306,16 @@ ${categoryHint ? `CONTEXT: This question relates to ${categoryHint}` : ''}
                         )}
 
                         {/* Receipt Download Button for Successful Orders */}
-                        {message.content.includes('Payment Successful') && completedOrders.length > 0 && (
+                        {message.content.includes('Payment Successful') && (
                           <div className="mt-4">
                             <button
-                              onClick={() => generateChatOrderReceipt(completedOrders[0])}
+                              onClick={() => {
+                                const latestOrder = completedOrders.length > 0 ? completedOrders[0] : 
+                                                   userOrderHistory.length > 0 ? userOrderHistory[0] : null;
+                                if (latestOrder) {
+                                  generateOrderReceipt(latestOrder);
+                                }
+                              }}
                               className="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 justify-center"
                             >
                               <Download size={16} />

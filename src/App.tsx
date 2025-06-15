@@ -26,6 +26,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import FloatingChatIcon from "@/components/FloatingChatIcon";
 import Chat from "@/pages/Chat";
+import NotFound from "@/pages/NotFound";
+import Questionnaire from "@/pages/Questionnaire";
 
 function App() {
   return (
@@ -76,6 +78,11 @@ function App() {
             <Route path="/food">
               <ProtectedRoute>
                 <FoodQuestionnaire />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/questionnaire">
+              <ProtectedRoute>
+                <Questionnaire />
               </ProtectedRoute>
             </Route>
             <Route path="/questionnaire/lifestyle">
@@ -150,6 +157,13 @@ function App() {
             <Route path="/chat">
               <ProtectedRoute>
                 <Chat />
+              </ProtectedRoute>
+            </Route>
+            
+            {/* Catch-all route for 404 - must be last */}
+            <Route>
+              <ProtectedRoute>
+                <NotFound />
               </ProtectedRoute>
             </Route>
           </Switch>

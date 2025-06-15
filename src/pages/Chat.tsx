@@ -228,193 +228,107 @@ export default function Chat() {
   const generateOrderReceipt = (order: any) => {
     const pdf = new jsPDF();
     
-    // Set font size and style
-    pdf.setFontSize(16);
-    pdf.setFont('helvetica', 'bold');
-    
-    // Header
-    pdf.text('EARNEATS RECEIPT', 105, 20, { align: 'center' });
-    
-    // Draw line under header
-    pdf.setLineWidth(0.5);
-    pdf.line(20, 25, 190, 25);
-    
-    // Color scheme - define early for use throughout
-    const primaryColor = [34, 197, 94]; // Green
-    const secondaryColor = [59, 130, 246]; // Blue
-    const grayColor = [107, 114, 128]; // Gray
-    const lightGrayColor = [249, 250, 251]; // Light gray
-    
-    // Brand header with background
-    pdf.setFillColor(...primaryColor);
-    pdf.rect(0, 0, 210, 35, 'F');
-    
-    // Brand logo/name
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(24);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('🍽️ EarnEats', 105, 15, { align: 'center' });
-    
-    pdf.setFontSize(12);
-    pdf.setFont('helvetica', 'normal');
-    pdf.text('Your Food Delivery Partner', 105, 25, { align: 'center' });
-    
-    // Receipt title with accent
-    pdf.setFillColor(...lightGrayColor);
-    pdf.rect(15, 40, 180, 12, 'F');
-    
-    pdf.setTextColor(...grayColor);
-    pdf.setFontSize(14);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('DIGITAL RECEIPT', 105, 48, { align: 'center' });
-    
-    // Order info box
+    // Simple black text throughout
     pdf.setTextColor(0, 0, 0);
-    pdf.setDrawColor(...grayColor);
-    pdf.setLineWidth(0.3);
-    pdf.roundedRect(15, 58, 180, 25, 3, 3, 'S');
     
-    let yPosition = 68;
+    // Clean header
+    pdf.setFontSize(18);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('EarnEats', 105, 20, { align: 'center' });
+    
     pdf.setFontSize(10);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Order Information', 20, yPosition);
-    
-    yPosition += 8;
     pdf.setFont('helvetica', 'normal');
+    pdf.text('Digital Receipt', 105, 28, { align: 'center' });
+    
+    // Simple line separator
+    pdf.setLineWidth(0.5);
+    pdf.line(30, 35, 180, 35);
+    
+    let yPosition = 45;
+    
+    // Order details
     pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
     
-    // Two-column layout for order info
-    pdf.text(`Order ID: ${order.orderId}`, 20, yPosition);
-    pdf.text(`Date: ${new Date(order.created_at).toLocaleDateString()}`, 110, yPosition);
-    yPosition += 5;
-    pdf.text(`Customer: ${order.userEmail}`, 20, yPosition);
-    pdf.text(`Status: ${order.status.toUpperCase()}`, 110, yPosition);
+    pdf.text(`Order ID: ${order.orderId}`, 30, yPosition);
+    yPosition += 6;
     
-    // Items section with modern styling
+    pdf.text(`Date: ${new Date(order.created_at).toLocaleDateString('en-MY', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })}`, 30, yPosition);
+    yPosition += 6;
+    
+    pdf.text(`Customer: ${order.userEmail}`, 30, yPosition);
+    yPosition += 6;
+    
+    pdf.text(`Status: ${order.status.toUpperCase()}`, 30, yPosition);
     yPosition += 15;
-    pdf.setFillColor(...secondaryColor);
-    pdf.rect(15, yPosition - 3, 180, 8, 'F');
     
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(11);
+    // Items section
     pdf.setFont('helvetica', 'bold');
-    pdf.text('ITEMS ORDERED', 20, yPosition + 2);
+    pdf.text('ITEMS:', 30, yPosition);
+    yPosition += 8;
     
-    yPosition += 12;
-    pdf.setTextColor(0, 0, 0);
-    
-    // Items with better formatting
-    order.items.forEach((item: any, index: number) => {
-      // Alternating row colors
-      if (index % 2 === 0) {
-        pdf.setFillColor(248, 250, 252);
-        pdf.rect(15, yPosition - 3, 180, 8, 'F');
-      }
-      
+    pdf.setFont('helvetica', 'normal');
+    order.items.forEach((item: any) => {
       const itemTotal = item.price * item.quantity;
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(9);
-      
-      // Item name and quantity
-      pdf.text(`${item.quantity}x`, 20, yPosition);
-      pdf.text(`${item.name}`, 30, yPosition);
-      pdf.text(`RM ${itemTotal.toFixed(2)}`, 175, yPosition, { align: 'right' });
+      pdf.text(`${item.quantity}x ${item.name}`, 30, yPosition);
+      pdf.text(`RM ${itemTotal.toFixed(2)}`, 150, yPosition, { align: 'right' });
       yPosition += 6;
       
-      // Add-ons with indentation
+      // Add-ons
       if (item.addOns && item.addOns.length > 0) {
-        pdf.setTextColor(...grayColor);
-        pdf.setFontSize(8);
         item.addOns.forEach((addOn: any) => {
           const addOnTotal = addOn.price * addOn.quantity;
           pdf.text(`  + ${addOn.quantity}x ${addOn.name}`, 35, yPosition);
-          pdf.text(`+RM ${addOnTotal.toFixed(2)}`, 175, yPosition, { align: 'right' });
-          yPosition += 4;
+          pdf.text(`RM ${addOnTotal.toFixed(2)}`, 150, yPosition, { align: 'right' });
+          yPosition += 5;
         });
-        pdf.setTextColor(0, 0, 0);
       }
-      yPosition += 2;
+      yPosition += 3;
     });
     
-    // Payment section
+    // Payment details
     yPosition += 8;
-    pdf.setFillColor(...lightGrayColor);
-    pdf.rect(15, yPosition - 3, 180, 25, 'F');
-    
-    pdf.setFontSize(10);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('PAYMENT DETAILS', 20, yPosition + 2);
+    pdf.text('PAYMENT:', 30, yPosition);
+    yPosition += 8;
     
-    yPosition += 10;
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(9);
-    
     const paymentMethodName = order.paymentMethod.type === 'points' ? 'EarnEats Points' : 
                              order.paymentMethod.type === 'grabpay' ? 'GrabPay' :
                              order.paymentMethod.type === 'touchngo' ? "Touch 'n Go" :
                              order.paymentMethod.type === 'card' ? 'Bank Transfer' : order.paymentMethod.type;
     
-    const paymentIcon = order.paymentMethod.type === 'points' ? '🪙' : 
-                       order.paymentMethod.type === 'grabpay' ? '🟢' :
-                       order.paymentMethod.type === 'touchngo' ? '🔵' : '🏦';
-    
-    pdf.text(`${paymentIcon} Payment Method: ${paymentMethodName}`, 20, yPosition);
-    yPosition += 5;
+    pdf.text(`Method: ${paymentMethodName}`, 30, yPosition);
+    yPosition += 6;
     
     if (order.transactionId) {
-      pdf.text(`Transaction ID: ${order.transactionId}`, 20, yPosition);
-      yPosition += 5;
+      pdf.text(`Transaction: ${order.transactionId}`, 30, yPosition);
+      yPosition += 6;
     }
     
-    // Total section with emphasis
+    // Total with simple line
     yPosition += 8;
-    pdf.setFillColor(...primaryColor);
-    pdf.rect(15, yPosition - 5, 180, 15, 'F');
+    pdf.line(30, yPosition, 180, yPosition);
+    yPosition += 10;
     
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(14);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('TOTAL AMOUNT', 20, yPosition + 2);
-    pdf.text(`RM ${order.totalAmount.toFixed(2)}`, 175, yPosition + 2, { align: 'right' });
-    
-    // QR Code placeholder (visual representation)
-    yPosition += 25;
-    pdf.setTextColor(0, 0, 0);
-    pdf.setDrawColor(...grayColor);
-    pdf.rect(140, yPosition, 30, 30, 'S');
-    pdf.setFontSize(8);
-    pdf.text('QR Code', 155, yPosition + 16, { align: 'center' });
-    pdf.text('(Verify Receipt)', 155, yPosition + 20, { align: 'center' });
-    
-    // Special note for AI orders
-    pdf.setFontSize(8);
-    pdf.setTextColor(...secondaryColor);
-    pdf.text('🤖 This order was placed using our AI Chat Assistant', 20, yPosition + 10);
-    
-    // Company info and footer
-    pdf.setTextColor(...grayColor);
-    pdf.text('Receipt generated on ' + new Date().toLocaleString(), 20, yPosition + 18);
-    pdf.text('Powered by EarnEats AI Assistant', 20, yPosition + 23);
-    
-    // Social media and contact info
-    pdf.text('📧 support@earneats.com  📱 +60 12-345-6789', 20, yPosition + 33);
-    pdf.text('🌐 www.earneats.com  📍 Kuala Lumpur, Malaysia', 20, yPosition + 38);
-    
-    // Thank you message with emoji
-    yPosition += 48;
-    pdf.setTextColor(...primaryColor);
     pdf.setFontSize(12);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('🙏 Thank you for choosing EarnEats!', 105, yPosition, { align: 'center' });
+    pdf.text('TOTAL:', 30, yPosition);
+    pdf.text(`RM ${order.totalAmount.toFixed(2)}`, 150, yPosition, { align: 'right' });
     
-    pdf.setFontSize(9);
+    // Simple footer
+    yPosition += 20;
+    pdf.setFontSize(8);
     pdf.setFont('helvetica', 'normal');
-    pdf.text('Rate your experience and earn points! 🌟', 105, yPosition + 6, { align: 'center' });
-    
-    // Decorative border
-    pdf.setDrawColor(...primaryColor);
-    pdf.setLineWidth(2);
-    pdf.rect(10, 5, 190, pdf.internal.pageSize.height - 15, 'S');
+    pdf.text('Thank you for your order.', 105, yPosition, { align: 'center' });
+    yPosition += 5;
+    pdf.text('support@earneats.com', 105, yPosition, { align: 'center' });
     
     // Save the PDF
     pdf.save(`EarnEats_Receipt_${order.orderId}.pdf`);
@@ -423,55 +337,63 @@ export default function Chat() {
   const generateChatOrderReceipt = (order: any) => {
     const pdf = new jsPDF();
     
-    // Set font size and style
-    pdf.setFontSize(16);
+    // Simple black text throughout
+    pdf.setTextColor(0, 0, 0);
+    
+    // Clean header
+    pdf.setFontSize(18);
     pdf.setFont('helvetica', 'bold');
+    pdf.text('EarnEats', 105, 20, { align: 'center' });
     
-    // Header
-    pdf.text('EARNEATS RECEIPT', 105, 20, { align: 'center' });
-    pdf.text('(Chat Order)', 105, 28, { align: 'center' });
-    
-    // Draw line under header
-    pdf.setLineWidth(0.5);
-    pdf.line(20, 32, 190, 32);
-    
-    // Order details
     pdf.setFontSize(10);
     pdf.setFont('helvetica', 'normal');
-    let yPosition = 42;
+    pdf.text('Chat Order Receipt', 105, 28, { align: 'center' });
     
-    pdf.text(`Order ID: ${order.orderId}`, 20, yPosition);
+    // Simple line separator
+    pdf.setLineWidth(0.5);
+    pdf.line(30, 35, 180, 35);
+    
+    let yPosition = 45;
+    
+    // Order details
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    
+    pdf.text(`Order ID: ${order.orderId}`, 30, yPosition);
     yPosition += 6;
+    
     pdf.text(`Date: ${new Date(order.created_at).toLocaleDateString('en-MY', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
-    })}`, 20, yPosition);
+    })}`, 30, yPosition);
     yPosition += 6;
-    pdf.text(`Customer: ${order.userEmail}`, 20, yPosition);
+    
+    pdf.text(`Customer: ${order.userEmail}`, 30, yPosition);
     yPosition += 6;
-    pdf.text(`Order Method: AI Chat Assistant`, 20, yPosition);
-    yPosition += 10;
+    
+    pdf.text(`Method: AI Chat Assistant`, 30, yPosition);
+    yPosition += 15;
     
     // Items section
     pdf.setFont('helvetica', 'bold');
-    pdf.text('ITEMS ORDERED:', 20, yPosition);
+    pdf.text('ITEMS:', 30, yPosition);
     yPosition += 8;
     
     pdf.setFont('helvetica', 'normal');
     order.items.forEach((item: any) => {
       const itemTotal = item.price * item.quantity;
-      pdf.text(`${item.quantity}x ${item.name}`, 25, yPosition);
-      pdf.text(`RM ${itemTotal.toFixed(2)}`, 150, yPosition);
-      yPosition += 5;
+      pdf.text(`${item.quantity}x ${item.name}`, 30, yPosition);
+      pdf.text(`RM ${itemTotal.toFixed(2)}`, 150, yPosition, { align: 'right' });
+      yPosition += 6;
     });
     
     // Payment details
-    yPosition += 5;
+    yPosition += 8;
     pdf.setFont('helvetica', 'bold');
-    pdf.text('PAYMENT DETAILS:', 20, yPosition);
+    pdf.text('PAYMENT:', 30, yPosition);
     yPosition += 8;
     
     pdf.setFont('helvetica', 'normal');
@@ -480,39 +402,33 @@ export default function Chat() {
                              order.paymentMethod.type === 'touchngo' ? "Touch 'n Go" :
                              order.paymentMethod.type === 'card' ? 'Bank Transfer' : order.paymentMethod.type;
     
-    pdf.text(`Payment Method: ${paymentMethodName}`, 20, yPosition);
+    pdf.text(`Method: ${paymentMethodName}`, 30, yPosition);
     yPosition += 6;
     
     if (order.transactionId) {
-      pdf.text(`Transaction ID: ${order.transactionId}`, 20, yPosition);
+      pdf.text(`Transaction: ${order.transactionId}`, 30, yPosition);
       yPosition += 6;
     }
     
-    pdf.text(`Status: ${order.status.toUpperCase()}`, 20, yPosition);
-    yPosition += 10;
-    
-    // Total
-    pdf.setLineWidth(0.5);
-    pdf.line(20, yPosition, 190, yPosition);
+    pdf.text(`Status: ${order.status.toUpperCase()}`, 30, yPosition);
     yPosition += 8;
+    
+    // Total with simple line
+    pdf.line(30, yPosition, 180, yPosition);
+    yPosition += 10;
     
     pdf.setFontSize(12);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('TOTAL:', 20, yPosition);
-    pdf.text(`RM ${order.totalAmount.toFixed(2)}`, 150, yPosition);
-    yPosition += 15;
+    pdf.text('TOTAL:', 30, yPosition);
+    pdf.text(`RM ${order.totalAmount.toFixed(2)}`, 150, yPosition, { align: 'right' });
     
-    // Special note for chat orders
-    pdf.setFontSize(9);
-    pdf.setFont('helvetica', 'italic');
-    pdf.text('This order was placed using our AI Chat Assistant', 105, yPosition, { align: 'center' });
-    yPosition += 6;
-    
-    // Footer
+    // Simple footer
+    yPosition += 20;
+    pdf.setFontSize(8);
     pdf.setFont('helvetica', 'normal');
-    pdf.text('Thank you for your order!', 105, yPosition, { align: 'center' });
-    yPosition += 4;
-    pdf.text('Visit us again at EarnEats.', 105, yPosition, { align: 'center' });
+    pdf.text('Ordered via AI Chat Assistant', 105, yPosition, { align: 'center' });
+    yPosition += 5;
+    pdf.text('Thank you for your order.', 105, yPosition, { align: 'center' });
     
     // Save the PDF
     pdf.save(`chat_receipt_${order.orderId}.pdf`);

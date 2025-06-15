@@ -3,6 +3,7 @@ import { useRoute } from "wouter";
 import { ArrowLeft, Plus, Minus, ShoppingCart } from "lucide-react";
 import { useLocation } from "wouter";
 import { useCart } from "../contexts/CartContext";
+import { useNotifications } from "../contexts/NotificationContext";
 
 interface MenuItem {
   id: string;
@@ -34,6 +35,7 @@ export default function MenuItemDetail() {
   const [selectedAddOns, setSelectedAddOns] = useState<Record<string, number>>({});
   const [portionSize, setPortionSize] = useState("More Portion");
   const { addToCart, getTotalItems } = useCart();
+  const { addNotification } = useNotifications();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -254,7 +256,11 @@ export default function MenuItemDetail() {
                   })
               };
               addToCart(cartItem);
-              alert('Added to cart!');
+              addNotification({
+                type: 'success',
+                title: 'Added to Cart! 🛒',
+                message: `${menuItem.name} has been added to your cart`,
+              });
               setLocation('/menu');
             }}
           >

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { MessageCircle, Send, Sparkles, DollarSign, UtensilsCrossed, Home, Award, ArrowUp, CheckCircle, CreditCard, Download } from 'lucide-react';
 import MobileContainer from '../components/MobileContainer';

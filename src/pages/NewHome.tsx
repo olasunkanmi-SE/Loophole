@@ -106,7 +106,7 @@ export default function NewHome() {
   return (
     <MobileContainer>
       <div className="bg-gradient-to-br from-blue-50 via-purple-50 to-green-50 min-h-screen">
-        <MobileHeader title="EarnQuiz" showBack={false} />
+        <MobileHeader title="AyamBroke" showBack={false} />
 
         {/* Hero Section */}
         <div className="px-6 py-8 text-center">

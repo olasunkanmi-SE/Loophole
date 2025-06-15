@@ -476,23 +476,25 @@ export default function Chat() {
     }
   ];
 
-  // Helper function to extract menu items from AI response
-  const menuItems = [
-      { id: "1", name: "Grilled Rack of Lamb", price: 28, category: "meat" },
-      { id: "5", name: "Wagyu Beef Steak", price: 45, category: "meat" },
-      { id: "6", name: "BBQ Pork Ribs", price: 22, category: "meat" },
-      { id: "2", name: "Maple Bourbon Glazed Salmon", price: 26, category: "seafood" },
-      { id: "3", name: "Garlic Butter Prawns", price: 18, category: "seafood" },
-      { id: "8", name: "Grilled Fish & Chips", price: 16, category: "seafood" },
-      { id: "10", name: "Herb Roasted Chicken", price: 18, category: "chicken" },
-      { id: "11", name: "Chicken Tikka Masala", price: 16, category: "chicken" },
-      { id: "12", name: "Buffalo Chicken Wings", price: 14, category: "chicken" },
-      { id: "13", name: "Chicken Parmigiana", price: 19, category: "chicken" },
-      { id: "4", name: "Fresh Orange Juice", price: 6, category: "drink" },
-      { id: "14", name: "Iced Coffee", price: 5, category: "drink" },
-      { id: "15", name: "Green Tea", price: 4, category: "drink" },
-      { id: "16", name: "Mango Smoothie", price: 7, category: "drink" }
-    ];
+  const [menuItems, setMenuItems] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchMenuItems();
+  }, []);
+
+  const fetchMenuItems = async () => {
+    try {
+      const response = await fetch('/api/menu-items');
+      if (response.ok) {
+        const items = await response.json();
+        setMenuItems(items);
+      } else {
+        console.error('Failed to fetch menu items');
+      }
+    } catch (error) {
+      console.error('Error fetching menu items:', error);
+    }
+  };
 
   // Helper function to extract menu items from AI response
   const extractMenuItems = (content: string) => {

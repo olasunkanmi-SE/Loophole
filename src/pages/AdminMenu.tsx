@@ -26,138 +26,11 @@ const defaultCategories: Category[] = [
   { id: "seafood", name: "Seafood" },
 ];
 
-const defaultMenuItems: MenuItem[] = [
-  {
-    id: "1",
-    name: "Grilled Rack of Lamb",
-    description: "Premium rack of lamb, perfectly seasoned and marinated with herbs",
-    price: 28,
-    image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&h=400&fit=crop",
-    category: "meat",
-    available: true
-  },
-  {
-    id: "5",
-    name: "Wagyu Beef Steak",
-    description: "Premium wagyu beef, grilled to perfection with rosemary",
-    price: 45,
-    image: "https://images.unsplash.com/photo-1558030006-450675393462?w=400&h=400&fit=crop",
-    category: "meat",
-    available: true
-  },
-  {
-    id: "6",
-    name: "BBQ Pork Ribs",
-    description: "Slow-cooked pork ribs with smoky BBQ sauce and coleslaw",
-    price: 22,
-    image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=400&fit=crop",
-    category: "meat",
-    available: true
-  },
-  {
-    id: "2", 
-    name: "Maple Bourbon Glazed Salmon",
-    description: "Fresh Atlantic salmon with maple bourbon glaze and vegetables",
-    price: 26,
-    image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=400&fit=crop",
-    category: "seafood",
-    available: true
-  },
-  {
-    id: "3",
-    name: "Garlic Butter Prawns",
-    description: "Fresh prawns sautéed in garlic butter with herbs",
-    price: 18,
-    image: "https://images.unsplash.com/photo-1559847844-5315695dadae?w=400&h=400&fit=crop",
-    category: "seafood",
-    available: true
-  },
-  {
-    id: "8",
-    name: "Grilled Fish & Chips",
-    description: "Beer-battered fish with crispy fries and tartar sauce",
-    price: 16,
-    image: "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=400&h=400&fit=crop",
-    category: "seafood",
-    available: true
-  },
-  {
-    id: "10",
-    name: "Herb Roasted Chicken",
-    description: "Half roasted chicken with rosemary, thyme and roasted vegetables",
-    price: 18,
-    image: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=400&fit=crop",
-    category: "chicken",
-    available: true
-  },
-  {
-    id: "11",
-    name: "Chicken Tikka Masala",
-    description: "Tender chicken in creamy tomato curry with basmati rice",
-    price: 16,
-    image: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400&h=400&fit=crop",
-    category: "chicken",
-    available: true
-  },
-  {
-    id: "12",
-    name: "Buffalo Chicken Wings",
-    description: "Crispy wings tossed in spicy buffalo sauce with celery sticks",
-    price: 14,
-    image: "https://images.unsplash.com/photo-1527477396000-e27163b481c2?w=400&h=400&fit=crop",
-    category: "chicken",
-    available: true
-  },
-  {
-    id: "13",
-    name: "Chicken Parmigiana",
-    description: "Breaded chicken breast with marinara sauce and melted cheese",
-    price: 19,
-    image: "https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400&h=400&fit=crop",
-    category: "chicken",
-    available: true
-  },
-  {
-    id: "4",
-    name: "Fresh Orange Juice",
-    description: "Freshly squeezed orange juice with pulp",
-    price: 6,
-    image: "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&h=400&fit=crop",
-    category: "drink",
-    available: true
-  },
-  {
-    id: "14",
-    name: "Iced Coffee",
-    description: "Cold brew coffee served over ice with milk",
-    price: 5,
-    image: "https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=400&h=400&fit=crop",
-    category: "drink",
-    available: true
-  },
-  {
-    id: "15",
-    name: "Green Tea",
-    description: "Premium jasmine green tea served hot",
-    price: 4,
-    image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=400&fit=crop",
-    category: "drink",
-    available: true
-  },
-  {
-    id: "16",
-    name: "Mango Smoothie",
-    description: "Fresh mango blended with yogurt and honey",
-    price: 7,
-    image: "https://images.unsplash.com/photo-1536935338788-846bb9981813?w=400&h=400&fit=crop",
-    category: "drink",
-    available: true
-  }
-];
+// Menu items will be fetched from database
 
 export default function AdminMenu() {
   const [, setLocation] = useLocation();
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(defaultMenuItems);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>(defaultCategories);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
@@ -175,6 +48,22 @@ export default function AdminMenu() {
     category: 'drink',
     available: true
   });
+
+  useEffect(() => {
+    fetchMenuItems();
+  }, []);
+
+  const fetchMenuItems = async () => {
+    try {
+      const response = await fetch('/api/menu-items');
+      if (response.ok) {
+        const data = await response.json();
+        setMenuItems(data);
+      }
+    } catch (error) {
+      console.error('Error fetching menu items:', error);
+    }
+  };
 
   const filteredItems = menuItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -215,8 +104,10 @@ export default function AdminMenu() {
         });
 
         if (response.ok) {
-          // Refresh the list (assuming you have a function to fetch menu items)
-          // fetchMenuItems();
+          const updatedItem = await response.json();
+          setMenuItems(prev => prev.map(item => 
+            item.id === editingItem.id ? updatedItem : item
+          ));
         }
       } else {
         // Create new item
@@ -234,39 +125,40 @@ export default function AdminMenu() {
         });
 
         if (response.ok) {
-          // Refresh the list (assuming you have a function to fetch menu items)
-          // fetchMenuItems();
+          const createdItem = await response.json();
+          setMenuItems(prev => [...prev, createdItem]);
         }
       }
 
       setShowItemForm(false);
       setEditingItem(null);
+      fetchMenuItems();
     } catch (error) {
       console.error('Error saving menu item:', error);
     }
   };
 
-  const handleDeleteItem = async (id: string) => {
+  const handleDeleteItem = async (itemId: string) => {
     try {
-      const response = await fetch(`/api/menu-items/${id}`, {
+      const response = await fetch(`/api/menu-items/${itemId}`, {
         method: 'DELETE',
       });
 
       if (response.ok) {
-        // Refresh the list (assuming you have a function to fetch menu items)
-        // fetchMenuItems();
+        setMenuItems(prev => prev.filter(item => item.id !== itemId));
+        fetchMenuItems();
       }
     } catch (error) {
       console.error('Error deleting menu item:', error);
     }
   };
 
-  const toggleItemAvailability = async (id: string) => {
+  const toggleItemAvailability = async (itemId: string) => {
     try {
-      const item = menuItems.find(item => item.id === id);
+      const item = menuItems.find(item => item.id === itemId);
       if (!item) return;
 
-      const response = await fetch(`/api/menu-items/${id}`, {
+      const response = await fetch(`/api/menu-items/${itemId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -275,11 +167,14 @@ export default function AdminMenu() {
       });
 
       if (response.ok) {
-        // Refresh the list (assuming you have a function to fetch menu items)
-        // fetchMenuItems();
+        const updatedItem = await response.json();
+        setMenuItems(prev => prev.map(item => 
+          item.id === itemId ? updatedItem : item
+        ));
       }
+      fetchMenuItems();
     } catch (error) {
-      console.error('Error updating menu item availability:', error);
+      console.error('Error toggling item availability:', error);
     }
   };
 

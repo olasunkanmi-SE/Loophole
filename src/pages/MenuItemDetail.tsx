@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRoute } from "wouter";
 import { ArrowLeft, Plus, Minus, ShoppingCart } from "lucide-react";
 import { useLocation } from "wouter";
@@ -19,136 +19,7 @@ interface AddOn {
   price: number;
 }
 
-// This would typically come from your menu data
-const menuItems: MenuItem[] = [
-  // Meat Category
-  {
-    id: "1",
-    name: "Grilled Rack of Lamb",
-    description: "rack of lamb, perfectly seasoned and marinated...",
-    price: 20,
-    image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&h=400&fit=crop",
-    category: "meat"
-  },
-  {
-    id: "5",
-    name: "Wagyu Beef Steak",
-    description: "Premium wagyu beef, grilled to perfection with herbs",
-    price: 35,
-    image: "https://images.unsplash.com/photo-1558030006-450675393462?w=400&h=400&fit=crop",
-    category: "meat"
-  },
-  {
-    id: "6",
-    name: "BBQ Pork Ribs",
-    description: "Slow-cooked pork ribs with smoky BBQ sauce",
-    price: 18,
-    image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=400&fit=crop",
-    category: "meat"
-  },
-  {
-    id: "7",
-    name: "Venison Medallions",
-    description: "Tender venison with juniper berry sauce",
-    price: 28,
-    image: "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=400&fit=crop",
-    category: "meat"
-  },
-
-  // Seafood Category
-  {
-    id: "2", 
-    name: "Maple Bourbon Glazed Salmon",
-    description: "Fresh Atlantic salmon with maple bourbon glaze and vegetables",
-    price: 26,
-    image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=400&fit=crop",
-    category: "seafood"
-  },
-  {
-    id: "3",
-    name: "Garlic Butter Prawns",
-    description: "Fresh prawns sautéed in garlic butter with herbs",
-    price: 18,
-    image: "https://images.unsplash.com/photo-1559847844-5315695dadae?w=400&h=400&fit=crop",
-    category: "seafood"
-  },
-  {
-    id: "8",
-    name: "Grilled Fish & Chips",
-    description: "Beer-battered fish with crispy fries and tartar sauce",
-    price: 16,
-    image: "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=400&h=400&fit=crop",
-    category: "seafood"
-  },
-
-  // Chicken Category
-  {
-    id: "10",
-    name: "Herb Roasted Chicken",
-    description: "Half roasted chicken with rosemary, thyme and roasted vegetables",
-    price: 18,
-    image: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=400&fit=crop",
-    category: "chicken"
-  },
-  {
-    id: "11",
-    name: "Chicken Tikka Masala",
-    description: "Tender chicken in creamy tomato curry with basmati rice",
-    price: 16,
-    image: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400&h=400&fit=crop",
-    category: "chicken"
-  },
-  {
-    id: "12",
-    name: "Buffalo Chicken Wings",
-    description: "Crispy wings tossed in spicy buffalo sauce with celery sticks",
-    price: 14,
-    image: "https://images.unsplash.com/photo-1527477396000-e27163b481c2?w=400&h=400&fit=crop",
-    category: "chicken"
-  },
-  {
-    id: "13",
-    name: "Chicken Parmigiana",
-    description: "Breaded chicken breast with marinara sauce and melted cheese",
-    price: 19,
-    image: "https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400&h=400&fit=crop",
-    category: "chicken"
-  },
-
-  // Drink Category
-  {
-    id: "4",
-    name: "Fresh Orange Juice",
-    description: "Freshly squeezed orange juice with pulp",
-    price: 6,
-    image: "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&h=400&fit=crop",
-    category: "drink"
-  },
-  {
-    id: "14",
-    name: "Iced Coffee",
-    description: "Cold brew coffee served over ice with milk",
-    price: 5,
-    image: "https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=400&h=400&fit=crop",
-    category: "drink"
-  },
-  {
-    id: "15",
-    name: "Green Tea",
-    description: "Premium jasmine green tea served hot",
-    price: 4,
-    image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=400&fit=crop",
-    category: "drink"
-  },
-  {
-    id: "16",
-    name: "Mango Smoothie",
-    description: "Fresh mango blended with yogurt and honey",
-    price: 7,
-    image: "https://images.unsplash.com/photo-1536935338788-846bb9981813?w=400&h=400&fit=crop",
-    category: "drink"
-  },
-];
+// Menu items will be fetched from database
 
 const addOns: AddOn[] = [
   { id: "chili", name: "Chili Salt Rim", price: 40 },
@@ -163,11 +34,53 @@ export default function MenuItemDetail() {
   const [selectedAddOns, setSelectedAddOns] = useState<Record<string, number>>({});
   const [portionSize, setPortionSize] = useState("More Portion");
   const { addToCart, getTotalItems } = useCart();
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchMenuItems();
+  }, []);
+
+  const fetchMenuItems = async () => {
+    try {
+      const response = await fetch('/api/menu-items');
+      if (response.ok) {
+        const items = await response.json();
+        setMenuItems(items);
+      } else {
+        console.error('Failed to fetch menu items');
+      }
+    } catch (error) {
+      console.error('Error fetching menu items:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!match || !params?.id) return null;
 
   const menuItem = menuItems.find(item => item.id === params.id);
-  if (!menuItem) return <div>Menu item not found</div>;
+
+  if (loading) {
+    return (
+      <div className="bg-gray-50 min-h-screen">
+        <div className="p-4 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-500 mt-2">Loading menu item...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!menuItem) {
+    return (
+      <div className="bg-gray-50 min-h-screen">
+        <div className="p-4">
+          <p>Menu item not found</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleAddOnChange = (addOnId: string, change: number) => {
     setSelectedAddOns(prev => {

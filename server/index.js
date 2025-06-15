@@ -225,6 +225,40 @@ app.post("/api/profile", checkDbConnection, async (req, res) => {
   }
 });
 
+app.put("/api/profile/:email", checkDbConnection, async (req, res) => {
+  try {
+    const { email } = req.params;
+    const profileData = req.body;
+
+    const profilesCollection = db.collection("profiles");
+
+    // Check if profile exists
+    const existingProfile = await profilesCollection.findOne({ email });
+    if (!existingProfile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+
+    // Update profile data (exclude email from updates)
+    const { email: _, password, ...updateData } = profileData;
+    const updatedProfile = {
+      ...updateData,
+      updated_at: new Date().toISOString(),
+    };
+
+    await profilesCollection.updateOne(
+      { email },
+      { $set: updatedProfile }
+    );
+
+    // Fetch and return updated profile
+    const profile = await profilesCollection.findOne({ email });
+    res.json(profile);
+  } catch (error) {
+    console.error("Update profile error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 app.post("/api/reset-password", checkDbConnection, async (req, res) => {
   try {
     const { email, newPassword } = req.body;

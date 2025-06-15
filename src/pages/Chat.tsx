@@ -125,10 +125,10 @@ export default function Chat() {
   const formatAIResponse = (content: string) => {
     // Extract menu items mentioned in the response
     const mentionedMenuItems = extractMenuItems(content);
-    
+
     // Split content into paragraphs and format
     const paragraphs = content.split('\n\n').filter(p => p.trim());
-    
+
     return paragraphs.map((paragraph, index) => {
       // Check if it's a list
       if (paragraph.includes('•') || paragraph.includes('-')) {
@@ -153,7 +153,7 @@ export default function Chat() {
           </div>
         );
       }
-      
+
       // Check if it's a food recommendation with prices - show clickable cards
       if (paragraph.includes('RM') && (paragraph.includes('recommend') || paragraph.includes('food') || mentionedMenuItems.length > 0)) {
         return (
@@ -165,7 +165,7 @@ export default function Chat() {
               </div>
               <p className="text-gray-200 text-sm mb-3">{paragraph}</p>
             </div>
-            
+
             {/* Clickable Menu Item Cards */}
             {mentionedMenuItems.length > 0 && (
               <div className="space-y-2">
@@ -200,7 +200,7 @@ export default function Chat() {
           </div>
         );
       }
-      
+
       // Check if it's about earning/surveys
       if (paragraph.includes('survey') || paragraph.includes('earn') || paragraph.includes('points')) {
         return (
@@ -213,7 +213,7 @@ export default function Chat() {
           </div>
         );
       }
-      
+
       // Regular paragraph
       return (
         <p key={index} className="text-gray-100 text-sm mb-3 leading-relaxed">
@@ -226,7 +226,7 @@ export default function Chat() {
   // Helper function to extract actionable buttons from AI response
   const extractActionButtons = (content: string) => {
     const actions = [];
-    
+
     // Check for food ordering mentions
     if (content.toLowerCase().includes('order food') || content.toLowerCase().includes('menu')) {
       actions.push({
@@ -235,7 +235,7 @@ export default function Chat() {
         onClick: () => setLocation('/menu')
       });
     }
-    
+
     // Check for housing/accommodation mentions
     if (content.toLowerCase().includes('housing') || content.toLowerCase().includes('accommodation') || 
         content.toLowerCase().includes('hostel') || content.toLowerCase().includes('hotel') ||
@@ -246,7 +246,7 @@ export default function Chat() {
         onClick: () => setLocation('/housing')
       });
     }
-    
+
     // Check for survey mentions
     if (content.toLowerCase().includes('survey') || content.toLowerCase().includes('earn more')) {
       actions.push({
@@ -255,7 +255,7 @@ export default function Chat() {
         onClick: () => setLocation('/')
       });
     }
-    
+
     // Check for points/earnings mentions
     if (content.toLowerCase().includes('points') || content.toLowerCase().includes('earnings')) {
       actions.push({
@@ -264,12 +264,12 @@ export default function Chat() {
         onClick: () => setLocation('/points')
       });
     }
-    
+
     return actions;
   };
 
   // Comprehensive app context for the LLM
-  const getComprehensivePrompt = (userQuery: string, categoryHint?: string) => {
+  const getComprehensivePrompt = async (userQuery: string, categoryHint?: string) => {
     const foodMenu = {
       drinks: [
         { name: "Blood Orange Cocktail", price: 12, description: "Refreshing citrus cocktail" },
@@ -312,79 +312,109 @@ export default function Chat() {
       ]
     };
 
-    let baseContext = `You are a comprehensive AI assistant for EarnQuiz, a Malaysian app where people earn money by completing surveys and use that money to order food.
+    const housingOptions = [
+      { type: "Budget Hostel", price: "RM 15-25/night", description: "Shared dorm beds, basic amenities" },
+      { type: "Private Room", price: "RM 25-35/night", description: "Private room in shared accommodation" },
+      { type: "Studio Apartment", price: "RM 35-45/night", description: "Self-contained studio with kitchenette" },
+      { type: "Luxury Stay", price: "RM 45+/night", description: "Premium accommodation with full amenities" }
+    ];
+
+    // Generate user analytics summary
+    const generateAnalyticsSummary = (analytics: any) => {
+      if (!analytics || !analytics.orders || !analytics.payments) {
+        return "No user data available for analysis.";
+      }
+
+      const { orders, payments } = analytics;
+
+      // Calculate spending patterns
+      const totalSpent = orders.reduce((sum: number, order: any) => sum + order.totalAmount, 0);
+      const avgOrderValue = totalSpent / orders.length || 0;
+      const orderFrequency = orders.length;
+
+      // Payment method preferences
+      const paymentMethods = orders.reduce((acc: any, order: any) => {
+        const method = order.paymentMethod.type;
+        acc[method] = (acc[method] || 0) + 1;
+        return acc;
+      }, {});
+
+      const preferredPayment = Object.keys(paymentMethods).reduce((a, b) => 
+        paymentMethods[a] > paymentMethods[b] ? a : b, ''
+      );
+
+      // Most ordered items
+      const itemFrequency: any = {};
+      orders.forEach((order: any) => {
+        order.items.forEach((item: any) => {
+          itemFrequency[item.name] = (itemFrequency[item.name] || 0) + item.quantity;
+        });
+      });
+
+      const topItems = Object.entries(itemFrequency)
+        .sort(([,a], [,b]) => (b as number) - (a as number))
+        .slice(0, 3)
+        .map(([name, count]) => `${name} (${count}x)`);
+
+      // Recent activity
+      const recentOrders = orders.slice(0, 3);
+      const lastOrderDate = orders.length > 0 ? new Date(orders[0].created_at).toLocaleDateString() : 'Never';
+
+      return `
+USER SPENDING ANALYTICS:
+- Total Orders: ${orderFrequency}
+- Total Spent: RM ${totalSpent.toFixed(2)}
+- Average Order Value: RM ${avgOrderValue.toFixed(2)}
+- Last Order: ${lastOrderDate}
+- Preferred Payment: ${preferredPayment}
+- Top Ordered Items: ${topItems.join(', ')}
+- Recent Order Amounts: ${recentOrders.map((o: any) => `RM ${o.totalAmount}`).join(', ')}
+- Payment Methods Used: ${Object.keys(paymentMethods).join(', ')}
+      `;
+    };
+
+    // Fetch user analytics (replace with your actual API call)
+    const fetchUserAnalytics = async () => {
+      // Replace with your actual API endpoint for fetching user data
+      const mockAnalytics = {
+        orders: [
+          { id: '1', totalAmount: 25.50, paymentMethod: { type: 'card' }, items: [{ name: 'Wagyu Beef Steak', quantity: 1 }, { name: 'Espresso Martini', quantity: 2 }], created_at: new Date() },
+          { id: '2', totalAmount: 15.00, paymentMethod: { type: 'points' }, items: [{ name: 'Herb Roasted Chicken', quantity: 1 }], created_at: new Date() },
+          { id: '3', totalAmount: 40.00, paymentMethod: { type: 'card' }, items: [{ name: 'Grilled Lobster Tail', quantity: 1 }], created_at: new Date() }
+        ],
+        payments: [
+          { id: '1', amount: 25.50, type: 'card' },
+          { id: '2', amount: 15.00, type: 'points' },
+          { id: '3', amount: 40.00, type: 'card' }
+        ]
+      };
+      return mockAnalytics;
+    };
+
+    const analytics = await fetchUserAnalytics();
+    const analyticsText = analytics ? generateAnalyticsSummary(analytics) : "No order history available for this user.";
+
+    return `You are EarnEats Assistant, a helpful AI for the EarnEats food delivery app in Malaysia.
 
 CURRENT USER STATUS:
-- Total Points: ${totalPoints} points
 - Available Money: ${availableRM}
+- Total Points: ${totalPoints} points
 - Completed Surveys: ${completedSurveys}/3
-- Conversion Rate: 1 point = RM 1.00
+- Points can be converted to RM for food orders (roughly 1 point = RM 0.10)
 
-AVAILABLE SURVEYS:
-1. Lifestyle & Shopping (2-10 points, 2-3 minutes) - About shopping habits, sustainable living, consumer behavior
-2. Digital & Tech (2-10 points, 2-3 minutes) - About technology usage, streaming habits, digital preferences
-3. Food & Dining (2-10 points, 2-3 minutes) - About food preferences, dining habits, cultural food choices
+${analyticsText}
 
-FOOD MENU WITH PRICES:
-Drinks (RM 10-14): ${foodMenu.drinks.map(item => `${item.name} (RM ${item.price})`).join(', ')}
-Chicken (RM 12-18): ${foodMenu.chicken.map(item => `${item.name} (RM ${item.price})`).join(', ')}
-Seafood (RM 15-32): ${foodMenu.seafood.map(item => `${item.name} (RM ${item.price})`).join(', ')}
-Meat (RM 18-35): ${foodMenu.meat.map(item => `${item.name} (RM ${item.price})`).join(', ')}
+AVAILABLE FOOD MENU:
+${Object.entries(foodMenu).map(([category, items]) => 
+  `${category.toUpperCase()}:\n${items.map(item => `- ${item.name}: RM ${item.price} (${item.description})`).join('\n')}`
+).join('\n\n')}
 
-HOUSING & ACCOMMODATION OPTIONS:
-Budget (RM 15-25): ${accommodations.budget.map(item => `${item.name} (RM ${item.price}) in ${item.location}`).join(', ')}
-Mid-Range (RM 35-45): ${accommodations.midRange.map(item => `${item.name} (RM ${item.price}) in ${item.location}`).join(', ')}
-Luxury (RM 85+): ${accommodations.luxury.map(item => `${item.name} (RM ${item.price}) in ${item.location}`).join(', ')}
+HOUSING OPTIONS AVAILABLE:
+${housingOptions.map(option => `- ${option.type}: ${option.price} (${option.description})`).join('\n')}
 
-INTELLIGENT CAPABILITIES:
-- Provide personalized food recommendations based on user's budget
-- Suggest housing/accommodation options within user's budget range
-- Recommend survey combinations to reach specific spending goals for food OR accommodation
-- Help users understand earning potential vs. food AND housing costs
-- Guide users through the app's features and navigation
-- Answer questions about Malaysian food culture, housing options, and preferences
-- Compare costs between food vs accommodation spending strategies
-
-RECOMMENDATION LOGIC:
-Food Recommendations:
-- If user has RM 0-5: Recommend drinks and completing more surveys
-- If user has RM 5-15: Recommend chicken dishes and some seafood
-- If user has RM 15-25: Recommend most menu items except premium options
-- If user has RM 25+: Recommend any menu items including premium meat and seafood
-
-Housing Recommendations:
-- If user has RM 0-15: Suggest completing more surveys, focus on budget hostels (RM 15-25)
-- If user has RM 15-25: Recommend budget hostels and dorm beds
-- If user has RM 25-45: Recommend private rooms and studio apartments
-- If user has RM 45+: Recommend luxury options and private apartments
-
-Combined Strategy:
-- Help users balance between food and accommodation spending
-- Suggest earning goals for multi-day trips (food + accommodation)
-- Recommend cost-effective combinations (e.g., hostel + good meals vs luxury stay + simple food)
-
-CONVERSATION STYLE:
-- Be friendly, knowledgeable, and helpful
-- Provide specific recommendations with prices
-- Encourage earning when appropriate but don't be pushy
-- Use Malaysian context when relevant
-- Be conversational and natural
-- Always respond to the user's specific question`;
-
-    // Add category-specific context if provided
-    if (categoryHint) {
-      const categoryContexts = {
-        lifestyle: `\n\nCURRENT FOCUS: User is interested in the Lifestyle & Shopping survey about sustainable products, shopping habits, and consumer preferences. Highlight how this helps Malaysian businesses understand eco-friendly consumer trends.`,
-        digital: `\n\nCURRENT FOCUS: User is interested in the Digital & Tech survey about technology usage, streaming preferences, and digital habits. Emphasize how this helps tech companies improve services for Malaysian users.`,
-        food: `\n\nCURRENT FOCUS: User is interested in the Food & Dining survey about food preferences, dining habits, and cultural food choices. Connect this to how it helps the food industry serve Malaysian tastes better.`
-      };
-      
-      baseContext += categoryContexts[categoryHint] || '';
-    }
-
-    return `${baseContext}
-
-User query: ${userQuery}`;
+USER QUESTION: "${userQuery}"
+${categoryHint ? `CONTEXT: This question relates to ${categoryHint}` : ''}
+`;
   };
 
   const handleSendMessage = async (categoryHint?: string) => {
@@ -413,12 +443,12 @@ User query: ${userQuery}`;
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-thinking-exp-1219" });
 
       // Use comprehensive prompt with category hint if provided
-      const systemPrompt = getComprehensivePrompt(query, categoryHint);
-      console.log('Sending prompt to Gemini:', systemPrompt.substring(0, 200) + '...');
+      const comprehensivePrompt = await getComprehensivePrompt(query, categoryHint);
+      console.log('Sending prompt to Gemini:', comprehensivePrompt.substring(0, 200) + '...');
 
-      const result = await model.generateContent(systemPrompt);
+      const result = await model.generateContent(comprehensivePrompt);
       console.log('Gemini response received:', result);
-      
+
       const response = result.response.text();
       console.log('Response text:', response);
 
@@ -440,7 +470,7 @@ User query: ${userQuery}`;
 
       // More specific error handling
       let fallbackResponse = '';
-      
+
       if (error?.message?.includes('API_KEY')) {
         fallbackResponse = `There's an issue with the API configuration. Let me help you with what I know! You have ${totalPoints} points (${availableRM}). What would you like to know about earning money or ordering food?`;
       } else if (error?.message?.includes('quota') || error?.message?.includes('limit')) {
@@ -534,7 +564,7 @@ User query: ${userQuery}`;
                 <h3 className="text-lg font-semibold text-white">Quick Actions</h3>
                 <div className="flex-1 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded"></div>
               </div>
-              
+
               {quickActions.map((action, index) => (
                 <button
                   key={action.id}
@@ -566,7 +596,7 @@ User query: ${userQuery}`;
                 </div>
                 <h4 className="font-semibold text-white">💰 Earning Potential</h4>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-gray-900/50 rounded-lg p-3 text-center border border-gray-600">
                   <div className="text-lg font-bold text-green-400">RM 0.10-1.00</div>
@@ -577,14 +607,14 @@ User query: ${userQuery}`;
                   <div className="text-xs text-gray-400">Time Required</div>
                 </div>
               </div>
-              
+
               <div className="mt-4 p-3 bg-green-900/20 rounded-lg border border-green-700/30">
                 <div className="text-center">
                   <div className="text-xl font-bold text-green-400">Up to RM 3.00</div>
                   <div className="text-xs text-green-300">Complete all 3 surveys</div>
                 </div>
               </div>
-              
+
               <div className="mt-4 text-center">
                 <p className="text-xs text-gray-400">
                   🎯 Start earning now and order your favorite food!
@@ -648,7 +678,7 @@ User query: ${userQuery}`;
                         <div className="prose prose-sm prose-invert max-w-none">
                           {formatAIResponse(message.content)}
                         </div>
-                        
+
                         {/* Quick Action Buttons from AI response */}
                         {extractActionButtons(message.content).length > 0 && (
                           <div className="mt-4 space-y-2">

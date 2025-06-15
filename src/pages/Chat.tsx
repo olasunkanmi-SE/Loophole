@@ -154,15 +154,23 @@ User query: ${userQuery}`;
     setInputValue('');
 
     try {
+      // Get API key
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyCZ2i4mYhfTC59fZSQoAIUsIJJmMqvQ5fE';
+      console.log('Using API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'undefined');
+
       // Initialize Gemini AI
-      const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyCZ2i4mYhfTC59fZSQoAIUsIJJmMqvQ5fE');
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-thinking-exp-1219" });
 
       // Use comprehensive prompt with category hint if provided
       const systemPrompt = getComprehensivePrompt(query, categoryHint);
+      console.log('Sending prompt to Gemini:', systemPrompt.substring(0, 200) + '...');
 
       const result = await model.generateContent(systemPrompt);
+      console.log('Gemini response received:', result);
+      
       const response = result.response.text();
+      console.log('Response text:', response);
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -173,10 +181,21 @@ User query: ${userQuery}`;
 
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
-      console.error('Gemini AI error:', error);
+      console.error('Gemini AI error details:', error);
+      console.error('Error type:', typeof error);
+      console.error('Error message:', error?.message);
+      console.error('Error stack:', error?.stack);
 
-      // Fallback response - more natural
-      const fallbackResponse = `Hey! I'm having trouble connecting to my AI brain right now, but I'm still here to help! You've got ${totalPoints} points (${availableRM}) so far. Feel free to ask me anything about the app, surveys, or how to use your points for food orders!`;
+      // More specific error handling
+      let fallbackResponse = '';
+      
+      if (error?.message?.includes('API_KEY')) {
+        fallbackResponse = `There's an issue with the API configuration. Let me help you with what I know! You have ${totalPoints} points (${availableRM}). What would you like to know about earning money or ordering food?`;
+      } else if (error?.message?.includes('quota') || error?.message?.includes('limit')) {
+        fallbackResponse = `The AI service is temporarily busy. I can still help! You have ${totalPoints} points (${availableRM}). Ask me about surveys, food recommendations, or how to use your points!`;
+      } else {
+        fallbackResponse = `I'm having technical difficulties right now, but I'm here to help! You have ${totalPoints} points (${availableRM}). What would you like to know about the app?`;
+      }
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),

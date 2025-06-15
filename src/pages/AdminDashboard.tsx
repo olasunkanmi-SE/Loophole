@@ -195,6 +195,13 @@ export default function AdminDashboard() {
                 <FileText size={20} />
                 <span className="text-sm font-medium">Content</span>
               </button>
+              <button
+                onClick={() => setLocation('/admin/settings')}
+                className="flex items-center gap-2 p-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <Settings size={20} />
+                <span className="text-sm font-medium">Settings</span>
+              </button>
             </div>
           </div>
 

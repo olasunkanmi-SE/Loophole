@@ -791,6 +791,108 @@ app.get('/api/admin/export-financial-report', checkDbConnection, async (req, res
   }
 });
 
+// System settings endpoints
+app.get('/api/admin/system-settings', checkDbConnection, async (req, res) => {
+  try {
+    const settingsCollection = db.collection('system_settings');
+    const settings = await settingsCollection.findOne({}, { sort: { updated_at: -1 } });
+    
+    // Default settings if none exist
+    const defaultSettings = {
+      system: {
+        appName: 'EarnEats',
+        appVersion: '1.0.0',
+        maintenanceMode: false,
+        allowRegistration: true,
+        maxUsersPerOrder: 5,
+        sessionTimeout: 30
+      },
+      payment: {
+        grabPayEnabled: true,
+        touchNGoEnabled: true,
+        bankTransferEnabled: true,
+        pointsConversionRate: 1.0,
+        minimumOrderAmount: 10.0,
+        serviceFeePercentage: 2.5
+      },
+      notifications: {
+        emailEnabled: true,
+        smsEnabled: false,
+        pushNotificationsEnabled: true,
+        orderConfirmationTemplate: 'Default order confirmation template',
+        welcomeEmailTemplate: 'Default welcome template',
+        resetPasswordTemplate: 'Default reset password template'
+      }
+    };
+
+    res.json(settings || defaultSettings);
+  } catch (error) {
+    console.error('Get system settings error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/admin/system-settings', checkDbConnection, async (req, res) => {
+  try {
+    const settingsData = req.body;
+    const settingsCollection = db.collection('system_settings');
+    
+    const newSettings = {
+      ...settingsData,
+      updated_at: new Date().toISOString(),
+      updated_by: 'admin'
+    };
+    
+    await settingsCollection.insertOne(newSettings);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Save system settings error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/admin/backup-database', checkDbConnection, async (req, res) => {
+  try {
+    const collections = ['users', 'profiles', 'orders', 'payments', 'surveys', 'survey_responses'];
+    const backup = {};
+    
+    for (const collectionName of collections) {
+      const collection = db.collection(collectionName);
+      backup[collectionName] = await collection.find({}).toArray();
+    }
+    
+    backup.metadata = {
+      created_at: new Date().toISOString(),
+      version: '1.0.0',
+      total_collections: collections.length
+    };
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename=earneats-backup-${new Date().toISOString().split('T')[0]}.json`);
+    res.json(backup);
+  } catch (error) {
+    console.error('Database backup error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/admin/test-email', checkDbConnection, async (req, res) => {
+  try {
+    const { template } = req.body;
+    
+    // Simulate sending email (in production, integrate with email service)
+    console.log(`Sending test email with template: ${template}`);
+    
+    // Simulate email sending delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    res.json({ success: true, message: 'Test email sent successfully' });
+  } catch (error) {
+    console.error('Test email error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);
 });

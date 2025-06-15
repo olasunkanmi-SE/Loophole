@@ -1,18 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import MobileHeader from "../components/MobileHeader";
 import { useLocation } from "wouter";
 import { signIn, signUp, getProfile } from "../api/client";
+import { useAuth } from "../contexts/AuthContext";
 import { User, Mail, Lock } from "lucide-react";
 
 export default function SignIn() {
   const [, setLocation] = useLocation();
+  const { user, loading } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: ""
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Redirect authenticated users away from sign-in page
+  useEffect(() => {
+    if (!loading && user) {
+      setLocation('/');
+    }
+  }, [user, loading, setLocation]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -56,6 +65,22 @@ export default function SignIn() {
   };
 
   const isFormValid = formData.email && formData.password;
+
+  // Show loading while checking authentication
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Don't render sign-in form if user is already authenticated
+  if (user) {
+    return null;
+  }
 
   return (
     <Layout>

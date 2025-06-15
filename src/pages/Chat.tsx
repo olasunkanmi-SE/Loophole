@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { MessageCircle, Send, Sparkles, DollarSign, UtensilsCrossed, Home, Award, ArrowUp } from 'lucide-react';
+import { MessageCircle, Send, Sparkles, DollarSign, UtensilsCrossed, Home, Award, ArrowUp, CheckCircle, CreditCard } from 'lucide-react';
 import MobileContainer from '../components/MobileContainer';
 import { usePoints } from '../contexts/PointsContext';
+import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
+import { usePayment } from '../contexts/PaymentContext';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 interface Message {
@@ -40,11 +43,154 @@ export default function Chat() {
     return [];
   });
   const [inputValue, setInputValue] = useState('');
-  const { getTotalPoints, getFormattedRM, getCompletedCategories } = usePoints();
+  const [pendingOrder, setPendingOrder] = useState<any>(null);
+  const [showPaymentOptions, setShowPaymentOptions] = useState(false);
+  const [orderProcessing, setOrderProcessing] = useState(false);
+  const { getTotalPoints, getFormattedRM, getCompletedCategories, canAfford, deductRM } = usePoints();
+  const { addToCart, clearCart } = useCart();
+  const { processPayment } = usePayment();
+  const { user } = useAuth();
 
   const totalPoints = getTotalPoints();
   const availableRM = getFormattedRM();
   const completedSurveys = getCompletedCategories().length;
+
+  // Food ordering functions
+  const handleOrderConfirmation = async (orderItems: any[]) => {
+    const orderTotal = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    setPendingOrder({
+      items: orderItems,
+      total: orderTotal,
+      timestamp: new Date()
+    });
+    
+    setShowPaymentOptions(true);
+    
+    // Add assistant message asking for payment method
+    const assistantMessage: Message = {
+      id: Date.now().toString(),
+      content: `Perfect! I've prepared your order:\n\n${orderItems.map(item => `• ${item.quantity}x ${item.name} - RM ${(item.price * item.quantity).toFixed(2)}`).join('\n')}\n\n**Total: RM ${orderTotal.toFixed(2)}**\n\nHow would you like to pay for this order?`,
+      sender: 'assistant',
+      timestamp: new Date()
+    };
+    
+    const updatedMessages = [...messages, assistantMessage];
+    setMessages(updatedMessages);
+    saveChatHistory(updatedMessages);
+  };
+
+  const handlePaymentSelection = async (paymentMethod: 'points' | 'card' | 'grabpay' | 'touchngo') => {
+    if (!pendingOrder) return;
+    
+    setOrderProcessing(true);
+    setShowPaymentOptions(false);
+    
+    let paymentSuccess = false;
+    let paymentMessage = '';
+    
+    try {
+      if (paymentMethod === 'points') {
+        if (!canAfford(pendingOrder.total)) {
+          paymentMessage = `❌ **Payment Failed**\n\nInsufficient balance. You need RM ${pendingOrder.total.toFixed(2)} but only have ${availableRM}.\n\nComplete more surveys to earn points!`;
+        } else {
+          if (deductRM(pendingOrder.total)) {
+            paymentSuccess = true;
+            paymentMessage = `✅ **Payment Successful!**\n\nPaid RM ${pendingOrder.total.toFixed(2)} using your points balance.\n\nYour order has been placed and will be prepared shortly!`;
+          }
+        }
+      } else {
+        // Handle external payment methods
+        const paymentMethodMap = {
+          card: { type: 'bank_transfer', name: 'Bank Transfer' },
+          grabpay: { type: 'grabpay', name: 'GrabPay' },
+          touchngo: { type: 'touchngo', name: "Touch 'n Go" }
+        };
+        
+        const selectedMethod = paymentMethodMap[paymentMethod];
+        const result = await processPayment(pendingOrder.total, selectedMethod);
+        
+        if (result) {
+          paymentSuccess = true;
+          paymentMessage = `✅ **Payment Successful!**\n\nPaid RM ${pendingOrder.total.toFixed(2)} using ${selectedMethod.name}.\n\nYour order has been placed and will be prepared shortly!`;
+        } else {
+          paymentMessage = `❌ **Payment Failed**\n\nThere was an issue processing your ${selectedMethod.name} payment. Please try again or use a different payment method.`;
+        }
+      }
+      
+      if (paymentSuccess) {
+        // Create order in database
+        await createChatOrder(pendingOrder, paymentMethod);
+        
+        // Clear pending order
+        setPendingOrder(null);
+      }
+      
+    } catch (error) {
+      paymentMessage = `❌ **Payment Error**\n\nAn unexpected error occurred. Please try again.`;
+    }
+    
+    // Add payment result message
+    const paymentResultMessage: Message = {
+      id: Date.now().toString(),
+      content: paymentMessage,
+      sender: 'assistant',
+      timestamp: new Date()
+    };
+    
+    const updatedMessages = [...messages, paymentResultMessage];
+    setMessages(updatedMessages);
+    saveChatHistory(updatedMessages);
+    
+    setOrderProcessing(false);
+  };
+
+  const createChatOrder = async (order: any, paymentMethod: string) => {
+    try {
+      const orderData = {
+        userEmail: user?.email || 'guest',
+        items: order.items.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          addOns: []
+        })),
+        totalAmount: order.total,
+        paymentMethod: {
+          type: paymentMethod,
+          name: paymentMethod === 'points' ? 'Points Balance' : paymentMethod
+        }
+      };
+
+      const response = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      if (response.ok) {
+        const createdOrder = await response.json();
+        
+        // Update order status to completed
+        await fetch('/api/update-order-status', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderId: createdOrder.orderId,
+            status: 'completed',
+            transactionId: `chat_${Date.now()}`
+          }),
+        });
+      }
+    } catch (error) {
+      console.error('Error creating chat order:', error);
+    }
+  };
 
   // Function to save chat history to localStorage (keep last 5 conversations)
   const saveChatHistory = (newMessages: Message[]) => {
@@ -268,6 +414,22 @@ export default function Chat() {
     return actions;
   };
 
+  // Parse order intent from user messages
+  const parseOrderIntent = (userQuery: string) => {
+    const orderKeywords = ['order', 'buy', 'purchase', 'get', 'want', 'need', 'hungry', 'food', 'eat', 'meal'];
+    const confirmKeywords = ['yes', 'sure', 'okay', 'ok', 'agree', 'confirm', 'place order', 'lets do it', 'sounds good'];
+    
+    const hasOrderIntent = orderKeywords.some(keyword => 
+      userQuery.toLowerCase().includes(keyword)
+    );
+    
+    const hasConfirmIntent = confirmKeywords.some(keyword => 
+      userQuery.toLowerCase().includes(keyword)
+    );
+    
+    return { hasOrderIntent, hasConfirmIntent };
+  };
+
   // Comprehensive app context for the LLM
   const getComprehensivePrompt = async (userQuery: string, categoryHint?: string) => {
     const foodMenu = {
@@ -394,6 +556,8 @@ USER SPENDING ANALYTICS:
     const analytics = await fetchUserAnalytics();
     const analyticsText = analytics ? generateAnalyticsSummary(analytics) : "No order history available for this user.";
 
+    const { hasOrderIntent, hasConfirmIntent } = parseOrderIntent(userQuery);
+    
     return `You are EarnEats Assistant, a helpful AI for the EarnEats food delivery app in Malaysia.
 
 CURRENT USER STATUS:
@@ -411,6 +575,20 @@ ${Object.entries(foodMenu).map(([category, items]) =>
 
 HOUSING OPTIONS AVAILABLE:
 ${housingOptions.map(option => `- ${option.type}: ${option.price} (${option.description})`).join('\n')}
+
+FOOD ORDERING INSTRUCTIONS:
+${hasOrderIntent ? `
+- The user seems interested in ordering food
+- When recommending food items, ask if they'd like to place an order
+- If they confirm wanting to order, respond with: "ORDER_CONFIRMATION:" followed by a JSON array of items like:
+ORDER_CONFIRMATION: [{"id": "1", "name": "Grilled Rack of Lamb", "price": 20, "quantity": 1}, {"id": "4", "name": "Blood Orange Cocktail", "price": 12, "quantity": 1}]
+- Only include this ORDER_CONFIRMATION format when the user explicitly agrees to order
+` : ''}
+
+${hasConfirmIntent && pendingOrder ? `
+- The user seems to be confirming a previous recommendation
+- If they're agreeing to a food recommendation you made, include the ORDER_CONFIRMATION format
+` : ''}
 
 USER QUESTION: "${userQuery}"
 ${categoryHint ? `CONTEXT: This question relates to ${categoryHint}` : ''}
@@ -452,9 +630,29 @@ ${categoryHint ? `CONTEXT: This question relates to ${categoryHint}` : ''}
       const response = result.response.text();
       console.log('Response text:', response);
 
+      // Check if the response contains an order confirmation
+      const orderConfirmationMatch = response.match(/ORDER_CONFIRMATION:\s*(\[.*?\])/);
+      
+      let assistantContent = response;
+      
+      if (orderConfirmationMatch) {
+        try {
+          const orderItems = JSON.parse(orderConfirmationMatch[1]);
+          // Remove the ORDER_CONFIRMATION part from the response
+          assistantContent = response.replace(/ORDER_CONFIRMATION:\s*\[.*?\]/, '').trim();
+          
+          // Handle the order confirmation
+          setTimeout(() => {
+            handleOrderConfirmation(orderItems);
+          }, 1000);
+        } catch (error) {
+          console.error('Error parsing order confirmation:', error);
+        }
+      }
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: response,
+        content: assistantContent,
         sender: 'assistant',
         timestamp: new Date()
       };
@@ -863,6 +1061,114 @@ ${categoryHint ? `CONTEXT: This question relates to ${categoryHint}` : ''}
                 </div>
               </div>
             ))}
+
+            {/* Payment Options Modal */}
+            {showPaymentOptions && pendingOrder && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 mx-6 max-w-sm w-full">
+                  <div className="text-center mb-4">
+                    <h3 className="text-lg font-bold text-gray-800">Choose Payment Method</h3>
+                    <p className="text-gray-600 text-sm mt-1">
+                      Total: RM {pendingOrder.total.toFixed(2)}
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {/* Points Payment */}
+                    <button
+                      onClick={() => handlePaymentSelection('points')}
+                      disabled={orderProcessing || !canAfford(pendingOrder.total)}
+                      className={`w-full p-3 rounded-lg border text-left transition-colors ${
+                        canAfford(pendingOrder.total)
+                          ? 'border-green-300 bg-green-50 hover:bg-green-100'
+                          : 'border-gray-300 bg-gray-100 cursor-not-allowed'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <DollarSign size={20} className={canAfford(pendingOrder.total) ? 'text-green-600' : 'text-gray-400'} />
+                          <div>
+                            <div className={`font-medium ${canAfford(pendingOrder.total) ? 'text-green-800' : 'text-gray-500'}`}>
+                              Points Balance
+                            </div>
+                            <div className={`text-sm ${canAfford(pendingOrder.total) ? 'text-green-600' : 'text-gray-400'}`}>
+                              {availableRM} available
+                            </div>
+                          </div>
+                        </div>
+                        {canAfford(pendingOrder.total) && <CheckCircle size={16} className="text-green-600" />}
+                      </div>
+                    </button>
+
+                    {/* Card Payment */}
+                    <button
+                      onClick={() => handlePaymentSelection('card')}
+                      disabled={orderProcessing}
+                      className="w-full p-3 rounded-lg border border-blue-300 bg-blue-50 hover:bg-blue-100 text-left transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <CreditCard size={20} className="text-blue-600" />
+                        <div>
+                          <div className="font-medium text-blue-800">Bank Transfer</div>
+                          <div className="text-sm text-blue-600">FPX / Online Banking</div>
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* GrabPay */}
+                    <button
+                      onClick={() => handlePaymentSelection('grabpay')}
+                      disabled={orderProcessing}
+                      className="w-full p-3 rounded-lg border border-green-300 bg-green-50 hover:bg-green-100 text-left transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-5 h-5 bg-green-600 rounded text-white text-xs flex items-center justify-center font-bold">G</div>
+                        <div>
+                          <div className="font-medium text-green-800">GrabPay</div>
+                          <div className="text-sm text-green-600">Digital wallet</div>
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* Touch 'n Go */}
+                    <button
+                      onClick={() => handlePaymentSelection('touchngo')}
+                      disabled={orderProcessing}
+                      className="w-full p-3 rounded-lg border border-purple-300 bg-purple-50 hover:bg-purple-100 text-left transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-5 h-5 bg-purple-600 rounded text-white text-xs flex items-center justify-center font-bold">T</div>
+                        <div>
+                          <div className="font-medium text-purple-800">Touch 'n Go</div>
+                          <div className="text-sm text-purple-600">eWallet</div>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setShowPaymentOptions(false);
+                      setPendingOrder(null);
+                    }}
+                    disabled={orderProcessing}
+                    className="w-full mt-4 p-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  >
+                    Cancel Order
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Order Processing Indicator */}
+            {orderProcessing && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Processing your order...</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -893,6 +1199,12 @@ ${categoryHint ? `CONTEXT: This question relates to ${categoryHint}` : ''}
           {/* Quick suggestion buttons */}
           <div className="flex gap-2 mt-3 overflow-x-auto">
             <button
+              onClick={() => setInputValue('I want to order food for dinner')}
+              className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs whitespace-nowrap hover:bg-gray-600 transition-colors"
+            >
+              Order food
+            </button>
+            <button
               onClick={() => setInputValue('Recommend food within my budget')}
               className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs whitespace-nowrap hover:bg-gray-600 transition-colors"
             >
@@ -915,12 +1227,6 @@ ${categoryHint ? `CONTEXT: This question relates to ${categoryHint}` : ''}
               className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs whitespace-nowrap hover:bg-gray-600 transition-colors"
             >
               What can I afford?
-            </button>
-            <button
-              onClick={() => setInputValue('Plan my food and accommodation budget')}
-              className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs whitespace-nowrap hover:bg-gray-600 transition-colors"
-            >
-              Budget planning
             </button>
           </div>
         </div>

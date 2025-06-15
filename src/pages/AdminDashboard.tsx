@@ -180,6 +180,15 @@ export default function AdminDashboard() {
                 <span className="text-sm font-medium">Menu Items</span>
               </button>
             </div>
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <button
+                onClick={() => setLocation('/admin/finance')}
+                className="flex items-center gap-2 p-3 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors"
+              >
+                <CreditCard size={20} />
+                <span className="text-sm font-medium">Finance</span>
+              </button>
+            </div>
           </div>
 
           {/* Recent Activity */}

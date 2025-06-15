@@ -22,6 +22,8 @@ import { CartProvider } from "@/contexts/CartContext";
 import { PointsProvider } from "@/contexts/PointsContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import FloatingChatIcon from "@/components/FloatingChatIcon";
+import Chat from "@/pages/Chat";
 
 function App() {
   return (
@@ -123,7 +125,15 @@ function App() {
                 </ProtectedRoute>
               )}
             </Route>
+            <Route path="/chat">
+              <ProtectedRoute>
+                <Chat />
+              </ProtectedRoute>
+            </Route>
           </Switch>
+          
+          {/* Floating Chat Icon - appears on all protected routes */}
+          <FloatingChatIcon />
         </PointsProvider>
       </CartProvider>
     </AuthProvider>

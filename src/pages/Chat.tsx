@@ -806,7 +806,7 @@ export default function Chat() {
     ];
 
     // Generate user analytics summary
-    const generateAnalyticsSummary = (analytics: any) => {```python
+    const generateAnalyticsSummary = (analytics:any) => {
       if (!analytics || !analytics.orders || !analytics.payments) {
         return "No user data available for analysis.";
       }
@@ -901,7 +901,7 @@ Mid-range options (RM 25-45/night):
 - Cozy Studio in City Center: RM 45, Kuala Lumpur, entire apartment, modern
 
 Luxury options (RM 45+/night):
-- Luxury Condo with Pool: RM 85, KLCC, entire apartment, stunning views`;
+- Luxury Condo with Pool: RM 85, KLCC, Kuala Lumpur, entire apartment, stunning views`;
 
     return `You are EarnEats Assistant, a helpful AI for the EarnEats food delivery app in Malaysia.
 
@@ -970,11 +970,48 @@ ${relevantFiles.map((file: any) =>
 ).join('\n')}`;
       }
     }
+       const availableSurveys = [
+      {
+        title: "Quick Feedback on EarnEats",
+        reward: "RM 0.20",
+        time: "2-3 minutes",
+        category: "General",
+        description: "Share your thoughts on the EarnEats platform and help us improve!"
+      },
+      {
+        title: "Food Ordering Habits",
+        reward: "RM 0.30",
+        time: "3-4 minutes",
+        category: "Food",
+        description: "Tell us about your food ordering habits and preferences."
+      },
+      {
+        title: "Accommodation Preferences",
+        reward: "RM 0.50",
+        time: "5-7 minutes",
+        category: "Housing",
+        description: "Share your accommodation preferences and help us find the best housing options for you."
+      },
+       {
+        title: "Weekend Bonus Survey",
+        reward: "RM 1.00",
+        time: "5-7 minutes",
+        category: "Bonus",
+        description: "Special weekend survey with double points!"
+      }
+    ];
+
+    const surveyList = availableSurveys.map(survey =>
+      `- ${survey.title}: Earn ${survey.reward} in ${survey.time} (${survey.category} category)`
+    ).join("\n");
 
     const systemPrompt = `You are EarnEats AI Assistant, a helpful food recommendation and ordering assistant for the EarnEats platform.
 
 CURRENT AVAILABLE MENU ITEMS:
 ${menuItemsText}
+
+AVAILABLE SURVEYS:
+${surveyList}
 
 USER CONTEXT:
 - User Email: ${userEmail || 'Not provided'}
@@ -990,14 +1027,16 @@ CAPABILITIES:
 6. System Updates - I have access to recent code changes and can provide information about new features
 
 RESPONSE GUIDELINES:
-- Always be helpful, friendly, and conversational
-- Format recommendations with item names, prices, and brief descriptions
-- Include relevant menu item details when making suggestions
-- Use emojis sparingly for a friendly tone
-- Keep responses concise but informative
-- If asked about orders, payments, or account issues, direct users to appropriate sections
-- Always recommend items from the available menu when discussing food
-- If asked about app features or recent changes, use the system knowledge context
+- Always be helpful, friendly, and supportive
+- Focus on helping users earn points through surveys and convert them to money for food
+- When asked about earning money or available surveys, provide specific details from the survey list above
+- Recommend specific surveys based on user interest and time available
+- Explain the points-to-money conversion clearly (10 points = RM 1.00)
+- Mention weekend bonuses (2x points) when relevant
+- If they ask about food, recommend items from the menu above
+- If they ask about housing, recommend options from the available housing list
+- Guide users to the "Questionnaire" section to start earning
+- Be encouraging and specific about earning potential
 
 Current user message: "${userMessage}"
 

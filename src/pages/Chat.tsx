@@ -1013,38 +1013,84 @@ ${relevantFiles.map((file: any) =>
     }
        const availableSurveys = [
       {
-        title: "Quick Feedback on EarnEats",
-        reward: "RM 0.20",
-        time: "2-3 minutes",
-        category: "General",
-        description: "Share your thoughts on the EarnEats platform and help us improve!"
+        title: "Lifestyle & Shopping Habits",
+        reward: "RM 1.20",
+        time: "4-6 minutes",
+        category: "Consumer Behavior",
+        description: "Help us understand your shopping preferences and lifestyle choices. High-paying survey!",
+        points: 12,
+        status: "Available Now"
       },
       {
-        title: "Food Ordering Habits",
-        reward: "RM 0.30",
-        time: "3-4 minutes",
-        category: "Food",
-        description: "Tell us about your food ordering habits and preferences."
-      },
-      {
-        title: "Accommodation Preferences",
+        title: "Daily Mood Check-in",
         reward: "RM 0.50",
-        time: "5-7 minutes",
-        category: "Housing",
-        description: "Share your accommodation preferences and help us find the best housing options for you."
+        time: "2-3 minutes", 
+        category: "Wellness",
+        description: "Quick daily survey about your mood and well-being.",
+        points: 5,
+        status: "Available Daily"
       },
-       {
-        title: "Weekend Bonus Survey",
+      {
+        title: "Technology Preferences",
         reward: "RM 1.00",
         time: "5-7 minutes",
-        category: "Bonus",
-        description: "Special weekend survey with double points!"
+        category: "Technology", 
+        description: "Share your thoughts on technology and digital habits.",
+        points: 10,
+        status: "Available Now"
+      },
+      {
+        title: "Food & Dining Habits",
+        reward: "RM 0.80",
+        time: "4-5 minutes",
+        category: "Food & Beverage",
+        description: "Tell us about your food preferences and dining experiences.",
+        points: 8,
+        status: "Available Now"
+      },
+      {
+        title: "Health & Wellness Survey",
+        reward: "RM 1.50",
+        time: "6-8 minutes",
+        category: "Health",
+        description: "Questions about your health and wellness routines. Premium survey!",
+        points: 15,
+        status: "Available Now"
+      },
+      {
+        title: "Weekend Bonus Survey",
+        reward: "RM 2.00",
+        time: "5-7 minutes",
+        category: "Special Bonus",
+        description: "Special weekend survey with DOUBLE POINTS! Limited time only!",
+        points: 20,
+        status: "Weekend Only - 2x Points"
       }
     ];
 
-    const surveyList = availableSurveys.map(survey =>
-      `- ${survey.title}: Earn ${survey.reward} in ${survey.time} (${survey.category} category)`
-    ).join("\n");
+    const surveyList = `🎯 AVAILABLE SURVEYS TO EARN MONEY:
+
+${availableSurveys.map((survey, index) => 
+`${index + 1}. **${survey.title}** 
+   💰 Reward: ${survey.reward} (${survey.points} points)
+   ⏱️ Time: ${survey.time}
+   📂 Category: ${survey.category}
+   ✅ Status: ${survey.status}
+   📝 ${survey.description}`
+).join("\n\n")}
+
+💡 HOW TO START EARNING:
+- Go to the "Questionnaire" section in the app
+- Choose any available survey
+- Complete all questions honestly  
+- Earn points instantly upon completion
+- Convert points to money for food/housing (10 points = RM 1.00)
+
+🏆 EARNING TIPS:
+- Complete all surveys to maximize earnings
+- Weekend surveys offer DOUBLE points
+- Each survey can only be completed once
+- Points never expire`;
 
     const systemPrompt = `You are EarnEats AI Assistant, a helpful food recommendation and ordering assistant for the EarnEats platform.
 
@@ -1069,17 +1115,16 @@ CAPABILITIES:
 
 RESPONSE GUIDELINES:
 - Always be helpful, friendly, and supportive
-- Focus on helping users earn points through surveys and convert them to money for food AND housing
-- When asked about earning money or available surveys, provide specific details from the survey list above
-- When asked about HOUSING/ACCOMMODATION/LODGING/STAYING, prioritize housing recommendations from the detailed housing options above
-- When asked about FOOD/EATING/MEALS/RESTAURANTS, prioritize food recommendations from the menu above
-- Recommend specific surveys based on user interest and time available
+- **PRIORITY**: When asked about SURVEYS/EARNING/AVAILABLE SURVEYS/QUESTIONNAIRES, respond with the complete survey list above
+- When asked about earning money or "what surveys are available", show ALL surveys from the detailed list above
+- When asked about HOUSING/ACCOMMODATION/LODGING/STAYING, prioritize housing recommendations
+- When asked about FOOD/EATING/MEALS/RESTAURANTS, prioritize food recommendations  
+- **SURVEY RESPONSES**: Always include survey titles, rewards, time estimates, categories, and descriptions
 - Explain the points-to-money conversion clearly (10 points = RM 1.00)
 - Mention weekend bonuses (2x points) when relevant
-- For housing queries: Show specific properties, prices, amenities, and booking process
-- For food queries: Show specific menu items, prices, and ordering process
 - Guide users to the "Questionnaire" section to start earning
-- Be encouraging and specific about earning potential for BOTH food and housing
+- Be specific about earning potential - mention exact amounts and survey details
+- **DO NOT** recommend food when user asks about surveys or earning money
 
 Current user message: "${userMessage}"
 

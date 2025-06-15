@@ -1,6 +1,7 @@
 import { useState } from "react";
 import MobileHeader from "../components/MobileHeader";
 import { useLocation } from "wouter";
+import { useEffect } from "react";
 
 interface CategoryCard {
   id: string;
@@ -77,6 +78,16 @@ function CategoryCardComponent({ category, isSelected, onSelect, onNavigate }: C
 export default function Quiz() {
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [, setLocation] = useLocation();
+    const [showCompletionModal, setShowCompletionModal] = useState(false);
+
+  useEffect(() => {
+    if (showCompletionModal) {
+      const timer = setTimeout(() => {
+        setLocation('/points');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showCompletionModal, setLocation]);
 
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategories(prev => {

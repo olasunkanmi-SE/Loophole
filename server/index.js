@@ -1,11 +1,15 @@
 import express from "express";
 import cors from "cors";
 import { MongoClient } from "mongodb";
+import dotenv from "dotenv";
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-const DATABASE_URL = "";
+const DATABASE_URL = process.env.DATABASE_URL || 'mongodb+srv://kosemani:omowunmi888@cluster0.4i82g.mongodb.net/learn?retryWrites=true';
 let db;
 
 // Connect to MongoDB

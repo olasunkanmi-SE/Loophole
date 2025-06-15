@@ -322,8 +322,185 @@ export default function Chat() {
     yPosition += 4;
     pdf.text('Visit us again at EarnEats.', 105, yPosition, { align: 'center' });
     
+    // Color scheme
+    const primaryColor = [34, 197, 94]; // Green
+    const secondaryColor = [59, 130, 246]; // Blue
+    const grayColor = [107, 114, 128]; // Gray
+    const lightGrayColor = [249, 250, 251]; // Light gray
+    
+    // Brand header with background
+    pdf.setFillColor(...primaryColor);
+    pdf.rect(0, 0, 210, 35, 'F');
+    
+    // Brand logo/name
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(24);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('🍽️ EarnEats', 105, 15, { align: 'center' });
+    
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Your Food Delivery Partner', 105, 25, { align: 'center' });
+    
+    // Receipt title with accent
+    pdf.setFillColor(...lightGrayColor);
+    pdf.rect(15, 40, 180, 12, 'F');
+    
+    pdf.setTextColor(...grayColor);
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('DIGITAL RECEIPT', 105, 48, { align: 'center' });
+    
+    // Order info box
+    pdf.setTextColor(0, 0, 0);
+    pdf.setDrawColor(...grayColor);
+    pdf.setLineWidth(0.3);
+    pdf.roundedRect(15, 58, 180, 25, 3, 3, 'S');
+    
+    let yPosition = 68;
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Order Information', 20, yPosition);
+    
+    yPosition += 8;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+    
+    // Two-column layout for order info
+    pdf.text(`Order ID: ${order.orderId}`, 20, yPosition);
+    pdf.text(`Date: ${new Date(order.created_at).toLocaleDateString()}`, 110, yPosition);
+    yPosition += 5;
+    pdf.text(`Customer: ${order.userEmail}`, 20, yPosition);
+    pdf.text(`Status: ${order.status.toUpperCase()}`, 110, yPosition);
+    
+    // Items section with modern styling
+    yPosition += 15;
+    pdf.setFillColor(...secondaryColor);
+    pdf.rect(15, yPosition - 3, 180, 8, 'F');
+    
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('ITEMS ORDERED', 20, yPosition + 2);
+    
+    yPosition += 12;
+    pdf.setTextColor(0, 0, 0);
+    
+    // Items with better formatting
+    order.items.forEach((item: any, index: number) => {
+      // Alternating row colors
+      if (index % 2 === 0) {
+        pdf.setFillColor(248, 250, 252);
+        pdf.rect(15, yPosition - 3, 180, 8, 'F');
+      }
+      
+      const itemTotal = item.price * item.quantity;
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(9);
+      
+      // Item name and quantity
+      pdf.text(`${item.quantity}x`, 20, yPosition);
+      pdf.text(`${item.name}`, 30, yPosition);
+      pdf.text(`RM ${itemTotal.toFixed(2)}`, 175, yPosition, { align: 'right' });
+      yPosition += 6;
+      
+      // Add-ons with indentation
+      if (item.addOns && item.addOns.length > 0) {
+        pdf.setTextColor(...grayColor);
+        pdf.setFontSize(8);
+        item.addOns.forEach((addOn: any) => {
+          const addOnTotal = addOn.price * addOn.quantity;
+          pdf.text(`  + ${addOn.quantity}x ${addOn.name}`, 35, yPosition);
+          pdf.text(`+RM ${addOnTotal.toFixed(2)}`, 175, yPosition, { align: 'right' });
+          yPosition += 4;
+        });
+        pdf.setTextColor(0, 0, 0);
+      }
+      yPosition += 2;
+    });
+    
+    // Payment section
+    yPosition += 8;
+    pdf.setFillColor(...lightGrayColor);
+    pdf.rect(15, yPosition - 3, 180, 25, 'F');
+    
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('PAYMENT DETAILS', 20, yPosition + 2);
+    
+    yPosition += 10;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+    
+    const paymentMethodName = order.paymentMethod.type === 'points' ? 'EarnEats Points' : 
+                             order.paymentMethod.type === 'grabpay' ? 'GrabPay' :
+                             order.paymentMethod.type === 'touchngo' ? "Touch 'n Go" :
+                             order.paymentMethod.type === 'card' ? 'Bank Transfer' : order.paymentMethod.type;
+    
+    const paymentIcon = order.paymentMethod.type === 'points' ? '🪙' : 
+                       order.paymentMethod.type === 'grabpay' ? '🟢' :
+                       order.paymentMethod.type === 'touchngo' ? '🔵' : '🏦';
+    
+    pdf.text(`${paymentIcon} Payment Method: ${paymentMethodName}`, 20, yPosition);
+    yPosition += 5;
+    
+    if (order.transactionId) {
+      pdf.text(`Transaction ID: ${order.transactionId}`, 20, yPosition);
+      yPosition += 5;
+    }
+    
+    // Total section with emphasis
+    yPosition += 8;
+    pdf.setFillColor(...primaryColor);
+    pdf.rect(15, yPosition - 5, 180, 15, 'F');
+    
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('TOTAL AMOUNT', 20, yPosition + 2);
+    pdf.text(`RM ${order.totalAmount.toFixed(2)}`, 175, yPosition + 2, { align: 'right' });
+    
+    // QR Code placeholder (visual representation)
+    yPosition += 25;
+    pdf.setTextColor(0, 0, 0);
+    pdf.setDrawColor(...grayColor);
+    pdf.rect(140, yPosition, 30, 30, 'S');
+    pdf.setFontSize(8);
+    pdf.text('QR Code', 155, yPosition + 16, { align: 'center' });
+    pdf.text('(Verify Receipt)', 155, yPosition + 20, { align: 'center' });
+    
+    // Special note for AI orders
+    pdf.setFontSize(8);
+    pdf.setTextColor(...secondaryColor);
+    pdf.text('🤖 This order was placed using our AI Chat Assistant', 20, yPosition + 10);
+    
+    // Company info and footer
+    pdf.setTextColor(...grayColor);
+    pdf.text('Receipt generated on ' + new Date().toLocaleString(), 20, yPosition + 18);
+    pdf.text('Powered by EarnEats AI Assistant', 20, yPosition + 23);
+    
+    // Social media and contact info
+    pdf.text('📧 support@earneats.com  📱 +60 12-345-6789', 20, yPosition + 33);
+    pdf.text('🌐 www.earneats.com  📍 Kuala Lumpur, Malaysia', 20, yPosition + 38);
+    
+    // Thank you message with emoji
+    yPosition += 48;
+    pdf.setTextColor(...primaryColor);
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('🙏 Thank you for choosing EarnEats!', 105, yPosition, { align: 'center' });
+    
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Rate your experience and earn points! 🌟', 105, yPosition + 6, { align: 'center' });
+    
+    // Decorative border
+    pdf.setDrawColor(...primaryColor);
+    pdf.setLineWidth(2);
+    pdf.rect(10, 5, 190, pdf.internal.pageSize.height - 15, 'S');
+    
     // Save the PDF
-    pdf.save(`receipt_${order.orderId}.pdf`);
+    pdf.save(`EarnEats_Receipt_${order.orderId}.pdf`);
   };
 
   const generateChatOrderReceipt = (order: any) => {

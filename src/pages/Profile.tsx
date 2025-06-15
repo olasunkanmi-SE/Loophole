@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import MobileHeader from "../components/MobileHeader";
 import { useLocation } from "wouter";
-import { User, Mail, MapPin, Star, ShoppingBag, Settings, ChevronRight, Trophy, Users, Bell } from "lucide-react";
+import { User, Mail, MapPin, Star, ShoppingBag, Settings, ChevronRight, Trophy, Users, Bell, Edit3, LogOut } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { updateProfile } from "../api/client";
 
@@ -260,6 +260,39 @@ export default function Profile() {
         {/* Action Buttons */}
         <div className="space-y-3">
           <button
+            onClick={() => setLocation('/notifications')}
+            className="w-full bg-white p-4 rounded-xl flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <Bell size={20} className="text-gray-500" />
+              <span className="font-medium text-gray-900">Notifications</span>
+            </div>
+            <ChevronRight size={20} className="text-gray-400" />
+          </button>
+
+          <button
+            onClick={() => setLocation('/achievements')}
+            className="w-full bg-white p-4 rounded-xl flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <Trophy size={20} className="text-gray-500" />
+              <span className="font-medium text-gray-900">Achievements</span>
+            </div>
+            <ChevronRight size={20} className="text-gray-400" />
+          </button>
+
+          <button
+            onClick={() => setLocation('/social')}
+            className="w-full bg-white p-4 rounded-xl flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <Users size={20} className="text-gray-500" />
+              <span className="font-medium text-gray-900">Social</span>
+            </div>
+            <ChevronRight size={20} className="text-gray-400" />
+          </button>
+
+          <button
             onClick={() => setLocation('/settings')}
             className="w-full bg-white p-4 rounded-xl flex items-center justify-between"
           >
@@ -267,7 +300,7 @@ export default function Profile() {
               <Settings size={20} className="text-gray-500" />
               <span className="font-medium text-gray-900">Settings</span>
             </div>
-            <div className="w-5 h-5 border-2 border-gray-300 border-r-gray-600 border-b-gray-600 rotate-45 transform scale-50"></div>
+            <ChevronRight size={20} className="text-gray-400" />
           </button>
 
           <button

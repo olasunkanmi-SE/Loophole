@@ -21,6 +21,7 @@ interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
+  isLoadingProfile: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -33,18 +34,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
   const refreshProfile = async () => {
-    if (user?.email) {
-      try {
-        console.log('Refreshing profile for:', user.email);
-        const profile = await getProfile(user.email);
-        console.log('Profile loaded:', profile);
-        setUserProfile(profile);
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-        setUserProfile(null);
-      }
+    if (!user?.email || isLoadingProfile) return;
+
+    try {
+      setIsLoadingProfile(true);
+      console.log("Refreshing profile for:", user.email);
+      const profile = await getProfile(user.email);
+      console.log("Profile loaded:", profile);
+      setUserProfile(profile);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      // Don't set profile to null on error to avoid infinite loops
+    } finally {
+      setIsLoadingProfile(false);
     }
   };
 
@@ -98,6 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     userProfile,
     loading,
+    isLoadingProfile,
     signIn,
     signUp,
     signOut,

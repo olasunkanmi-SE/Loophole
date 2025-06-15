@@ -54,85 +54,88 @@ export default function Chat() {
     }
   ];
 
-  // Optimized prompts for each survey category
-  const getCategoryPrompt = (category: string) => {
-    const baseContext = `You are a helpful AI assistant for EarnQuiz, an app where people earn money by completing quick surveys. Current user status: ${totalPoints} points (${availableRM}), ${completedSurveys}/3 surveys completed.`;
+  // Comprehensive app context for the LLM
+  const getComprehensivePrompt = (categoryHint?: string) => {
+    const foodMenu = {
+      drinks: [
+        { name: "Blood Orange Cocktail", price: 12, description: "Refreshing citrus cocktail" },
+        { name: "Classic Mojito", price: 10, description: "Fresh mint, lime, and white rum" },
+        { name: "Espresso Martini", price: 14, description: "Coffee cocktail with vodka" },
+        { name: "Tropical Paradise", price: 11, description: "Pineapple, coconut, and passion fruit" }
+      ],
+      meat: [
+        { name: "Grilled Rack of Lamb", price: 20, description: "Perfectly seasoned rack of lamb" },
+        { name: "Wagyu Beef Steak", price: 35, description: "Premium wagyu beef, grilled to perfection" },
+        { name: "BBQ Pork Ribs", price: 18, description: "Slow-cooked pork ribs with smoky BBQ sauce" },
+        { name: "Venison Medallions", price: 28, description: "Tender venison with juniper berry sauce" }
+      ],
+      chicken: [
+        { name: "Herb Roasted Chicken", price: 16, description: "Free-range chicken with rosemary and thyme" },
+        { name: "Chicken Tikka Masala", price: 14, description: "Creamy tomato curry with tender chicken" },
+        { name: "Buffalo Chicken Wings", price: 12, description: "Crispy wings tossed in spicy buffalo sauce" },
+        { name: "Chicken Cordon Bleu", price: 18, description: "Stuffed chicken breast with ham and swiss cheese" }
+      ],
+      seafood: [
+        { name: "Maple Bourbon Glazed Salmon", price: 20, description: "Sweet and savory salmon" },
+        { name: "Garlic Butter Clams", price: 15, description: "Fresh clams in garlic butter sauce" },
+        { name: "Grilled Lobster Tail", price: 32, description: "Fresh lobster tail with lemon butter" },
+        { name: "Pan-Seared Scallops", price: 24, description: "Perfectly seared scallops with cauliflower puree" }
+      ]
+    };
 
-    switch (category) {
-      case 'lifestyle':
-        return `${baseContext}
+    const baseContext = `You are a comprehensive AI assistant for EarnQuiz, a Malaysian app where people earn money by completing surveys and use that money to order food.
 
-The user is interested in the Lifestyle & Shopping survey. This survey focuses on:
-- Shopping habits and preferences
-- Sustainable living choices
-- Consumer behavior patterns
-- Product preferences
-- Environmental consciousness
+CURRENT USER STATUS:
+- Total Points: ${totalPoints} points
+- Available Money: ${availableRM}
+- Completed Surveys: ${completedSurveys}/3
+- Conversion Rate: 10 points = RM 1.00
 
-Key benefits to highlight:
-- Earn 2-10 points (RM 0.20-1.00) in just 2-3 minutes
-- Help brands understand Malaysian consumer preferences
-- Questions about eco-friendly products and shopping habits
-- No wrong answers - just share your honest opinions
+AVAILABLE SURVEYS:
+1. Lifestyle & Shopping (2-10 points, 2-3 minutes) - About shopping habits, sustainable living, consumer behavior
+2. Digital & Tech (2-10 points, 2-3 minutes) - About technology usage, streaming habits, digital preferences
+3. Food & Dining (2-10 points, 2-3 minutes) - About food preferences, dining habits, cultural food choices
 
-Be encouraging and explain how their lifestyle insights are valuable to Malaysian businesses looking to serve customers better.
+FOOD MENU WITH PRICES:
+Drinks (RM 10-14): ${foodMenu.drinks.map(item => `${item.name} (${item.price})`).join(', ')}
+Chicken (RM 12-18): ${foodMenu.chicken.map(item => `${item.name} (${item.price})`).join(', ')}
+Seafood (RM 15-32): ${foodMenu.seafood.map(item => `${item.name} (${item.price})`).join(', ')}
+Meat (RM 18-35): ${foodMenu.meat.map(item => `${item.name} (${item.price})`).join(', ')}
 
-User query: ${inputValue}`;
+INTELLIGENT CAPABILITIES:
+- Provide personalized food recommendations based on user's budget
+- Suggest survey combinations to reach specific spending goals
+- Help users understand earning potential vs. food costs
+- Guide users through the app's features and navigation
+- Answer questions about Malaysian food culture and preferences
 
-      case 'digital':
-        return `${baseContext}
+RECOMMENDATION LOGIC:
+- If user has RM 0-5: Recommend drinks and completing more surveys
+- If user has RM 5-15: Recommend chicken dishes and some seafood
+- If user has RM 15-25: Recommend most menu items except premium options
+- If user has RM 25+: Recommend any menu items including premium meat and seafood
 
-The user is interested in the Digital & Tech survey. This survey focuses on:
-- Technology usage patterns
-- Digital entertainment preferences
-- Streaming service habits
-- App and platform preferences
-- Digital lifestyle trends
+CONVERSATION STYLE:
+- Be friendly, knowledgeable, and helpful
+- Provide specific recommendations with prices
+- Encourage earning when appropriate but don't be pushy
+- Use Malaysian context when relevant
+- Be conversational and natural`;
 
-Key benefits to highlight:
-- Earn 2-10 points (RM 0.20-1.00) in just 2-3 minutes
-- Share your tech preferences and digital habits
-- Help tech companies understand Malaysian users
-- Questions about streaming, apps, and digital services
-- Your insights help shape better digital experiences
-
-Be encouraging and explain how their tech insights help companies create better digital products for Malaysians.
-
-User query: ${inputValue}`;
-
-      case 'food':
-        return `${baseContext}
-
-The user is interested in the Food & Dining survey. This survey focuses on:
-- Food preferences and dietary habits
-- Restaurant and dining experiences
-- Cooking habits and meal preferences
-- Food delivery and ordering patterns
-- Cultural food preferences
-
-Key benefits to highlight:
-- Earn 2-10 points (RM 0.20-1.00) in just 2-3 minutes
-- Share your food preferences and dining habits
-- Help food businesses understand Malaysian tastes
-- Questions about local cuisine, dining, and food culture
-- Your insights help restaurants serve you better
-
-Be encouraging and explain how their food insights help the food industry better serve Malaysian preferences.
-
-User query: ${inputValue}`;
-
-      default:
-        return `${baseContext}
-
-Guidelines:
-- Answer naturally like a helpful friend
-- Only mention surveys/earning when relevant to their question
-- Help with any questions about the app, points, food ordering, or general queries
-- Be encouraging but not pushy
-- Keep responses conversational and not too long
-
-Respond naturally to: ${inputValue}`;
+    // Add category-specific context if provided
+    if (categoryHint) {
+      const categoryContexts = {
+        lifestyle: `\n\nCURRENT FOCUS: User is interested in the Lifestyle & Shopping survey about sustainable products, shopping habits, and consumer preferences. Highlight how this helps Malaysian businesses understand eco-friendly consumer trends.`,
+        digital: `\n\nCURRENT FOCUS: User is interested in the Digital & Tech survey about technology usage, streaming preferences, and digital habits. Emphasize how this helps tech companies improve services for Malaysian users.`,
+        food: `\n\nCURRENT FOCUS: User is interested in the Food & Dining survey about food preferences, dining habits, and cultural food choices. Connect this to how it helps the food industry serve Malaysian tastes better.`
+      };
+      
+      baseContext += categoryContexts[categoryHint] || '';
     }
+
+    return `${baseContext}
+
+User query: ${inputValue}`;
   };
 
   const handleSendMessage = async (categoryHint?: string) => {
@@ -154,8 +157,8 @@ Respond naturally to: ${inputValue}`;
       const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyCZ2i4mYhfTC59fZSQoAIUsIJJmMqvQ5fE');
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
-      // Use category-specific prompt if provided, otherwise use general prompt
-      const systemPrompt = categoryHint ? getCategoryPrompt(categoryHint) : getCategoryPrompt('general');
+      // Use comprehensive prompt with category hint if provided
+      const systemPrompt = getComprehensivePrompt(categoryHint);
 
       const result = await model.generateContent(systemPrompt);
       const response = result.response.text();
@@ -329,22 +332,28 @@ Respond naturally to: ${inputValue}`;
           {/* Quick suggestion buttons */}
           <div className="flex gap-2 mt-3 overflow-x-auto">
             <button
-              onClick={() => setInputValue('How can I earn money?')}
+              onClick={() => setInputValue('Recommend food within my budget')}
               className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs whitespace-nowrap hover:bg-gray-600 transition-colors"
             >
-              How to earn money?
+              Food recommendations
             </button>
             <button
-              onClick={() => setInputValue('Show me available surveys')}
+              onClick={() => setInputValue('How to earn more money?')}
               className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs whitespace-nowrap hover:bg-gray-600 transition-colors"
             >
-              Available surveys
+              Earn more money
             </button>
             <button
-              onClick={() => setInputValue('Order food with my points')}
+              onClick={() => setInputValue('What can I afford with my current balance?')}
               className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs whitespace-nowrap hover:bg-gray-600 transition-colors"
             >
-              Order food
+              What can I afford?
+            </button>
+            <button
+              onClick={() => setInputValue('Show me the menu with prices')}
+              className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs whitespace-nowrap hover:bg-gray-600 transition-colors"
+            >
+              View menu
             </button>
           </div>
         </div>

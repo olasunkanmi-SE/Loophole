@@ -200,6 +200,7 @@ export default function Housing() {
 
   return (
     <MobileContainer>
+      <>
       <div className="bg-gray-50 min-h-screen">
         <MobileHeader 
           title="Housing" 
@@ -534,6 +535,7 @@ export default function Housing() {
             </div>
           </div>
         )}
+      </>
     </MobileContainer>
   );
 }

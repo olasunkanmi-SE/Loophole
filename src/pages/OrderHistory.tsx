@@ -5,6 +5,7 @@ import { Calendar, Download, Package, CreditCard, CheckCircle, XCircle } from 'l
 import MobileContainer from '../components/MobileContainer';
 import MobileHeader from '../components/MobileHeader';
 import { useAuth } from '../contexts/AuthContext';
+import jsPDF from 'jspdf';
 
 interface OrderItem {
   id: string;
@@ -91,60 +92,97 @@ export default function OrderHistory() {
   };
 
   const downloadReceipt = (order: Order) => {
-    const receiptContent = generateReceiptContent(order);
-    const blob = new Blob([receiptContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `receipt_${order.orderId}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    generatePDFReceipt(order);
   };
 
-  const generateReceiptContent = (order: Order) => {
-    const itemsText = order.items.map(item => {
-      let itemText = `${item.quantity}x ${item.name} - RM ${(item.price * item.quantity).toFixed(2)}`;
+  const generatePDFReceipt = (order: Order) => {
+    const pdf = new jsPDF();
+    
+    // Set font size and style
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    
+    // Header
+    pdf.text('EARNEATS RECEIPT', 105, 20, { align: 'center' });
+    
+    // Draw line under header
+    pdf.setLineWidth(0.5);
+    pdf.line(20, 25, 190, 25);
+    
+    // Order details
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    let yPosition = 35;
+    
+    pdf.text(`Order ID: ${order.orderId}`, 20, yPosition);
+    yPosition += 6;
+    pdf.text(`Date: ${formatDate(order.created_at)}`, 20, yPosition);
+    yPosition += 6;
+    pdf.text(`Customer: ${order.userEmail}`, 20, yPosition);
+    yPosition += 10;
+    
+    // Items section
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('ITEMS ORDERED:', 20, yPosition);
+    yPosition += 8;
+    
+    pdf.setFont('helvetica', 'normal');
+    order.items.forEach(item => {
+      const itemTotal = item.price * item.quantity;
+      pdf.text(`${item.quantity}x ${item.name}`, 25, yPosition);
+      pdf.text(`RM ${itemTotal.toFixed(2)}`, 150, yPosition);
+      yPosition += 5;
+      
+      // Add-ons
       if (item.addOns && item.addOns.length > 0) {
-        const addOnsText = item.addOns.map(addOn => 
-          `  + ${addOn.quantity}x ${addOn.name} - RM ${(addOn.price * addOn.quantity).toFixed(2)}`
-        ).join('\n');
-        itemText += '\n' + addOnsText;
+        item.addOns.forEach(addOn => {
+          const addOnTotal = addOn.price * addOn.quantity;
+          pdf.text(`   + ${addOn.quantity}x ${addOn.name}`, 30, yPosition);
+          pdf.text(`RM ${addOnTotal.toFixed(2)}`, 150, yPosition);
+          yPosition += 4;
+        });
       }
-      return itemText;
-    }).join('\n');
-
-    return `
-=================================
-         EARNEATS RECEIPT
-=================================
-
-Order ID: ${order.orderId}
-Date: ${formatDate(order.created_at)}
-Customer: ${order.userEmail}
-
----------------------------------
-ITEMS ORDERED:
----------------------------------
-${itemsText}
-
----------------------------------
-PAYMENT DETAILS:
----------------------------------
-Payment Method: ${getPaymentMethodName(order.paymentMethod.type)}
-${order.transactionId ? `Transaction ID: ${order.transactionId}` : ''}
-Status: ${order.status.toUpperCase()}
-
----------------------------------
-TOTAL: RM ${order.totalAmount.toFixed(2)}
----------------------------------
-
-Thank you for your order!
-Visit us again at EarnEats.
-
-=================================
-    `;
+      yPosition += 3;
+    });
+    
+    // Payment details
+    yPosition += 5;
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('PAYMENT DETAILS:', 20, yPosition);
+    yPosition += 8;
+    
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`Payment Method: ${getPaymentMethodName(order.paymentMethod.type)}`, 20, yPosition);
+    yPosition += 6;
+    
+    if (order.transactionId) {
+      pdf.text(`Transaction ID: ${order.transactionId}`, 20, yPosition);
+      yPosition += 6;
+    }
+    
+    pdf.text(`Status: ${order.status.toUpperCase()}`, 20, yPosition);
+    yPosition += 10;
+    
+    // Total
+    pdf.setLineWidth(0.5);
+    pdf.line(20, yPosition, 190, yPosition);
+    yPosition += 8;
+    
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('TOTAL:', 20, yPosition);
+    pdf.text(`RM ${order.totalAmount.toFixed(2)}`, 150, yPosition);
+    yPosition += 15;
+    
+    // Footer
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Thank you for your order!', 105, yPosition, { align: 'center' });
+    yPosition += 4;
+    pdf.text('Visit us again at EarnEats.', 105, yPosition, { align: 'center' });
+    
+    // Save the PDF
+    pdf.save(`receipt_${order.orderId}.pdf`);
   };
 
   if (loading) {

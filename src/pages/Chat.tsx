@@ -53,6 +53,7 @@ export default function Chat() {
   const { addToCart, clearCart } = useCart();
   const { processPayment } = usePayment();
   const { user } = useAuth();
+  const { cartItems, getTotalItems, getTotalPrice } = useCart();
 
   const totalPoints = getTotalPoints();
   const availableRM = getFormattedRM();
@@ -811,6 +812,10 @@ USER SPENDING ANALYTICS:
 
     const { hasOrderIntent, hasConfirmIntent } = parseOrderIntent(userQuery);
 
+    const cartInfo = cartItems.length > 0
+      ? cartItems.map(item => `- ${item.name} (Qty: ${item.quantity}, Price: RM${item.price})`).join('\n')
+      : 'Cart is empty';
+
     return `You are EarnEats Assistant, a helpful AI for the EarnEats food delivery app in Malaysia.
 
 CURRENT USER STATUS:
@@ -828,6 +833,11 @@ ${Object.entries(foodMenu).map(([category, items]) =>
 
 HOUSING OPTIONS AVAILABLE:
 ${housingOptions.map(option => `- ${option.type}: ${option.price} (${option.description})`).join('\n')}
+
+CURRENT SHOPPING CART:
+${cartInfo}
+- Cart Total Items: ${getTotalItems()}
+- Cart Total Price: RM${getTotalPrice()}
 
 FOOD ORDERING INSTRUCTIONS:
 ${hasOrderIntent ? `
@@ -1505,6 +1515,18 @@ ${categoryHint ? `CONTEXT: This question relates to ${categoryHint}` : ''}
               className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs whitespace-nowrap hover:bg-gray-600 transition-colors"
             >
               What can I afford?
+            </button>
+             <button
+              onClick={() => setInputValue('What is in my cart?')}
+              className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs whitespace-nowrap hover:bg-gray-600 transition-colors"
+            >
+              What is in my cart?
+            </button>
+             <button
+              onClick={() => setInputValue('Place order for items in my cart')}
+              className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs whitespace-nowrap hover:bg-gray-600 transition-colors"
+            >
+            Place order
             </button>
           </div>
         </div>

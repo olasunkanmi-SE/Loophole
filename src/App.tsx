@@ -34,6 +34,7 @@ import { SocialProvider } from './contexts/SocialContext';
 import { OfflineProvider } from './contexts/OfflineContext';
 import { SurveyProvider } from './contexts/SurveyContext';
 import { FinancialProvider } from './contexts/FinancialContext';
+import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from "@/components/ProtectedRoute";
 import FloatingChatIcon from "@/components/FloatingChatIcon";
 import Chat from "@/pages/Chat";

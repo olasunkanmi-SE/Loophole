@@ -980,8 +980,7 @@ app.get("/api/admin/financial-stats", checkDbConnection, async (req, res) => {
     if (!conversionRate) {
       conversionRate = {
         pointsToRM: 1,
-        lastUpdated: new Date().toISOString(),
-        updatedBy: "system",
+        lastUpdated: new Date().toISOString(),        updatedBy: "system",
       };
     }    const stats = {
       totalRevenue,
@@ -1185,21 +1184,21 @@ app.get('/api/knowledge-context', checkDbConnection, async (req, res) => {
   try {
     const contextCollection = db.collection('ai_context');
     const knowledgeCollection = db.collection('knowledge_base');
-    
+
     // Get recent context updates
     const recentContext = await contextCollection
       .find({})
       .sort({ timestamp: -1 })
       .limit(10)
       .toArray();
-    
+
     // Get current file knowledge
     const currentKnowledge = await knowledgeCollection
       .find({})
       .sort({ updated_at: -1 })
       .limit(50)
       .toArray();
-    
+
     res.json({
       recentUpdates: recentContext,
       currentFiles: currentKnowledge,
@@ -1215,14 +1214,14 @@ app.post('/api/knowledge-update', checkDbConnection, async (req, res) => {
   try {
     const { files, commitInfo } = req.body;
     const contextCollection = db.collection('ai_context');
-    
+
     const update = {
       type: 'manual_update',
       timestamp: new Date().toISOString(),
       files: files,
       commitInfo: commitInfo
     };
-    
+
     await contextCollection.insertOne(update);
     res.json({ success: true });
   } catch (error) {
@@ -1231,6 +1230,8 @@ app.post('/api/knowledge-update', checkDbConnection, async (req, res) => {
   }
 });
 
-app.listen(PORT, "0.0.0.0", () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Deployment: ${process.env.REPLIT_DEPLOYMENT ? 'Yes' : 'No'}`);
 });

@@ -64,7 +64,7 @@ mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "node scripts/check-recent-changes.js"
+args = "node -e \"if(process.env.NODE_ENV !== 'production' && !process.env.REPLIT_DEPLOYMENT) { require('child_process').execSync('node scripts/check-recent-changes.js', {stdio: 'inherit'}); }\""
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"

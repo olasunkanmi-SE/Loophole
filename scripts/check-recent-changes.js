@@ -5,6 +5,14 @@ import fs from 'fs';
 
 const execAsync = promisify(exec);
 
+// Check if running in development environment
+const isDevelopment = process.env.NODE_ENV !== 'production' && !process.env.REPLIT_DEPLOYMENT;
+
+if (!isDevelopment) {
+  console.log('ℹ️  Knowledge update checking is disabled in production environment');
+  process.exit(0);
+}
+
 async function checkRecentChanges() {
   try {
     console.log('🔍 Checking for recent Git changes...');

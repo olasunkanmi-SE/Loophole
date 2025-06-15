@@ -4,11 +4,26 @@ import { exec } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
+// Only run webhook handler in development environment
+const isDevelopment = process.env.NODE_ENV !== 'production' && !process.env.REPLIT_DEPLOYMENT;
+
+if (!isDevelopment) {
+  console.log('🚫 Git webhook handler is disabled in production environment');
+  process.exit(0);
+}
+
+console.log('🔧 Git webhook handler starting in development mode');
+
 const app = express();
 app.use(express.json());
 
 // Webhook endpoint for Git push events
 app.post('/webhook/git-push', async (req, res) => {
+  // Double-check environment safety
+  if (process.env.NODE_ENV === 'production' || process.env.REPLIT_DEPLOYMENT) {
+    return res.status(403).json({ error: 'Webhook handler disabled in production' });
+  }
+  
   try {
     const { commits, repository } = req.body;
     
@@ -324,5 +339,8 @@ function inferFilePurpose(content) {
 }
 
 app.listen(3002, '0.0.0.0', () => {
-  console.log('Git webhook handler running on port 3002');
+  console.log('🎯 Git webhook handler running on port 3002 (Development Only)');
+  console.log('📝 Environment checks:');
+  console.log(`   - NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
+  console.log(`   - REPLIT_DEPLOYMENT: ${process.env.REPLIT_DEPLOYMENT || 'undefined'}`);
 });

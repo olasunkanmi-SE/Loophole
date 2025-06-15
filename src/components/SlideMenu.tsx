@@ -52,7 +52,7 @@ export default function SlideMenu({ isOpen, onClose }: SlideMenuProps) {
           </div>
 
           <nav className="space-y-4">
-            <button onClick={() => handleNavigation('/')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
+            <button onClick={() => handleNavigation('/home')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
               Home
             </button>
             <button onClick={() => handleNavigation('/location')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">

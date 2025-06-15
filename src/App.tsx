@@ -46,6 +46,11 @@ function App() {
             {/* Protected routes */}
             <Route path="/">
               <ProtectedRoute>
+                <Quiz />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/home">
+              <ProtectedRoute>
                 <Home />
               </ProtectedRoute>
             </Route>

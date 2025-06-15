@@ -54,6 +54,105 @@ export default function Chat() {
     }
   ];
 
+  // Helper function to format AI response with better styling
+  const formatAIResponse = (content: string) => {
+    // Split content into paragraphs and format
+    const paragraphs = content.split('\n\n').filter(p => p.trim());
+    
+    return paragraphs.map((paragraph, index) => {
+      // Check if it's a list
+      if (paragraph.includes('•') || paragraph.includes('-')) {
+        const items = paragraph.split('\n').filter(item => item.trim());
+        return (
+          <div key={index} className="mb-4">
+            {items.map((item, itemIndex) => {
+              if (item.includes('•') || item.includes('-')) {
+                return (
+                  <div key={itemIndex} className="flex items-start gap-2 mb-2">
+                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
+                    <span className="text-gray-200 text-sm">{item.replace(/[•-]/, '').trim()}</span>
+                  </div>
+                );
+              }
+              return (
+                <p key={itemIndex} className="text-gray-100 text-sm mb-2">
+                  {item}
+                </p>
+              );
+            })}
+          </div>
+        );
+      }
+      
+      // Check if it's a food recommendation with prices
+      if (paragraph.includes('RM') && (paragraph.includes('recommend') || paragraph.includes('food'))) {
+        return (
+          <div key={index} className="bg-gray-700 rounded-lg p-3 mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <UtensilsCrossed size={16} className="text-orange-400" />
+              <span className="text-orange-400 font-medium text-sm">Food Recommendations</span>
+            </div>
+            <p className="text-gray-200 text-sm">{paragraph}</p>
+          </div>
+        );
+      }
+      
+      // Check if it's about earning/surveys
+      if (paragraph.includes('survey') || paragraph.includes('earn') || paragraph.includes('points')) {
+        return (
+          <div key={index} className="bg-gradient-to-r from-green-900/30 to-blue-900/30 rounded-lg p-3 mb-4 border border-green-700/30">
+            <div className="flex items-center gap-2 mb-2">
+              <DollarSign size={16} className="text-green-400" />
+              <span className="text-green-400 font-medium text-sm">Earning Opportunity</span>
+            </div>
+            <p className="text-gray-200 text-sm">{paragraph}</p>
+          </div>
+        );
+      }
+      
+      // Regular paragraph
+      return (
+        <p key={index} className="text-gray-100 text-sm mb-3 leading-relaxed">
+          {paragraph}
+        </p>
+      );
+    });
+  };
+
+  // Helper function to extract actionable buttons from AI response
+  const extractActionButtons = (content: string) => {
+    const actions = [];
+    
+    // Check for food ordering mentions
+    if (content.toLowerCase().includes('order food') || content.toLowerCase().includes('menu')) {
+      actions.push({
+        text: 'View Food Menu',
+        icon: <UtensilsCrossed size={16} />,
+        onClick: () => setLocation('/menu')
+      });
+    }
+    
+    // Check for survey mentions
+    if (content.toLowerCase().includes('survey') || content.toLowerCase().includes('earn more')) {
+      actions.push({
+        text: 'Complete Surveys',
+        icon: <DollarSign size={16} />,
+        onClick: () => setLocation('/')
+      });
+    }
+    
+    // Check for points/earnings mentions
+    if (content.toLowerCase().includes('points') || content.toLowerCase().includes('earnings')) {
+      actions.push({
+        text: 'View My Earnings',
+        icon: <Award size={16} />,
+        onClick: () => setLocation('/points')
+      });
+    }
+    
+    return actions;
+  };
+
   // Comprehensive app context for the LLM
   const getComprehensivePrompt = (userQuery: string, categoryHint?: string) => {
     const foodMenu = {
@@ -240,61 +339,101 @@ User query: ${userQuery}`;
         {/* Welcome Message & Quick Actions */}
         {messages.length === 0 && (
           <div className="flex-1 p-4 space-y-6">
+            {/* Hero Section */}
             <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center mx-auto">
-                <DollarSign size={32} />
+              <div className="relative">
+                <div className="w-20 h-20 bg-gradient-to-br from-green-500 via-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto animate-pulse">
+                  <DollarSign size={36} className="text-white" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
+                  <Sparkles size={12} className="text-yellow-800" />
+                </div>
               </div>
               <div>
-                <h2 className="text-xl font-bold mb-2">Earn Money for Food & Living</h2>
-                <p className="text-gray-400 text-sm">
-                  Complete quick 2-3 minute surveys to earn points that convert to real money. Use your earnings to order food!
+                <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
+                  Your AI Earnings Assistant
+                </h2>
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  Complete quick surveys, earn real money, and order delicious food. 
+                  I'm here to help you maximize your earnings! 🚀
                 </p>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Sparkles size={18} />
-                Quick Actions
-              </h3>
-              {quickActions.map((action) => (
+            {/* Quick Actions with Enhanced Design */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-0.5 bg-gradient-to-r from-green-500 to-blue-500 rounded"></div>
+                <h3 className="text-lg font-semibold text-white">Quick Actions</h3>
+                <div className="flex-1 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded"></div>
+              </div>
+              
+              {quickActions.map((action, index) => (
                 <button
                   key={action.id}
                   onClick={action.action}
-                  className="w-full bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-xl p-4 text-left transition-colors"
+                  className="w-full bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 border border-gray-600 rounded-xl p-4 text-left transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg"
+                  style={{ animationDelay: `${index * 100}ms` }}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 bg-gradient-to-br from-gray-600 to-gray-700 rounded-lg flex items-center justify-center shadow-lg">
                       {action.icon}
                     </div>
                     <div className="flex-1">
-                      <div className="font-medium">{action.title}</div>
-                      <div className="text-sm text-gray-400">{action.description}</div>
+                      <div className="font-medium text-white">{action.title}</div>
+                      <div className="text-sm text-gray-300">{action.description}</div>
+                    </div>
+                    <div className="text-gray-500">
+                      <ArrowUp size={16} className="rotate-45" />
                     </div>
                   </div>
                 </button>
               ))}
             </div>
 
-            {/* Earning Potential */}
-            <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-              <h4 className="font-semibold mb-2 flex items-center gap-2">
-                <Award size={16} className="text-yellow-500" />
-                Earning Potential
-              </h4>
-              <div className="space-y-2 text-sm text-gray-300">
-                <div className="flex justify-between">
-                  <span>Each survey:</span>
-                  <span className="text-green-400">RM 0.10 - RM 1.00</span>
+            {/* Enhanced Earning Potential Card */}
+            <div className="bg-gradient-to-br from-gray-800 via-gray-700 to-gray-800 rounded-xl p-5 border border-gray-600 shadow-xl">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center">
+                  <Award size={16} className="text-white" />
                 </div>
-                <div className="flex justify-between">
-                  <span>All 3 surveys:</span>
-                  <span className="text-green-400">Up to RM 3.00</span>
+                <h4 className="font-semibold text-white">💰 Earning Potential</h4>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-900/50 rounded-lg p-3 text-center border border-gray-600">
+                  <div className="text-lg font-bold text-green-400">RM 0.10-1.00</div>
+                  <div className="text-xs text-gray-400">Per Survey</div>
                 </div>
-                <div className="flex justify-between">
-                  <span>Time per survey:</span>
-                  <span className="text-blue-400">2-3 minutes</span>
+                <div className="bg-gray-900/50 rounded-lg p-3 text-center border border-gray-600">
+                  <div className="text-lg font-bold text-blue-400">2-3 min</div>
+                  <div className="text-xs text-gray-400">Time Required</div>
                 </div>
+              </div>
+              
+              <div className="mt-4 p-3 bg-green-900/20 rounded-lg border border-green-700/30">
+                <div className="text-center">
+                  <div className="text-xl font-bold text-green-400">Up to RM 3.00</div>
+                  <div className="text-xs text-green-300">Complete all 3 surveys</div>
+                </div>
+              </div>
+              
+              <div className="mt-4 text-center">
+                <p className="text-xs text-gray-400">
+                  🎯 Start earning now and order your favorite food!
+                </p>
+              </div>
+            </div>
+
+            {/* Call to Action */}
+            <div className="text-center">
+              <p className="text-sm text-gray-400 mb-3">
+                💬 Ask me anything about earning money or ordering food!
+              </p>
+              <div className="flex justify-center gap-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
               </div>
             </div>
           </div>
@@ -308,17 +447,64 @@ User query: ${userQuery}`;
                 key={message.id}
                 className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
+                {message.sender === 'assistant' && (
+                  <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center mr-3 mt-1 flex-shrink-0">
+                    <Sparkles size={16} className="text-white" />
+                  </div>
+                )}
                 <div
-                  className={`max-w-[80%] p-3 rounded-2xl ${
+                  className={`max-w-[80%] ${
                     message.sender === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-800 text-gray-100 border border-gray-700'
+                      ? 'bg-blue-600 text-white rounded-2xl p-3'
+                      : 'bg-gray-800 text-gray-100 border border-gray-700 rounded-2xl overflow-hidden'
                   }`}
                 >
-                  <p className="text-sm">{message.content}</p>
-                  <p className="text-xs opacity-70 mt-1">
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
+                  {message.sender === 'user' ? (
+                    <>
+                      <p className="text-sm">{message.content}</p>
+                      <p className="text-xs opacity-70 mt-1">
+                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </>
+                  ) : (
+                    <div className="space-y-3">
+                      {/* AI Header */}
+                      <div className="bg-gradient-to-r from-green-600 to-blue-600 px-4 py-2 -m-3 mb-3">
+                        <div className="flex items-center gap-2">
+                          <DollarSign size={16} className="text-white" />
+                          <span className="text-sm font-medium text-white">EarnQuiz Assistant</span>
+                        </div>
+                      </div>
+
+                      {/* AI Response Content */}
+                      <div className="px-3 pb-3">
+                        <div className="prose prose-sm prose-invert max-w-none">
+                          {formatAIResponse(message.content)}
+                        </div>
+                        
+                        {/* Quick Action Buttons from AI response */}
+                        {extractActionButtons(message.content).length > 0 && (
+                          <div className="mt-4 space-y-2">
+                            {extractActionButtons(message.content).map((action, index) => (
+                              <button
+                                key={index}
+                                onClick={action.onClick}
+                                className="w-full bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                              >
+                                {action.icon}
+                                {action.text}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Timestamp */}
+                        <p className="text-xs opacity-50 mt-3">
+                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

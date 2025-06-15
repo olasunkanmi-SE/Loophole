@@ -359,8 +359,9 @@ export default function Housing() {
             </div>
           )}
         </div>
+      </div>
 
-        {/* Detail Modal */}
+      {/* Detail Modal */}
         {showDetailModal && selectedListing && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50">
             <div className="bg-white rounded-t-2xl w-full max-h-[85vh] overflow-y-auto">
@@ -533,7 +534,6 @@ export default function Housing() {
             </div>
           </div>
         )}
-      </div>
     </MobileContainer>
   );
 }

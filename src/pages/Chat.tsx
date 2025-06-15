@@ -492,6 +492,164 @@ ${categoryHint ? `CONTEXT: This question relates to ${categoryHint}` : ''}
     }
   };
 
+  const formatAnalyticsResponse = (content: string) => {
+    // Check if this is an analytics response
+    if (!content.includes('USER SPENDING ANALYTICS:')) {
+      return content;
+    }
+
+    // Extract analytics data from the content
+    const lines = content.split('\n').filter(line => line.trim());
+    const analytics: any = {};
+
+    lines.forEach(line => {
+      if (line.includes('Total Orders:')) {
+        analytics.totalOrders = line.split(':')[1].trim();
+      } else if (line.includes('Total Spent:')) {
+        analytics.totalSpent = line.split(':')[1].trim();
+      } else if (line.includes('Average Order Value:')) {
+        analytics.avgOrderValue = line.split(':')[1].trim();
+      } else if (line.includes('Last Order:')) {
+        analytics.lastOrder = line.split(':')[1].trim();
+      } else if (line.includes('Preferred Payment:')) {
+        analytics.preferredPayment = line.split(':')[1].trim();
+      } else if (line.includes('Top Ordered Items:')) {
+        analytics.topItems = line.split(':')[1].trim();
+      } else if (line.includes('Recent Order Amounts:')) {
+        analytics.recentAmounts = line.split(':')[1].trim();
+      } else if (line.includes('Payment Methods Used:')) {
+        analytics.paymentMethods = line.split(':')[1].trim();
+      }
+    });
+
+    const getPaymentIcon = (method: string) => {
+      if (method.toLowerCase().includes('card')) return '💳';
+      if (method.toLowerCase().includes('points')) return '💰';
+      if (method.toLowerCase().includes('grabpay')) return '🚗';
+      if (method.toLowerCase().includes('touchngo')) return '📱';
+      return '💳';
+    };
+
+    return (
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-xl shadow-lg">
+          <div className="flex items-center space-x-2">
+            <span className="text-2xl">📊</span>
+            <div>
+              <h3 className="text-lg font-bold">Your Spending Analytics</h3>
+              <p className="text-blue-100 text-sm">Here's what I found about your ordering habits</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Stats Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-gradient-to-br from-green-400 to-green-600 text-white p-4 rounded-xl shadow-md">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold">{analytics.totalOrders || '0'}</div>
+                <div className="text-green-100 text-sm font-medium">Total Orders</div>
+              </div>
+              <span className="text-3xl opacity-80">🛍️</span>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-400 to-blue-600 text-white p-4 rounded-xl shadow-md">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xl font-bold">{analytics.totalSpent || 'RM 0'}</div>
+                <div className="text-blue-100 text-sm font-medium">Total Spent</div>
+              </div>
+              <span className="text-3xl opacity-80">💸</span>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-purple-400 to-purple-600 text-white p-4 rounded-xl shadow-md">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-lg font-bold">{analytics.avgOrderValue || 'RM 0'}</div>
+                <div className="text-purple-100 text-sm font-medium">Avg Order</div>
+              </div>
+              <span className="text-3xl opacity-80">📈</span>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-orange-400 to-orange-600 text-white p-4 rounded-xl shadow-md">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-bold">{analytics.lastOrder || 'Never'}</div>
+                <div className="text-orange-100 text-sm font-medium">Last Order</div>
+              </div>
+              <span className="text-3xl opacity-80">📅</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Payment Method Card */}
+        {analytics.preferredPayment && (
+          <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
+            <div className="flex items-center space-x-3">
+              <div className="bg-yellow-100 p-3 rounded-full">
+                <span className="text-2xl">{getPaymentIcon(analytics.preferredPayment)}</span>
+              </div>
+              <div className="flex-1">
+                <div className="text-gray-800 font-semibold">Preferred Payment Method</div>
+                <div className="text-gray-600 text-sm capitalize">{analytics.preferredPayment}</div>
+              </div>
+              <div className="bg-yellow-50 px-3 py-1 rounded-full">
+                <span className="text-yellow-600 text-xs font-medium">Most Used</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Favorite Items Card */}
+        {analytics.topItems && (
+          <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
+            <div className="flex items-start space-x-3">
+              <div className="bg-red-100 p-3 rounded-full">
+                <span className="text-2xl">🍽️</span>
+              </div>
+              <div className="flex-1">
+                <div className="text-gray-800 font-semibold mb-1">Your Favorite Items</div>
+                <div className="text-gray-600 text-sm leading-relaxed">{analytics.topItems}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Recent Orders Card */}
+        {analytics.recentAmounts && (
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 p-4 rounded-xl">
+            <div className="flex items-center space-x-3 mb-2">
+              <span className="text-xl">📊</span>
+              <div className="text-indigo-800 font-semibold">Recent Order Amounts</div>
+            </div>
+            <div className="text-indigo-700 text-sm">{analytics.recentAmounts}</div>
+          </div>
+        )}
+
+        {/* Payment Methods Used */}
+        {analytics.paymentMethods && (
+          <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl">
+            <div className="flex items-center space-x-3 mb-2">
+              <span className="text-xl">💳</span>
+              <div className="text-gray-800 font-semibold">Payment Methods You've Used</div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {analytics.paymentMethods.split(',').map((method: string, index: number) => (
+                <span key={index} className="bg-white px-3 py-1 rounded-full text-sm text-gray-700 border border-gray-300 capitalize">
+                  {getPaymentIcon(method.trim())} {method.trim()}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <MobileContainer>
       <div className="bg-gray-900 min-h-screen text-white flex flex-col">

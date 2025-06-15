@@ -1,7 +1,7 @@
 
-# AyamBroke - Survey-to-Earnings Platform
+# EarnEats - Survey-to-Earnings Platform
 
-AyamBroke is a comprehensive web application that allows users to earn real money by completing surveys and questionnaires, then use their earnings to order food and book accommodation. Built with modern web technologies and designed with a mobile-first approach.
+EarnEats is a comprehensive web application that allows users to earn real money by completing surveys and questionnaires, then use their earnings to order food and book accommodation. Built with modern web technologies and designed with a mobile-first approach.
 
 ## 🚀 Features
 
@@ -64,7 +64,7 @@ AyamBroke is a comprehensive web application that allows users to earn real mone
 
 ## 📱 Mobile-First Design
 
-AyamBroke is designed with a mobile-first approach, featuring:
+EarnEats is designed with a mobile-first approach, featuring:
 - **Responsive Layout**: Optimized for all screen sizes
 - **Touch-Friendly UI**: Large buttons and intuitive gestures
 - **Progressive Web App**: Can be installed on mobile devices
@@ -83,7 +83,7 @@ AyamBroke is designed with a mobile-first approach, featuring:
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd ayambroke
+   cd earneats
    ```
 
 2. **Install dependencies**
@@ -338,4 +338,4 @@ For support and questions:
 
 **Version**: 1.0.0  
 **Last Updated**: January 2025  
-**Maintainer**: AyamBroke Development Team
+**Maintainer**: EarnEats Development Team

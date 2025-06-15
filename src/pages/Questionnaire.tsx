@@ -62,11 +62,12 @@ export default function Questionnaire() {
     // Map database survey IDs to frontend routes
     const routeMap: Record<string, string> = {
       'lifestyle_shopping': '/questionnaire/lifestyle',
-      'daily_mood_checkin': '/questionnaire/lifestyle',
+      'lifestyle': '/questionnaire/lifestyle',
+      'daily_mood_checkin': '/questionnaire/health',
       'tech_preferences': '/questionnaire/digital',
       'food_dining': '/questionnaire/food',
       'weekend_special': '/questionnaire/lifestyle',
-      'health_wellness': '/questionnaire/lifestyle'
+      'health_wellness': '/questionnaire/health'
     };
     return routeMap[surveyId] || '/questionnaire/lifestyle';
   };

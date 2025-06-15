@@ -4,6 +4,7 @@ import { useLocation } from 'wouter';
 import { MessageCircle, Send, Sparkles, DollarSign, UtensilsCrossed, Home, Award, ArrowUp } from 'lucide-react';
 import MobileContainer from '../components/MobileContainer';
 import { usePoints } from '../contexts/PointsContext';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 interface Message {
   id: string;
@@ -54,7 +55,7 @@ export default function Chat() {
     }
   ];
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
     const userMessage: Message = {
@@ -65,23 +66,32 @@ export default function Chat() {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const query = inputValue.trim();
+    setInputValue('');
 
-    // Auto-response based on common queries
-    setTimeout(() => {
-      let response = '';
-      const query = inputValue.toLowerCase();
+    try {
+      // Initialize Gemini AI
+      const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyCZ2i4mYhfTC59fZSQoAIUsIJJmMqvQ5fE');
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
-      if (query.includes('earn') || query.includes('money') || query.includes('points')) {
-        response = `You can earn money by completing our 3 survey categories! Each survey takes 2-3 minutes and earns you points that convert to real money (10 points = RM 1.00). You currently have ${totalPoints} points (${availableRM}). Complete surveys in Lifestyle & Shopping, Digital & Tech, and Food & Dining to maximize your earnings!`;
-      } else if (query.includes('food') || query.includes('order') || query.includes('eat')) {
-        response = `Use your earned points to order food! You have ${availableRM} available. Every 10 points = RM 1.00 that you can spend on delicious meals. Complete more surveys to earn more money for food orders.`;
-      } else if (query.includes('accommodation') || query.includes('housing') || query.includes('stay')) {
-        response = `While our current focus is on food orders, you're earning real money through surveys! Complete all 3 survey categories to maximize your earnings. Each survey gives you points that convert to money you can use.`;
-      } else if (query.includes('survey') || query.includes('quiz')) {
-        response = `We have 3 survey categories: Lifestyle & Shopping, Digital & Tech, and Food & Dining. Each takes 2-3 minutes and earns you 1-10 points. You've completed ${completedSurveys}/3 surveys. Complete the remaining ones to earn more money!`;
-      } else {
-        response = `Hi! I'm here to help you earn money through quick surveys. Complete our 3 survey categories (2-3 minutes each) to earn points that convert to real money for food orders. You currently have ${totalPoints} points (${availableRM}). How can I help you start earning?`;
-      }
+      // Create context about the app
+      const context = `You are an AI assistant for EarnQuiz, an app that helps people earn money by completing surveys. Here's the user's current status:
+      - Total points: ${totalPoints}
+      - Available money: ${availableRM} (10 points = RM 1.00)
+      - Completed surveys: ${completedSurveys}/3
+      - Available surveys: Lifestyle & Shopping, Digital & Tech, Food & Dining
+      
+      Your role is to:
+      1. Encourage users to complete more surveys to earn money
+      2. Help them understand how points convert to money (10 points = RM 1.00)
+      3. Guide them on using their earned money for food orders
+      4. Be motivational and friendly
+      5. Keep responses concise and helpful
+      
+      User question: ${query}`;
+
+      const result = await model.generateContent(context);
+      const response = result.response.text();
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -91,9 +101,21 @@ export default function Chat() {
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-    }, 1000);
+    } catch (error) {
+      console.error('Gemini AI error:', error);
+      
+      // Fallback response
+      const fallbackResponse = `Hi! I'm here to help you earn money through quick surveys. You currently have ${totalPoints} points (${availableRM}). Complete our 3 survey categories to earn more money for food orders! Each survey takes just 2-3 minutes.`;
+      
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: fallbackResponse,
+        sender: 'assistant',
+        timestamp: new Date()
+      };
 
-    setInputValue('');
+      setMessages(prev => [...prev, assistantMessage]);
+    }
   };
 
   return (

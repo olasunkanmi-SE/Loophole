@@ -8,6 +8,7 @@ import CheckoutBar from "../components/CheckoutBar";
 import { useLocation } from 'wouter';
 import { useCart } from "../contexts/CartContext";
 import { usePoints } from "../contexts/PointsContext";
+import { History } from "lucide-react";
 
 interface MenuItem {
   id: string;
@@ -204,6 +205,17 @@ export default function FoodMenu() {
         value={searchTerm}
         onChange={setSearchTerm}
       />
+
+      {/* Order History Button */}
+      <div className="p-4 pt-0">
+        <button
+          onClick={() => setLocation('/order-history')}
+          className="w-full bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg p-3 flex items-center justify-center gap-2 transition-colors"
+        >
+          <History size={20} className="text-blue-600" />
+          <span className="text-blue-600 font-medium">View Order History</span>
+        </button>
+      </div>
 
       <CategoryFilter 
         categories={categories}

@@ -99,7 +99,7 @@ const menuItemSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: { type: String, required: true },
   price: { type: Number, required: true },
-  image: { type: String, required: true },
+  image: { type: String, default: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=400&fit=crop' },
   category: { type: String, required: true },
   available: { type: Boolean, default: true }
 }, { timestamps: true });

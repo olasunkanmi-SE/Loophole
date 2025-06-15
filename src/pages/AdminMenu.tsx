@@ -113,7 +113,8 @@ export default function AdminMenu() {
         // Create new item
         const newItem = {
           ...itemForm,
-          id: Date.now().toString()
+          id: Date.now().toString(),
+          image: itemForm.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=400&fit=crop'
         };
 
         const response = await fetch('/api/menu-items', {

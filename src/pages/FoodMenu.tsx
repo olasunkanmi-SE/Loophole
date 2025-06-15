@@ -58,7 +58,9 @@ export default function FoodMenu() {
 const filteredItems = menuItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = activeCategory === "all" || item.category === activeCategory;
-    return matchesSearch && matchesCategory && item.available;
+    // Check if item.available exists, default to true if undefined
+    const isAvailable = item.available !== false;
+    return matchesSearch && matchesCategory && isAvailable;
   });
 
   const handleAddToCart = (itemId: string) => {

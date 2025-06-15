@@ -39,7 +39,6 @@ import Chat from "@/pages/Chat";
 import Housing from './pages/Housing';
 import NotFound from "@/pages/NotFound";
 import Questionnaire from "@/pages/Questionnaire";
-import { PaymentProvider } from "@/contexts/PaymentContext";
 import OrderHistory from "@/pages/OrderHistory";
 import AdminDashboard from "@/pages/AdminDashboard";
 import AdminUsers from "@/pages/AdminUsers";

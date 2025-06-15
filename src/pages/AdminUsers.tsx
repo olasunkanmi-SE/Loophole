@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import MobileHeader from '../components/MobileHeader';
@@ -80,9 +79,9 @@ export default function AdminUsers() {
     const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (user.profile?.first_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (user.profile?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+
     const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -272,7 +271,7 @@ export default function AdminUsers() {
               <div className="p-4 border-b border-gray-200">
                 <h3 className="text-lg font-semibold">User Details</h3>
               </div>
-              
+
               <div className="p-4 space-y-4">
                 <div className="text-center">
                   <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">

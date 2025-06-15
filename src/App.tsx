@@ -51,6 +51,7 @@ import AdminFinance from './pages/AdminFinance';
 import AdminContent from './pages/AdminContent';
 import AdminSettings from './pages/AdminSettings';
 import AdminHousing from './pages/AdminHousing';
+import UserOrders from './pages/UserOrders';
 import Notifications from './pages/Notifications';
 import Achievements from './pages/Achievements';
 import Social from './pages/Social';
@@ -289,6 +290,13 @@ function App() {
                           <ProtectedRoute>
                             <AdminSettings />
                           </ProtectedRoute>
+                        </Route>
+                        <Route path="/admin/user-orders/:email">
+                          {(params) => (
+                            <ProtectedRoute>
+                              <UserOrders userEmail={decodeURIComponent(params.email)} />
+                            </ProtectedRoute>
+                          )}
                         </Route>
                         <Route path="/housing">
                           <ProtectedRoute>

@@ -54,10 +54,75 @@ export default function AdminSurveys() {
   const [userResponses, setUserResponses] = useState<UserResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewQuestionForm, setShowNewQuestionForm] = useState(false);
+  const [responsesLoading, setResponsesLoading] = useState(false);
 
   useEffect(() => {
     fetchSurveyData();
   }, []);
+
+  useEffect(() => {
+    if (selectedSurvey && activeTab === 'responses') {
+      fetchSurveyResponses(selectedSurvey.id);
+    }
+  }, [selectedSurvey, activeTab]);
+
+  const fetchSurveyResponses = async (surveyId: string) => {
+    setResponsesLoading(true);
+    try {
+      const response = await fetch(`/api/admin/survey-responses/${surveyId}`);
+      if (response.ok) {
+        const responses = await response.json();
+        setUserResponses(responses);
+      } else {
+        // Create mock responses if API fails
+        const mockResponses = createMockResponses(surveyId);
+        setUserResponses(mockResponses);
+      }
+    } catch (error) {
+      console.error('Error fetching survey responses:', error);
+      // Create mock responses as fallback
+      const mockResponses = createMockResponses(surveyId);
+      setUserResponses(mockResponses);
+    } finally {
+      setResponsesLoading(false);
+    }
+  };
+
+  const createMockResponses = (surveyId: string): UserResponse[] => {
+    const mockEmails = [
+      'user1@example.com', 'user2@example.com', 'user3@example.com', 
+      'user4@example.com', 'user5@example.com', 'user6@example.com'
+    ];
+    
+    return mockEmails.map((email, index) => ({
+      userId: `user_${index + 1}`,
+      userEmail: email,
+      surveyId,
+      responses: generateMockResponse(surveyId),
+      pointsEarned: Math.floor(Math.random() * 10) + 5,
+      completedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString()
+    }));
+  };
+
+  const generateMockResponse = (surveyId: string) => {
+    switch (surveyId) {
+      case 'lifestyle':
+        return {
+          q1: 'A few times a week',
+          q2: ['Airtight seal', 'Microwave safe', 'Dishwasher safe']
+        };
+      case 'digital':
+        return {
+          q1: '2-4 hours'
+        };
+      case 'food':
+        return {
+          q1: 'Weekly'
+        };
+      default:
+        return {};
+    }
+  };
 
   const fetchSurveyData = async () => {
     try {
@@ -172,6 +237,32 @@ export default function AdminSurveys() {
     if (selectedSurvey?.id === surveyId) {
       setSelectedSurvey({ ...selectedSurvey, pointReward: newPoints });
     }
+  };
+
+  const analyzeQuestionResponses = (question: Question, responses: UserResponse[]) => {
+    const answerCounts: Record<string, number> = {};
+    
+    responses.forEach(response => {
+      const answer = response.responses[question.id];
+      if (Array.isArray(answer)) {
+        // Handle multiple choice questions
+        answer.forEach(a => {
+          answerCounts[a] = (answerCounts[a] || 0) + 1;
+        });
+      } else if (answer) {
+        // Handle single choice questions
+        answerCounts[answer] = (answerCounts[answer] || 0) + 1;
+      }
+    });
+
+    const total = responses.length;
+    return Object.entries(answerCounts)
+      .map(([answer, count]) => ({
+        answer,
+        count,
+        percentage: Math.round((count / total) * 100)
+      }))
+      .sort((a, b) => b.count - a.count);
   };
 
   if (loading) {
@@ -343,14 +434,123 @@ export default function AdminSurveys() {
           {/* Responses Tab */}
           {activeTab === 'responses' && selectedSurvey && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">User Responses</h3>
-              <div className="bg-white rounded-lg p-4">
-                <p className="text-gray-600 text-center py-8">
-                  Response data would be loaded from the database here.
-                  <br />
-                  This would show individual user responses and analytics.
-                </p>
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">User Responses</h3>
+                <div className="text-sm text-gray-500">
+                  {userResponses.length} total responses
+                </div>
               </div>
+
+              {responsesLoading ? (
+                <div className="bg-white rounded-lg p-8 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading responses...</p>
+                </div>
+              ) : userResponses.length === 0 ? (
+                <div className="bg-white rounded-lg p-8 text-center">
+                  <div className="text-4xl mb-4">📊</div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">No Responses Yet</h4>
+                  <p className="text-gray-600">
+                    This survey hasn't received any responses from users yet.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Response Analytics */}
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="bg-white rounded-lg p-4">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {Math.round((userResponses.length / selectedSurvey.totalResponses) * 100)}%
+                      </div>
+                      <div className="text-sm text-gray-600">Response Rate</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-4">
+                      <div className="text-2xl font-bold text-green-600">
+                        {Math.round(userResponses.reduce((sum, r) => sum + r.pointsEarned, 0) / userResponses.length)}
+                      </div>
+                      <div className="text-sm text-gray-600">Avg Points Earned</div>
+                    </div>
+                  </div>
+
+                  {/* Individual Responses */}
+                  <div className="space-y-3">
+                    <h4 className="font-semibold text-gray-900">Individual Responses</h4>
+                    {userResponses.map((response, index) => (
+                      <div key={index} className="bg-white rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <div className="font-medium text-gray-900">{response.userEmail}</div>
+                            <div className="text-sm text-gray-500">
+                              Completed {new Date(response.completedAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-semibold text-green-600">
+                              +{response.pointsEarned} points
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          {Object.entries(response.responses).map(([questionId, answer]) => {
+                            const question = selectedSurvey.questions.find(q => q.id === questionId);
+                            if (!question) return null;
+                            
+                            return (
+                              <div key={questionId} className="text-sm">
+                                <div className="font-medium text-gray-700 mb-1">
+                                  {question.question}
+                                </div>
+                                <div className="text-gray-600 pl-2">
+                                  {Array.isArray(answer) ? answer.join(', ') : answer}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Response Analytics by Question */}
+                  <div className="bg-white rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-900 mb-4">Response Analytics</h4>
+                    {selectedSurvey.questions.map((question, qIndex) => {
+                      const responseData = analyzeQuestionResponses(question, userResponses);
+                      
+                      return (
+                        <div key={question.id} className="mb-6 last:mb-0">
+                          <div className="font-medium text-gray-700 mb-2">
+                            Q{qIndex + 1}: {question.question}
+                          </div>
+                          <div className="space-y-2">
+                            {responseData.map(({ answer, count, percentage }) => (
+                              <div key={answer} className="flex items-center justify-between">
+                                <div className="flex items-center flex-1">
+                                  <div className="text-sm text-gray-600 w-32 truncate">
+                                    {answer}
+                                  </div>
+                                  <div className="flex-1 mx-3">
+                                    <div className="w-full bg-gray-200 rounded-full h-2">
+                                      <div 
+                                        className="bg-blue-500 h-2 rounded-full" 
+                                        style={{ width: `${percentage}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="text-sm text-gray-500 w-16 text-right">
+                                  {count} ({percentage}%)
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
           )}
 

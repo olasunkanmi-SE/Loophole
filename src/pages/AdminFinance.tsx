@@ -260,24 +260,59 @@ export default function AdminFinance() {
             
             <div className="space-y-4">
               {Object.entries(stats.paymentMethods).map(([method, count]) => {
-                const total = Object.values(stats.paymentMethods).reduce((sum, c) => sum + c, 0);
-                const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0';
+                const total = Object.values(stats.paymentMethods).reduce((sum, c) => sum + (typeof c === 'number' ? c : 0), 0);
+                const numericCount = typeof count === 'number' ? count : 0;
+                const percentage = total > 0 ? ((numericCount / total) * 100).toFixed(1) : '0';
+                
+                // Get proper display name and icon for payment method
+                const getPaymentMethodDisplay = (methodKey: string) => {
+                  const methodMap: Record<string, { name: string; icon: string; color: string }> = {
+                    'points': { name: 'EarnEats Points', icon: '💰', color: 'bg-yellow-500' },
+                    'grabpay': { name: 'GrabPay', icon: '🚗', color: 'bg-green-500' },
+                    'touchngo': { name: 'Touch \'n Go', icon: '📱', color: 'bg-blue-500' },
+                    'bank_transfer': { name: 'Bank Transfer', icon: '🏦', color: 'bg-purple-500' },
+                    'boost': { name: 'Boost', icon: '🚀', color: 'bg-orange-500' },
+                    'shopeepay': { name: 'ShopeePay', icon: '🛍️', color: 'bg-red-500' },
+                    'maybank_qr': { name: 'Maybank QR', icon: '🏛️', color: 'bg-indigo-500' },
+                    'cimb_pay': { name: 'CIMB Pay', icon: '💳', color: 'bg-teal-500' },
+                    'fpx': { name: 'FPX Banking', icon: '🔐', color: 'bg-gray-500' },
+                    'bigpay': { name: 'BigPay', icon: '✈️', color: 'bg-cyan-500' },
+                    'mcash': { name: 'MCash', icon: '📲', color: 'bg-pink-500' }
+                  };
+                  
+                  return methodMap[methodKey.toLowerCase()] || { 
+                    name: methodKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), 
+                    icon: '💳', 
+                    color: 'bg-gray-500' 
+                  };
+                };
+                
+                const methodDisplay = getPaymentMethodDisplay(method);
                 
                 return (
                   <div key={method} className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <div className="w-4 h-4 bg-blue-500 rounded mr-3"></div>
-                      <span className="text-sm font-medium text-gray-700 capitalize">
-                        {method.replace('_', ' ')}
+                      <div className={`w-4 h-4 ${methodDisplay.color} rounded mr-3`}></div>
+                      <span className="text-lg mr-2">{methodDisplay.icon}</span>
+                      <span className="text-sm font-medium text-gray-700">
+                        {methodDisplay.name}
                       </span>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-semibold text-gray-900">{count}</div>
+                      <div className="text-sm font-semibold text-gray-900">{numericCount}</div>
                       <div className="text-xs text-gray-500">{percentage}%</div>
                     </div>
                   </div>
                 );
               })}
+              
+              {Object.keys(stats.paymentMethods).length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <span className="text-4xl mb-2 block">📊</span>
+                  <p>No payment method data available yet</p>
+                  <p className="text-xs">Data will appear as users make payments</p>
+                </div>
+              )}
             </div>
           </div>
 

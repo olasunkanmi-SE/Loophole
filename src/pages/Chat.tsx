@@ -83,7 +83,7 @@ export default function Chat() {
       ]
     };
 
-    const baseContext = `You are a comprehensive AI assistant for EarnQuiz, a Malaysian app where people earn money by completing surveys and use that money to order food.
+    let baseContext = `You are a comprehensive AI assistant for EarnQuiz, a Malaysian app where people earn money by completing surveys and use that money to order food.
 
 CURRENT USER STATUS:
 - Total Points: ${totalPoints} points

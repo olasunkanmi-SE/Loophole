@@ -18,14 +18,11 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
       if (!user) {
         console.log('No user, redirecting to signin');
         setLocation('/signin');
-      } else if (!userProfile) {
-        console.log('User exists but no profile, redirecting to create-profile');
-        setLocation('/create-profile');
       } else {
-        console.log('User and profile exist, allowing access');
+        console.log('User authenticated, allowing access');
       }
     }
-  }, [user, userProfile, loading, setLocation]);
+  }, [user, loading, setLocation]);
 
   if (loading) {
     return (
@@ -35,7 +32,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  if (!user || !userProfile) {
+  if (!user) {
     return null;
   }
 

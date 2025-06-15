@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import MobileHeader from "../components/MobileHeader";
 import { useLocation } from "wouter";
@@ -9,6 +9,14 @@ import { useAuth } from "../contexts/AuthContext";
 export default function CreateProfile() {
   const [, setLocation] = useLocation();
   const { user, refreshProfile } = useAuth();
+  
+  // Redirect authenticated users to home page
+  useEffect(() => {
+    if (user) {
+      setLocation('/');
+    }
+  }, [user, setLocation]);
+  
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",

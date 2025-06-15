@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import MobileHeader from "../components/MobileHeader";
 import MobileContainer from "../components/MobileContainer";
@@ -10,6 +9,12 @@ export default function Notifications() {
   const [, setLocation] = useLocation();
   const { notifications, markAsRead, markAllAsRead, requestPermission, isSupported } = useNotifications();
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [showModal, setShowModal] = useState(false);
+  const [modalConfig, setModalConfig] = useState({
+    type: 'info',
+    title: '',
+    message: '',
+  });
 
   const filteredNotifications = notifications.filter(notif => 
     filter === 'all' || !notif.read
@@ -18,9 +23,19 @@ export default function Notifications() {
   const handleEnableNotifications = async () => {
     const granted = await requestPermission();
     if (granted) {
-      alert('Notifications enabled! You\'ll now receive updates about orders, surveys, and achievements.');
+      setModalConfig({
+        type: 'success',
+        title: 'Notifications Enabled',
+        message: 'You\'ll now receive updates about orders, surveys, and achievements.',
+      });
+      setShowModal(true);
     } else {
-      alert('Please enable notifications in your browser settings to receive updates.');
+      setModalConfig({
+        type: 'error',
+        title: 'Notifications Blocked',
+        message: 'Please enable notifications in your browser settings to receive updates.',
+      });
+      setShowModal(true);
     }
   };
 
@@ -45,6 +60,57 @@ export default function Notifications() {
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     return `${diffDays}d ago`;
+  };
+
+  // NotificationModal Component (Added here)
+  const NotificationModal = ({ isOpen, onClose, type, title, message, confirmText, autoClose, duration }) => {
+    const [visible, setVisible] = useState(isOpen);
+
+    useEffect(() => {
+      setVisible(isOpen);
+      if (isOpen && autoClose) {
+        const timer = setTimeout(() => {
+          setVisible(false);
+          setTimeout(onClose, 500); // Fade out transition
+        }, duration);
+        return () => clearTimeout(timer);
+      }
+    }, [isOpen, autoClose, duration, onClose]);
+
+    const handleClose = () => {
+      setVisible(false);
+      setTimeout(onClose, 500); // Fade out transition
+    };
+
+    if (!isOpen) return null;
+
+    const getIcon = () => {
+      switch (type) {
+        case 'success': return '✔️';
+        case 'error': return '❌';
+        case 'warning': return '⚠️';
+        default: return 'ℹ️';
+      }
+    };
+
+    return (
+      <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 transition-opacity duration-300 ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div className={`bg-white rounded-xl shadow-lg overflow-hidden w-full max-w-md mx-4 transition-transform duration-300 ${visible ? 'translate-y-0' : '-translate-y-10'}`}>
+          <div className="flex items-center bg-gray-50 border-b border-gray-200 p-4">
+            <span className="text-2xl mr-3">{getIcon()}</span>
+            <h2 className="text-lg font-semibold">{title}</h2>
+          </div>
+          <div className="p-4">
+            <p className="text-sm text-gray-700">{message}</p>
+          </div>
+          <div className="bg-gray-50 border-t border-gray-200 p-4 flex justify-end">
+            <button onClick={handleClose} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+              {confirmText}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -102,7 +168,7 @@ export default function Notifications() {
                   Unread ({notifications.filter(n => !n.read).length})
                 </button>
               </div>
-              
+
               {notifications.some(n => !n.read) && (
                 <button
                   onClick={markAllAsRead}
@@ -169,6 +235,18 @@ export default function Notifications() {
             )}
           </div>
         </div>
+
+        {/* Modern Notification Modal */}
+        <NotificationModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          type={modalConfig.type}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          confirmText="Got it!"
+          autoClose={modalConfig.type === 'success'}
+          duration={4000}
+        />
       </div>
     </MobileContainer>
   );

@@ -19,6 +19,7 @@ interface NotificationContextType {
   markAllAsRead: () => void;
   requestPermission: () => Promise<boolean>;
   isSupported: boolean;
+  showModal?: (config: { type: 'success' | 'error' | 'warning' | 'info'; title: string; message: string; }) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);

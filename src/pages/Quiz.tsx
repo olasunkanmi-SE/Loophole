@@ -31,9 +31,9 @@ const categories: CategoryCard[] = [
 ];
 
 const categoryRoutes: Record<string, string> = {
-  lifestyle: "/questionnaire/lifestyle",
-  digital: "/questionnaire/digital",
-  food: "/questionnaire/food"
+  lifestyle: "/lifestyle",
+  digital: "/digital",
+  food: "/food"aire/food"
 };
 
 interface CategoryCardProps {

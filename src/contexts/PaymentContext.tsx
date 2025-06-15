@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from 'react';
 
 export interface PaymentMethod {
@@ -62,31 +61,31 @@ export function PaymentProvider({ children }: { children: React.ReactNode }) {
 
   const processPayment = async (amount: number, method: PaymentMethod): Promise<boolean> => {
     setIsProcessing(true);
-    
+
     try {
       // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       switch (method.type) {
         case 'points':
           // Points payment is handled by PointsContext
           return true;
-          
+
         case 'grabpay':
           // Simulate GrabPay API call
           console.log(`Processing GrabPay payment of RM ${amount}`);
           return Math.random() > 0.1; // 90% success rate
-          
+
         case 'touchngo':
           // Simulate Touch 'n Go API call
           console.log(`Processing Touch 'n Go payment of RM ${amount}`);
           return Math.random() > 0.1; // 90% success rate
-          
+
         case 'bank_transfer':
           // Simulate FPX bank transfer
           console.log(`Processing bank transfer of RM ${amount}`);
           return Math.random() > 0.05; // 95% success rate
-          
+
         default:
           return false;
       }

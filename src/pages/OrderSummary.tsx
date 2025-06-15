@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { ArrowLeft, Plus, Minus, X } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
@@ -14,7 +13,7 @@ export default function OrderSummary() {
   const [showPaymentProcessing, setShowPaymentProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState<boolean | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
-  
+
   const { cartItems, updateQuantity, removeFromCart, clearCart, getTotalPrice } = useCart();
   const { canAfford, deductRM, getFormattedRM, getTotalPoints } = usePoints();
   const { processPayment, isProcessing } = usePayment();
@@ -30,13 +29,13 @@ export default function OrderSummary() {
     }
 
     const orderTotal = parseFloat(getTotalPrice());
-    
+
     if (selectedPaymentMethod.type === 'points') {
       if (!canAfford(orderTotal)) {
         setShowInsufficientFunds(true);
         return;
       }
-      
+
       if (deductRM(orderTotal)) {
         setPaymentSuccess(true);
         setShowPaymentProcessing(true);
@@ -52,7 +51,7 @@ export default function OrderSummary() {
       setShowPaymentProcessing(true);
       const success = await processPayment(orderTotal, selectedPaymentMethod);
       setPaymentSuccess(success);
-      
+
       if (success) {
         setTimeout(() => {
           clearCart();
@@ -89,7 +88,7 @@ export default function OrderSummary() {
           <h1 className="text-lg font-semibold">ORDER SUMMARY</h1>
           <div className="w-8"></div>
         </div>
-        
+
         <div className="flex flex-col items-center justify-center h-96">
           <p className="text-gray-500 text-lg">Your cart is empty</p>
           <button 
@@ -121,7 +120,7 @@ export default function OrderSummary() {
       </div>
 
       <div className="p-4">
-        
+
 
         {/* Cart Items - Always visible */}
         <div className="space-y-6">

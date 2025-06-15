@@ -1,38 +1,141 @@
-
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { ArrowLeft, Plus, Minus, X } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
 import { usePoints } from "../contexts/PointsContext";
+import { usePayment } from "../contexts/PaymentContext";
+import type { PaymentMethod } from "../contexts/PaymentContext";
+import { useAuth } from "../contexts/AuthContext";
+import PaymentMethodSelector from "../components/PaymentMethodSelector";
+import PaymentProcessing from "../components/PaymentProcessing";
 
 export default function OrderSummary() {
   const [, setLocation] = useLocation();
   const [showInsufficientFunds, setShowInsufficientFunds] = useState(false);
-  
-  const { cartItems, updateQuantity, removeFromCart, clearCart, getTotalPrice } = useCart();
-  const { canAfford, deductRM, getFormattedRM, getTotalPoints } = usePoints();
+  const [showPaymentProcessing, setShowPaymentProcessing] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState<boolean | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] =
+    useState<PaymentMethod | null>(null);
 
-  const handlePlaceOrder = () => {
-    const orderTotal = parseFloat(getTotalPrice());
-    
-    if (!canAfford(orderTotal)) {
-      setShowInsufficientFunds(true);
+  const {
+    cartItems,
+    updateQuantity,
+    removeFromCart,
+    clearCart,
+    getTotalPrice,
+  } = useCart();
+  const { canAfford, deductRM, getFormattedRM, getTotalPoints } = usePoints();
+  const { processPayment, isProcessing } = usePayment();
+  const { user } = useAuth();
+
+  const handlePaymentMethodSelect = (method: PaymentMethod) => {
+    setSelectedPaymentMethod(method);
+  };
+
+  const createOrder = async (paymentSuccess: boolean, transactionId?: string) => {
+    try {
+      const orderData = {
+        userEmail: user?.email || 'guest',
+        items: cartItems.map(item => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          addOns: item.addOns || []
+        })),
+        totalAmount: parseFloat(getTotalPrice()),
+        paymentMethod: {
+          type: selectedPaymentMethod?.type,
+          name: selectedPaymentMethod?.name
+        }
+      };
+
+      const response = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      if (response.ok) {
+        const order = await response.json();
+        
+        // Update order status based on payment success
+        await fetch('/api/update-order-status', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderId: order.orderId,
+            status: paymentSuccess ? 'completed' : 'cancelled',
+            transactionId
+          }),
+        });
+
+        return order;
+      }
+    } catch (error) {
+      console.error('Error creating order:', error);
+    }
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!selectedPaymentMethod) {
+      alert("Please select a payment method");
       return;
     }
-    
-    if (deductRM(orderTotal)) {
-      alert(`Order placed successfully! Total: RM ${getTotalPrice()}`);
-      clearCart();
-      setLocation("/");
+
+    const orderTotal = parseFloat(getTotalPrice());
+
+    if (selectedPaymentMethod.type === "points") {
+      if (!canAfford(orderTotal)) {
+        setShowInsufficientFunds(true);
+        return;
+      }
+
+      if (deductRM(orderTotal)) {
+        await createOrder(true);
+        setPaymentSuccess(true);
+        setShowPaymentProcessing(true);
+        setTimeout(() => {
+          clearCart();
+          setLocation("/");
+        }, 2000);
+      } else {
+        setShowInsufficientFunds(true);
+      }
     } else {
-      setShowInsufficientFunds(true);
+      // Handle other payment methods
+      setShowPaymentProcessing(true);
+      const success = await processPayment(orderTotal, selectedPaymentMethod);
+      setPaymentSuccess(success);
+
+      if (success) {
+        // Create order with transaction ID from payment processing
+        await createOrder(success, `txn_${Date.now()}`);
+        setTimeout(() => {
+          clearCart();
+          setLocation("/");
+        }, 2000);
+      } else {
+        // Create order as cancelled
+        await createOrder(false);
+      }
     }
+  };
+
+  const handlePaymentRetry = () => {
+    setPaymentSuccess(null);
+    setShowPaymentProcessing(false);
   };
 
   const getItemTotalPrice = (item: any) => {
     const itemPrice = item.price * item.quantity;
-    const addOnsPrice = item.addOns.reduce((sum: number, addOn: any) => 
-      sum + (addOn.price * addOn.quantity), 0
+    const addOnsPrice = item.addOns.reduce(
+      (sum: number, addOn: any) => sum + addOn.price * addOn.quantity,
+      0,
     );
     return itemPrice + addOnsPrice;
   };
@@ -41,7 +144,7 @@ export default function OrderSummary() {
     return (
       <div className="bg-gray-50 min-h-screen">
         <div className="bg-white p-4 flex items-center justify-between shadow-sm">
-          <button 
+          <button
             onClick={() => setLocation("/menu")}
             className="flex items-center text-gray-600"
           >
@@ -51,10 +154,10 @@ export default function OrderSummary() {
           <h1 className="text-lg font-semibold">ORDER SUMMARY</h1>
           <div className="w-8"></div>
         </div>
-        
+
         <div className="flex flex-col items-center justify-center h-96">
           <p className="text-gray-500 text-lg">Your cart is empty</p>
-          <button 
+          <button
             onClick={() => setLocation("/menu")}
             className="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg"
           >
@@ -69,7 +172,7 @@ export default function OrderSummary() {
     <div className="bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="bg-white p-4 flex items-center justify-between shadow-sm">
-        <button 
+        <button
           onClick={() => setLocation("/menu")}
           className="flex items-center text-gray-600"
         >
@@ -83,8 +186,6 @@ export default function OrderSummary() {
       </div>
 
       <div className="p-4">
-        
-
         {/* Cart Items - Always visible */}
         <div className="space-y-6">
           {cartItems.map((item) => (
@@ -95,7 +196,9 @@ export default function OrderSummary() {
                   <span className="text-gray-600 mr-2">x{item.quantity}</span>
                   <span className="font-medium text-gray-800">{item.name}</span>
                 </div>
-                <span className="font-bold text-gray-800">RM {getItemTotalPrice(item)}</span>
+                <span className="font-bold text-gray-800">
+                  RM {getItemTotalPrice(item)}
+                </span>
               </div>
 
               {/* Add-ons */}
@@ -126,7 +229,7 @@ export default function OrderSummary() {
                     <Plus size={16} />
                   </button>
                 </div>
-                <button 
+                <button
                   onClick={() => setLocation(`/menu/${item.id}`)}
                   className="px-4 py-2 border border-gray-300 rounded-lg text-gray-600 text-sm"
                 >
@@ -156,12 +259,25 @@ export default function OrderSummary() {
           </div>
         </div>
 
+        {/* Payment Method Selection */}
+        <div className="mt-6">
+          <PaymentMethodSelector
+            totalAmount={parseFloat(getTotalPrice())}
+            onPaymentMethodSelect={handlePaymentMethodSelect}
+          />
+        </div>
+
         {/* Place Order Button */}
-        <button 
+        <button
           onClick={handlePlaceOrder}
-          className="w-full bg-green-600 text-white py-4 rounded-lg font-medium text-lg"
+          disabled={!selectedPaymentMethod || isProcessing}
+          className={`w-full py-4 rounded-lg font-medium text-lg mt-6 ${
+            selectedPaymentMethod && !isProcessing
+              ? "bg-green-600 text-white hover:bg-green-700"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          }`}
         >
-          PLACE ORDER RM{getTotalPrice()}
+          {isProcessing ? "PROCESSING..." : `PLACE ORDER RM${getTotalPrice()}`}
         </button>
       </div>
 
@@ -181,7 +297,9 @@ export default function OrderSummary() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 mx-6 text-center max-w-sm">
             <div className="text-4xl mb-4">💳</div>
-            <h2 className="text-xl font-bold text-red-600 mb-3">Insufficient Balance</h2>
+            <h2 className="text-xl font-bold text-red-600 mb-3">
+              Insufficient Balance
+            </h2>
             <p className="text-gray-600 text-sm mb-4">
               You don't have enough money to complete this order.
             </p>
@@ -192,7 +310,9 @@ export default function OrderSummary() {
               </p>
               <p className="text-sm">
                 <span className="text-gray-600">Your Balance: </span>
-                <span className="font-bold text-blue-600">{getFormattedRM()}</span>
+                <span className="font-bold text-blue-600">
+                  {getFormattedRM()}
+                </span>
               </p>
             </div>
             <p className="text-sm text-blue-600 mb-4">
@@ -202,7 +322,7 @@ export default function OrderSummary() {
               <button
                 onClick={() => {
                   setShowInsufficientFunds(false);
-                  setLocation('/');
+                  setLocation("/");
                 }}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium"
               >
@@ -218,6 +338,20 @@ export default function OrderSummary() {
           </div>
         </div>
       )}
+
+      {/* Payment Processing Modal */}
+      <PaymentProcessing
+        isOpen={showPaymentProcessing}
+        isProcessing={isProcessing}
+        paymentSuccess={paymentSuccess}
+        paymentMethod={selectedPaymentMethod?.name || ""}
+        amount={parseFloat(getTotalPrice())}
+        onClose={() => {
+          setShowPaymentProcessing(false);
+          setPaymentSuccess(null);
+        }}
+        onRetry={handlePaymentRetry}
+      />
     </div>
   );
 }

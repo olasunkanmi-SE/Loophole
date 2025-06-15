@@ -1,9 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { MessageCircle, Send, Sparkles, DollarSign, UtensilsCrossed, Home, Award, ArrowUp } from 'lucide-react';
+import { MessageCircle, Send, Sparkles, DollarSign, UtensilsCrossed, Home, Award, ArrowUp, CheckCircle, CreditCard, Download } from 'lucide-react';
 import MobileContainer from '../components/MobileContainer';
 import { usePoints } from '../contexts/PointsContext';
+import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
+import { usePayment } from '../contexts/PaymentContext';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import jsPDF from 'jspdf';
 
 interface Message {
   id: string;
@@ -40,11 +44,395 @@ export default function Chat() {
     return [];
   });
   const [inputValue, setInputValue] = useState('');
-  const { getTotalPoints, getFormattedRM, getCompletedCategories } = usePoints();
+  const [pendingOrder, setPendingOrder] = useState<any>(null);
+  const [showPaymentOptions, setShowPaymentOptions] = useState(false);
+  const [orderProcessing, setOrderProcessing] = useState(false);
+  const [completedOrders, setCompletedOrders] = useState<any[]>([]);
+  const [userOrderHistory, setUserOrderHistory] = useState<any[]>([]);
+  const { getTotalPoints, getFormattedRM, getCompletedCategories, canAfford, deductRM } = usePoints();
+  const { addToCart, clearCart } = useCart();
+  const { processPayment } = usePayment();
+  const { user } = useAuth();
 
   const totalPoints = getTotalPoints();
   const availableRM = getFormattedRM();
   const completedSurveys = getCompletedCategories().length;
+
+  // Fetch user's order history for receipt downloads
+  useEffect(() => {
+    if (user?.email) {
+      fetchUserOrderHistory();
+    }
+  }, [user]);
+
+  const fetchUserOrderHistory = async () => {
+    try {
+      const response = await fetch(`/api/order-history/${user?.email}`);
+      if (response.ok) {
+        const orders = await response.json();
+        setUserOrderHistory(orders);
+      }
+    } catch (error) {
+      console.error('Error fetching order history:', error);
+    }
+  };
+
+  // Food ordering functions
+  const handleOrderConfirmation = async (orderItems: any[]) => {
+    const orderTotal = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    setPendingOrder({
+      items: orderItems,
+      total: orderTotal,
+      timestamp: new Date()
+    });
+    
+    setShowPaymentOptions(true);
+    
+    // Add assistant message asking for payment method
+    const assistantMessage: Message = {
+      id: Date.now().toString(),
+      content: `Perfect! I've prepared your order:\n\n${orderItems.map(item => `• ${item.quantity}x ${item.name} - RM ${(item.price * item.quantity).toFixed(2)}`).join('\n')}\n\n**Total: RM ${orderTotal.toFixed(2)}**\n\nHow would you like to pay for this order?`,
+      sender: 'assistant',
+      timestamp: new Date()
+    };
+    
+    const updatedMessages = [...messages, assistantMessage];
+    setMessages(updatedMessages);
+    saveChatHistory(updatedMessages);
+  };
+
+  const handlePaymentSelection = async (paymentMethod: 'points' | 'card' | 'grabpay' | 'touchngo') => {
+    if (!pendingOrder) return;
+    
+    setOrderProcessing(true);
+    setShowPaymentOptions(false);
+    
+    let paymentSuccess = false;
+    let paymentMessage = '';
+    
+    try {
+      if (paymentMethod === 'points') {
+        if (!canAfford(pendingOrder.total)) {
+          paymentMessage = `❌ **Payment Failed**\n\nInsufficient balance. You need RM ${pendingOrder.total.toFixed(2)} but only have ${availableRM}.\n\nComplete more surveys to earn points!`;
+        } else {
+          if (deductRM(pendingOrder.total)) {
+            paymentSuccess = true;
+            paymentMessage = `✅ **Payment Successful!**\n\nPaid RM ${pendingOrder.total.toFixed(2)} using your points balance.\n\nYour order has been placed and will be prepared shortly!\n\n📄 Your receipt is ready for download.`;
+          }
+        }
+      } else {
+        // Handle external payment methods
+        const paymentMethodMap = {
+          card: { type: 'bank_transfer', name: 'Bank Transfer' },
+          grabpay: { type: 'grabpay', name: 'GrabPay' },
+          touchngo: { type: 'touchngo', name: "Touch 'n Go" }
+        };
+        
+        const selectedMethod = paymentMethodMap[paymentMethod];
+        const result = await processPayment(pendingOrder.total, selectedMethod);
+        
+        if (result) {
+          paymentSuccess = true;
+          paymentMessage = `✅ **Payment Successful!**\n\nPaid RM ${pendingOrder.total.toFixed(2)} using ${selectedMethod.name}.\n\nYour order has been placed and will be prepared shortly!\n\n📄 Your receipt is ready for download.`;
+        } else {
+          paymentMessage = `❌ **Payment Failed**\n\nThere was an issue processing your ${selectedMethod.name} payment. Please try again or use a different payment method.`;
+        }
+      }
+      
+      if (paymentSuccess) {
+        // Create order in database
+        await createChatOrder(pendingOrder, paymentMethod);
+        
+        // Clear pending order
+        setPendingOrder(null);
+      }
+      
+    } catch (error) {
+      paymentMessage = `❌ **Payment Error**\n\nAn unexpected error occurred. Please try again.`;
+    }
+    
+    // Add payment result message
+    const paymentResultMessage: Message = {
+      id: Date.now().toString(),
+      content: paymentMessage,
+      sender: 'assistant',
+      timestamp: new Date()
+    };
+    
+    const updatedMessages = [...messages, paymentResultMessage];
+    setMessages(updatedMessages);
+    saveChatHistory(updatedMessages);
+    
+    setOrderProcessing(false);
+  };
+
+  const createChatOrder = async (order: any, paymentMethod: string) => {
+    try {
+      const orderData = {
+        userEmail: user?.email || 'guest',
+        items: order.items.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          addOns: []
+        })),
+        totalAmount: order.total,
+        paymentMethod: {
+          type: paymentMethod,
+          name: paymentMethod === 'points' ? 'Points Balance' : paymentMethod
+        }
+      };
+
+      const response = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      if (response.ok) {
+        const createdOrder = await response.json();
+        
+        // Update order status to completed
+        const transactionId = `chat_${Date.now()}`;
+        await fetch('/api/update-order-status', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderId: createdOrder.orderId,
+            status: 'completed',
+            transactionId: transactionId
+          }),
+        });
+
+        // Add to completed orders for receipt generation
+        const completedOrder = {
+          ...createdOrder,
+          status: 'completed',
+          transactionId: transactionId,
+          created_at: new Date().toISOString()
+        };
+        
+        setCompletedOrders(prev => [completedOrder, ...prev]);
+      }
+    } catch (error) {
+      console.error('Error creating chat order:', error);
+    }
+  };
+
+  const generateOrderReceipt = (order: any) => {
+    const pdf = new jsPDF();
+    
+    // Simple black text throughout
+    pdf.setTextColor(0, 0, 0);
+    
+    // Clean header
+    pdf.setFontSize(18);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('EarnEats', 105, 20, { align: 'center' });
+    
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Digital Receipt', 105, 28, { align: 'center' });
+    
+    // Simple line separator
+    pdf.setLineWidth(0.5);
+    pdf.line(30, 35, 180, 35);
+    
+    let yPosition = 45;
+    
+    // Order details
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    
+    pdf.text(`Order ID: ${order.orderId}`, 30, yPosition);
+    yPosition += 6;
+    
+    pdf.text(`Date: ${new Date(order.created_at).toLocaleDateString('en-MY', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })}`, 30, yPosition);
+    yPosition += 6;
+    
+    pdf.text(`Customer: ${order.userEmail}`, 30, yPosition);
+    yPosition += 6;
+    
+    pdf.text(`Status: ${order.status.toUpperCase()}`, 30, yPosition);
+    yPosition += 15;
+    
+    // Items section
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('ITEMS:', 30, yPosition);
+    yPosition += 8;
+    
+    pdf.setFont('helvetica', 'normal');
+    order.items.forEach((item: any) => {
+      const itemTotal = item.price * item.quantity;
+      pdf.text(`${item.quantity}x ${item.name}`, 30, yPosition);
+      pdf.text(`RM ${itemTotal.toFixed(2)}`, 150, yPosition, { align: 'right' });
+      yPosition += 6;
+      
+      // Add-ons
+      if (item.addOns && item.addOns.length > 0) {
+        item.addOns.forEach((addOn: any) => {
+          const addOnTotal = addOn.price * addOn.quantity;
+          pdf.text(`  + ${addOn.quantity}x ${addOn.name}`, 35, yPosition);
+          pdf.text(`RM ${addOnTotal.toFixed(2)}`, 150, yPosition, { align: 'right' });
+          yPosition += 5;
+        });
+      }
+      yPosition += 3;
+    });
+    
+    // Payment details
+    yPosition += 8;
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('PAYMENT:', 30, yPosition);
+    yPosition += 8;
+    
+    pdf.setFont('helvetica', 'normal');
+    const paymentMethodName = order.paymentMethod.type === 'points' ? 'EarnEats Points' : 
+                             order.paymentMethod.type === 'grabpay' ? 'GrabPay' :
+                             order.paymentMethod.type === 'touchngo' ? "Touch 'n Go" :
+                             order.paymentMethod.type === 'card' ? 'Bank Transfer' : order.paymentMethod.type;
+    
+    pdf.text(`Method: ${paymentMethodName}`, 30, yPosition);
+    yPosition += 6;
+    
+    if (order.transactionId) {
+      pdf.text(`Transaction: ${order.transactionId}`, 30, yPosition);
+      yPosition += 6;
+    }
+    
+    // Total with simple line
+    yPosition += 8;
+    pdf.line(30, yPosition, 180, yPosition);
+    yPosition += 10;
+    
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('TOTAL:', 30, yPosition);
+    pdf.text(`RM ${order.totalAmount.toFixed(2)}`, 150, yPosition, { align: 'right' });
+    
+    // Simple footer
+    yPosition += 20;
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Thank you for your order.', 105, yPosition, { align: 'center' });
+    yPosition += 5;
+    pdf.text('support@earneats.com', 105, yPosition, { align: 'center' });
+    
+    // Save the PDF
+    pdf.save(`EarnEats_Receipt_${order.orderId}.pdf`);
+  };
+
+  const generateChatOrderReceipt = (order: any) => {
+    const pdf = new jsPDF();
+    
+    // Simple black text throughout
+    pdf.setTextColor(0, 0, 0);
+    
+    // Clean header
+    pdf.setFontSize(18);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('EarnEats', 105, 20, { align: 'center' });
+    
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Chat Order Receipt', 105, 28, { align: 'center' });
+    
+    // Simple line separator
+    pdf.setLineWidth(0.5);
+    pdf.line(30, 35, 180, 35);
+    
+    let yPosition = 45;
+    
+    // Order details
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    
+    pdf.text(`Order ID: ${order.orderId}`, 30, yPosition);
+    yPosition += 6;
+    
+    pdf.text(`Date: ${new Date(order.created_at).toLocaleDateString('en-MY', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })}`, 30, yPosition);
+    yPosition += 6;
+    
+    pdf.text(`Customer: ${order.userEmail}`, 30, yPosition);
+    yPosition += 6;
+    
+    pdf.text(`Method: AI Chat Assistant`, 30, yPosition);
+    yPosition += 15;
+    
+    // Items section
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('ITEMS:', 30, yPosition);
+    yPosition += 8;
+    
+    pdf.setFont('helvetica', 'normal');
+    order.items.forEach((item: any) => {
+      const itemTotal = item.price * item.quantity;
+      pdf.text(`${item.quantity}x ${item.name}`, 30, yPosition);
+      pdf.text(`RM ${itemTotal.toFixed(2)}`, 150, yPosition, { align: 'right' });
+      yPosition += 6;
+    });
+    
+    // Payment details
+    yPosition += 8;
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('PAYMENT:', 30, yPosition);
+    yPosition += 8;
+    
+    pdf.setFont('helvetica', 'normal');
+    const paymentMethodName = order.paymentMethod.type === 'points' ? 'EarnEats Points' : 
+                             order.paymentMethod.type === 'grabpay' ? 'GrabPay' :
+                             order.paymentMethod.type === 'touchngo' ? "Touch 'n Go" :
+                             order.paymentMethod.type === 'card' ? 'Bank Transfer' : order.paymentMethod.type;
+    
+    pdf.text(`Method: ${paymentMethodName}`, 30, yPosition);
+    yPosition += 6;
+    
+    if (order.transactionId) {
+      pdf.text(`Transaction: ${order.transactionId}`, 30, yPosition);
+      yPosition += 6;
+    }
+    
+    pdf.text(`Status: ${order.status.toUpperCase()}`, 30, yPosition);
+    yPosition += 8;
+    
+    // Total with simple line
+    pdf.line(30, yPosition, 180, yPosition);
+    yPosition += 10;
+    
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('TOTAL:', 30, yPosition);
+    pdf.text(`RM ${order.totalAmount.toFixed(2)}`, 150, yPosition, { align: 'right' });
+    
+    // Simple footer
+    yPosition += 20;
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Ordered via AI Chat Assistant', 105, yPosition, { align: 'center' });
+    yPosition += 5;
+    pdf.text('Thank you for your order.', 105, yPosition, { align: 'center' });
+    
+    // Save the PDF
+    pdf.save(`chat_receipt_${order.orderId}.pdf`);
+  };
 
   // Function to save chat history to localStorage (keep last 5 conversations)
   const saveChatHistory = (newMessages: Message[]) => {
@@ -125,10 +513,10 @@ export default function Chat() {
   const formatAIResponse = (content: string) => {
     // Extract menu items mentioned in the response
     const mentionedMenuItems = extractMenuItems(content);
-    
+
     // Split content into paragraphs and format
     const paragraphs = content.split('\n\n').filter(p => p.trim());
-    
+
     return paragraphs.map((paragraph, index) => {
       // Check if it's a list
       if (paragraph.includes('•') || paragraph.includes('-')) {
@@ -153,7 +541,7 @@ export default function Chat() {
           </div>
         );
       }
-      
+
       // Check if it's a food recommendation with prices - show clickable cards
       if (paragraph.includes('RM') && (paragraph.includes('recommend') || paragraph.includes('food') || mentionedMenuItems.length > 0)) {
         return (
@@ -165,7 +553,7 @@ export default function Chat() {
               </div>
               <p className="text-gray-200 text-sm mb-3">{paragraph}</p>
             </div>
-            
+
             {/* Clickable Menu Item Cards */}
             {mentionedMenuItems.length > 0 && (
               <div className="space-y-2">
@@ -200,7 +588,7 @@ export default function Chat() {
           </div>
         );
       }
-      
+
       // Check if it's about earning/surveys
       if (paragraph.includes('survey') || paragraph.includes('earn') || paragraph.includes('points')) {
         return (
@@ -213,7 +601,7 @@ export default function Chat() {
           </div>
         );
       }
-      
+
       // Regular paragraph
       return (
         <p key={index} className="text-gray-100 text-sm mb-3 leading-relaxed">
@@ -226,7 +614,7 @@ export default function Chat() {
   // Helper function to extract actionable buttons from AI response
   const extractActionButtons = (content: string) => {
     const actions = [];
-    
+
     // Check for food ordering mentions
     if (content.toLowerCase().includes('order food') || content.toLowerCase().includes('menu')) {
       actions.push({
@@ -235,7 +623,7 @@ export default function Chat() {
         onClick: () => setLocation('/menu')
       });
     }
-    
+
     // Check for housing/accommodation mentions
     if (content.toLowerCase().includes('housing') || content.toLowerCase().includes('accommodation') || 
         content.toLowerCase().includes('hostel') || content.toLowerCase().includes('hotel') ||
@@ -246,7 +634,7 @@ export default function Chat() {
         onClick: () => setLocation('/housing')
       });
     }
-    
+
     // Check for survey mentions
     if (content.toLowerCase().includes('survey') || content.toLowerCase().includes('earn more')) {
       actions.push({
@@ -255,7 +643,7 @@ export default function Chat() {
         onClick: () => setLocation('/')
       });
     }
-    
+
     // Check for points/earnings mentions
     if (content.toLowerCase().includes('points') || content.toLowerCase().includes('earnings')) {
       actions.push({
@@ -264,12 +652,44 @@ export default function Chat() {
         onClick: () => setLocation('/points')
       });
     }
-    
+
+    // Check for receipt/download mentions
+    if (content.toLowerCase().includes('receipt') || content.toLowerCase().includes('download')) {
+      const latestOrder = userOrderHistory.length > 0 ? userOrderHistory[0] : 
+                         completedOrders.length > 0 ? completedOrders[0] : null;
+      
+      if (latestOrder) {
+        actions.push({
+          text: 'Download Latest Receipt',
+          icon: <Download size={16} />,
+          onClick: () => {
+            generateOrderReceipt(latestOrder);
+          }
+        });
+      }
+    }
+
     return actions;
   };
 
+  // Parse order intent from user messages
+  const parseOrderIntent = (userQuery: string) => {
+    const orderKeywords = ['order', 'buy', 'purchase', 'get', 'want', 'need', 'hungry', 'food', 'eat', 'meal'];
+    const confirmKeywords = ['yes', 'sure', 'okay', 'ok', 'agree', 'confirm', 'place order', 'lets do it', 'sounds good'];
+    
+    const hasOrderIntent = orderKeywords.some(keyword => 
+      userQuery.toLowerCase().includes(keyword)
+    );
+    
+    const hasConfirmIntent = confirmKeywords.some(keyword => 
+      userQuery.toLowerCase().includes(keyword)
+    );
+    
+    return { hasOrderIntent, hasConfirmIntent };
+  };
+
   // Comprehensive app context for the LLM
-  const getComprehensivePrompt = (userQuery: string, categoryHint?: string) => {
+  const getComprehensivePrompt = async (userQuery: string, categoryHint?: string) => {
     const foodMenu = {
       drinks: [
         { name: "Blood Orange Cocktail", price: 12, description: "Refreshing citrus cocktail" },
@@ -312,79 +732,131 @@ export default function Chat() {
       ]
     };
 
-    let baseContext = `You are a comprehensive AI assistant for EarnQuiz, a Malaysian app where people earn money by completing surveys and use that money to order food.
+    const housingOptions = [
+      { type: "Budget Hostel", price: "RM 15-25/night", description: "Shared dorm beds, basic amenities" },
+      { type: "Private Room", price: "RM 25-35/night", description: "Private room in shared accommodation" },
+      { type: "Studio Apartment", price: "RM 35-45/night", description: "Self-contained studio with kitchenette" },
+      { type: "Luxury Stay", price: "RM 45+/night", description: "Premium accommodation with full amenities" }
+    ];
+
+    // Generate user analytics summary
+    const generateAnalyticsSummary = (analytics: any) => {
+      if (!analytics || !analytics.orders || !analytics.payments) {
+        return "No user data available for analysis.";
+      }
+
+      const { orders, payments } = analytics;
+
+      // Calculate spending patterns
+      const totalSpent = orders.reduce((sum: number, order: any) => sum + order.totalAmount, 0);
+      const avgOrderValue = totalSpent / orders.length || 0;
+      const orderFrequency = orders.length;
+
+      // Payment method preferences
+      const paymentMethods = orders.reduce((acc: any, order: any) => {
+        const method = order.paymentMethod.type;
+        acc[method] = (acc[method] || 0) + 1;
+        return acc;
+      }, {});
+
+      const preferredPayment = Object.keys(paymentMethods).reduce((a, b) => 
+        paymentMethods[a] > paymentMethods[b] ? a : b, ''
+      );
+
+      // Most ordered items
+      const itemFrequency: any = {};
+      orders.forEach((order: any) => {
+        order.items.forEach((item: any) => {
+          itemFrequency[item.name] = (itemFrequency[item.name] || 0) + item.quantity;
+        });
+      });
+
+      const topItems = Object.entries(itemFrequency)
+        .sort(([,a], [,b]) => (b as number) - (a as number))
+        .slice(0, 3)
+        .map(([name, count]) => `${name} (${count}x)`);
+
+      // Recent activity
+      const recentOrders = orders.slice(0, 3);
+      const lastOrderDate = orders.length > 0 ? new Date(orders[0].created_at).toLocaleDateString() : 'Never';
+
+      return `
+USER SPENDING ANALYTICS:
+- Total Orders: ${orderFrequency}
+- Total Spent: RM ${totalSpent.toFixed(2)}
+- Average Order Value: RM ${avgOrderValue.toFixed(2)}
+- Last Order: ${lastOrderDate}
+- Preferred Payment: ${preferredPayment}
+- Top Ordered Items: ${topItems.join(', ')}
+- Recent Order Amounts: ${recentOrders.map((o: any) => `RM ${o.totalAmount}`).join(', ')}
+- Payment Methods Used: ${Object.keys(paymentMethods).join(', ')}
+      `;
+    };
+
+    // Fetch user analytics (replace with your actual API call)
+    const fetchUserAnalytics = async () => {
+      // Replace with your actual API endpoint for fetching user data
+      const mockAnalytics = {
+        orders: [
+          { id: '1', totalAmount: 25.50, paymentMethod: { type: 'card' }, items: [{ name: 'Wagyu Beef Steak', quantity: 1 }, { name: 'Espresso Martini', quantity: 2 }], created_at: new Date() },
+          { id: '2', totalAmount: 15.00, paymentMethod: { type: 'points' }, items: [{ name: 'Herb Roasted Chicken', quantity: 1 }], created_at: new Date() },
+          { id: '3', totalAmount: 40.00, paymentMethod: { type: 'card' }, items: [{ name: 'Grilled Lobster Tail', quantity: 1 }], created_at: new Date() }
+        ],
+        payments: [
+          { id: '1', amount: 25.50, type: 'card' },
+          { id: '2', amount: 15.00, type: 'points' },
+          { id: '3', amount: 40.00, type: 'card' }
+        ]
+      };
+      return mockAnalytics;
+    };
+
+    const analytics = await fetchUserAnalytics();
+    const analyticsText = analytics ? generateAnalyticsSummary(analytics) : "No order history available for this user.";
+
+    const { hasOrderIntent, hasConfirmIntent } = parseOrderIntent(userQuery);
+    
+    return `You are EarnEats Assistant, a helpful AI for the EarnEats food delivery app in Malaysia.
 
 CURRENT USER STATUS:
-- Total Points: ${totalPoints} points
 - Available Money: ${availableRM}
+- Total Points: ${totalPoints} points
 - Completed Surveys: ${completedSurveys}/3
-- Conversion Rate: 1 point = RM 1.00
+- Points can be converted to RM for food orders (roughly 1 point = RM 0.10)
 
-AVAILABLE SURVEYS:
-1. Lifestyle & Shopping (2-10 points, 2-3 minutes) - About shopping habits, sustainable living, consumer behavior
-2. Digital & Tech (2-10 points, 2-3 minutes) - About technology usage, streaming habits, digital preferences
-3. Food & Dining (2-10 points, 2-3 minutes) - About food preferences, dining habits, cultural food choices
+${analyticsText}
 
-FOOD MENU WITH PRICES:
-Drinks (RM 10-14): ${foodMenu.drinks.map(item => `${item.name} (RM ${item.price})`).join(', ')}
-Chicken (RM 12-18): ${foodMenu.chicken.map(item => `${item.name} (RM ${item.price})`).join(', ')}
-Seafood (RM 15-32): ${foodMenu.seafood.map(item => `${item.name} (RM ${item.price})`).join(', ')}
-Meat (RM 18-35): ${foodMenu.meat.map(item => `${item.name} (RM ${item.price})`).join(', ')}
+AVAILABLE FOOD MENU:
+${Object.entries(foodMenu).map(([category, items]) => 
+  `${category.toUpperCase()}:\n${items.map(item => `- ${item.name}: RM ${item.price} (${item.description})`).join('\n')}`
+).join('\n\n')}
 
-HOUSING & ACCOMMODATION OPTIONS:
-Budget (RM 15-25): ${accommodations.budget.map(item => `${item.name} (RM ${item.price}) in ${item.location}`).join(', ')}
-Mid-Range (RM 35-45): ${accommodations.midRange.map(item => `${item.name} (RM ${item.price}) in ${item.location}`).join(', ')}
-Luxury (RM 85+): ${accommodations.luxury.map(item => `${item.name} (RM ${item.price}) in ${item.location}`).join(', ')}
+HOUSING OPTIONS AVAILABLE:
+${housingOptions.map(option => `- ${option.type}: ${option.price} (${option.description})`).join('\n')}
 
-INTELLIGENT CAPABILITIES:
-- Provide personalized food recommendations based on user's budget
-- Suggest housing/accommodation options within user's budget range
-- Recommend survey combinations to reach specific spending goals for food OR accommodation
-- Help users understand earning potential vs. food AND housing costs
-- Guide users through the app's features and navigation
-- Answer questions about Malaysian food culture, housing options, and preferences
-- Compare costs between food vs accommodation spending strategies
+FOOD ORDERING INSTRUCTIONS:
+${hasOrderIntent ? `
+- The user seems interested in ordering food
+- When recommending food items, ask if they'd like to place an order
+- If they confirm wanting to order, respond with: "ORDER_CONFIRMATION:" followed by a JSON array of items like:
+ORDER_CONFIRMATION: [{"id": "1", "name": "Grilled Rack of Lamb", "price": 20, "quantity": 1}, {"id": "4", "name": "Blood Orange Cocktail", "price": 12, "quantity": 1}]
+- Only include this ORDER_CONFIRMATION format when the user explicitly agrees to order
+` : ''}
 
-RECOMMENDATION LOGIC:
-Food Recommendations:
-- If user has RM 0-5: Recommend drinks and completing more surveys
-- If user has RM 5-15: Recommend chicken dishes and some seafood
-- If user has RM 15-25: Recommend most menu items except premium options
-- If user has RM 25+: Recommend any menu items including premium meat and seafood
+RECEIPT CAPABILITIES:
+- You can help users download receipts for their completed orders
+- When users ask about receipts or downloading receipts, inform them that you can generate PDF receipts
+- Completed orders from this chat session can have receipts downloaded immediately
+- Tell users that receipts include order details, payment information, and transaction IDs
 
-Housing Recommendations:
-- If user has RM 0-15: Suggest completing more surveys, focus on budget hostels (RM 15-25)
-- If user has RM 15-25: Recommend budget hostels and dorm beds
-- If user has RM 25-45: Recommend private rooms and studio apartments
-- If user has RM 45+: Recommend luxury options and private apartments
+${hasConfirmIntent && pendingOrder ? `
+- The user seems to be confirming a previous recommendation
+- If they're agreeing to a food recommendation you made, include the ORDER_CONFIRMATION format
+` : ''}
 
-Combined Strategy:
-- Help users balance between food and accommodation spending
-- Suggest earning goals for multi-day trips (food + accommodation)
-- Recommend cost-effective combinations (e.g., hostel + good meals vs luxury stay + simple food)
-
-CONVERSATION STYLE:
-- Be friendly, knowledgeable, and helpful
-- Provide specific recommendations with prices
-- Encourage earning when appropriate but don't be pushy
-- Use Malaysian context when relevant
-- Be conversational and natural
-- Always respond to the user's specific question`;
-
-    // Add category-specific context if provided
-    if (categoryHint) {
-      const categoryContexts = {
-        lifestyle: `\n\nCURRENT FOCUS: User is interested in the Lifestyle & Shopping survey about sustainable products, shopping habits, and consumer preferences. Highlight how this helps Malaysian businesses understand eco-friendly consumer trends.`,
-        digital: `\n\nCURRENT FOCUS: User is interested in the Digital & Tech survey about technology usage, streaming preferences, and digital habits. Emphasize how this helps tech companies improve services for Malaysian users.`,
-        food: `\n\nCURRENT FOCUS: User is interested in the Food & Dining survey about food preferences, dining habits, and cultural food choices. Connect this to how it helps the food industry serve Malaysian tastes better.`
-      };
-      
-      baseContext += categoryContexts[categoryHint] || '';
-    }
-
-    return `${baseContext}
-
-User query: ${userQuery}`;
+USER QUESTION: "${userQuery}"
+${categoryHint ? `CONTEXT: This question relates to ${categoryHint}` : ''}
+`;
   };
 
   const handleSendMessage = async (categoryHint?: string) => {
@@ -413,18 +885,38 @@ User query: ${userQuery}`;
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-thinking-exp-1219" });
 
       // Use comprehensive prompt with category hint if provided
-      const systemPrompt = getComprehensivePrompt(query, categoryHint);
-      console.log('Sending prompt to Gemini:', systemPrompt.substring(0, 200) + '...');
+      const comprehensivePrompt = await getComprehensivePrompt(query, categoryHint);
+      console.log('Sending prompt to Gemini:', comprehensivePrompt.substring(0, 200) + '...');
 
-      const result = await model.generateContent(systemPrompt);
+      const result = await model.generateContent(comprehensivePrompt);
       console.log('Gemini response received:', result);
-      
+
       const response = result.response.text();
       console.log('Response text:', response);
 
+      // Check if the response contains an order confirmation
+      const orderConfirmationMatch = response.match(/ORDER_CONFIRMATION:\s*(\[.*?\])/);
+      
+      let assistantContent = response;
+      
+      if (orderConfirmationMatch) {
+        try {
+          const orderItems = JSON.parse(orderConfirmationMatch[1]);
+          // Remove the ORDER_CONFIRMATION part from the response
+          assistantContent = response.replace(/ORDER_CONFIRMATION:\s*\[.*?\]/, '').trim();
+          
+          // Handle the order confirmation
+          setTimeout(() => {
+            handleOrderConfirmation(orderItems);
+          }, 1000);
+        } catch (error) {
+          console.error('Error parsing order confirmation:', error);
+        }
+      }
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: response,
+        content: assistantContent,
         sender: 'assistant',
         timestamp: new Date()
       };
@@ -440,7 +932,7 @@ User query: ${userQuery}`;
 
       // More specific error handling
       let fallbackResponse = '';
-      
+
       if (error?.message?.includes('API_KEY')) {
         fallbackResponse = `There's an issue with the API configuration. Let me help you with what I know! You have ${totalPoints} points (${availableRM}). What would you like to know about earning money or ordering food?`;
       } else if (error?.message?.includes('quota') || error?.message?.includes('limit')) {
@@ -460,6 +952,164 @@ User query: ${userQuery}`;
       setMessages(finalMessages);
       saveChatHistory(finalMessages);
     }
+  };
+
+  const formatAnalyticsResponse = (content: string) => {
+    // Check if this is an analytics response
+    if (!content.includes('USER SPENDING ANALYTICS:')) {
+      return content;
+    }
+
+    // Extract analytics data from the content
+    const lines = content.split('\n').filter(line => line.trim());
+    const analytics: any = {};
+
+    lines.forEach(line => {
+      if (line.includes('Total Orders:')) {
+        analytics.totalOrders = line.split(':')[1].trim();
+      } else if (line.includes('Total Spent:')) {
+        analytics.totalSpent = line.split(':')[1].trim();
+      } else if (line.includes('Average Order Value:')) {
+        analytics.avgOrderValue = line.split(':')[1].trim();
+      } else if (line.includes('Last Order:')) {
+        analytics.lastOrder = line.split(':')[1].trim();
+      } else if (line.includes('Preferred Payment:')) {
+        analytics.preferredPayment = line.split(':')[1].trim();
+      } else if (line.includes('Top Ordered Items:')) {
+        analytics.topItems = line.split(':')[1].trim();
+      } else if (line.includes('Recent Order Amounts:')) {
+        analytics.recentAmounts = line.split(':')[1].trim();
+      } else if (line.includes('Payment Methods Used:')) {
+        analytics.paymentMethods = line.split(':')[1].trim();
+      }
+    });
+
+    const getPaymentIcon = (method: string) => {
+      if (method.toLowerCase().includes('card')) return '💳';
+      if (method.toLowerCase().includes('points')) return '💰';
+      if (method.toLowerCase().includes('grabpay')) return '🚗';
+      if (method.toLowerCase().includes('touchngo')) return '📱';
+      return '💳';
+    };
+
+    return (
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-xl shadow-lg">
+          <div className="flex items-center space-x-2">
+            <span className="text-2xl">📊</span>
+            <div>
+              <h3 className="text-lg font-bold">Your Spending Analytics</h3>
+              <p className="text-blue-100 text-sm">Here's what I found about your ordering habits</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Stats Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-gradient-to-br from-green-400 to-green-600 text-white p-4 rounded-xl shadow-md">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold">{analytics.totalOrders || '0'}</div>
+                <div className="text-green-100 text-sm font-medium">Total Orders</div>
+              </div>
+              <span className="text-3xl opacity-80">🛍️</span>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-400 to-blue-600 text-white p-4 rounded-xl shadow-md">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xl font-bold">{analytics.totalSpent || 'RM 0'}</div>
+                <div className="text-blue-100 text-sm font-medium">Total Spent</div>
+              </div>
+              <span className="text-3xl opacity-80">💸</span>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-purple-400 to-purple-600 text-white p-4 rounded-xl shadow-md">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-lg font-bold">{analytics.avgOrderValue || 'RM 0'}</div>
+                <div className="text-purple-100 text-sm font-medium">Avg Order</div>
+              </div>
+              <span className="text-3xl opacity-80">📈</span>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-orange-400 to-orange-600 text-white p-4 rounded-xl shadow-md">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-bold">{analytics.lastOrder || 'Never'}</div>
+                <div className="text-orange-100 text-sm font-medium">Last Order</div>
+              </div>
+              <span className="text-3xl opacity-80">📅</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Payment Method Card */}
+        {analytics.preferredPayment && (
+          <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
+            <div className="flex items-center space-x-3">
+              <div className="bg-yellow-100 p-3 rounded-full">
+                <span className="text-2xl">{getPaymentIcon(analytics.preferredPayment)}</span>
+              </div>
+              <div className="flex-1">
+                <div className="text-gray-800 font-semibold">Preferred Payment Method</div>
+                <div className="text-gray-600 text-sm capitalize">{analytics.preferredPayment}</div>
+              </div>
+              <div className="bg-yellow-50 px-3 py-1 rounded-full">
+                <span className="text-yellow-600 text-xs font-medium">Most Used</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Favorite Items Card */}
+        {analytics.topItems && (
+          <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
+            <div className="flex items-start space-x-3">
+              <div className="bg-red-100 p-3 rounded-full">
+                <span className="text-2xl">🍽️</span>
+              </div>
+              <div className="flex-1">
+                <div className="text-gray-800 font-semibold mb-1">Your Favorite Items</div>
+                <div className="text-gray-600 text-sm leading-relaxed">{analytics.topItems}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Recent Orders Card */}
+        {analytics.recentAmounts && (
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 p-4 rounded-xl">
+            <div className="flex items-center space-x-3 mb-2">
+              <span className="text-xl">📊</span>
+              <div className="text-indigo-800 font-semibold">Recent Order Amounts</div>
+            </div>
+            <div className="text-indigo-700 text-sm">{analytics.recentAmounts}</div>
+          </div>
+        )}
+
+        {/* Payment Methods Used */}
+        {analytics.paymentMethods && (
+          <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl">
+            <div className="flex items-center space-x-3 mb-2">
+              <span className="text-xl">💳</span>
+              <div className="text-gray-800 font-semibold">Payment Methods You've Used</div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {analytics.paymentMethods.split(',').map((method: string, index: number) => (
+                <span key={index} className="bg-white px-3 py-1 rounded-full text-sm text-gray-700 border border-gray-300 capitalize">
+                  {getPaymentIcon(method.trim())} {method.trim()}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -534,7 +1184,7 @@ User query: ${userQuery}`;
                 <h3 className="text-lg font-semibold text-white">Quick Actions</h3>
                 <div className="flex-1 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded"></div>
               </div>
-              
+
               {quickActions.map((action, index) => (
                 <button
                   key={action.id}
@@ -566,7 +1216,7 @@ User query: ${userQuery}`;
                 </div>
                 <h4 className="font-semibold text-white">💰 Earning Potential</h4>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-gray-900/50 rounded-lg p-3 text-center border border-gray-600">
                   <div className="text-lg font-bold text-green-400">RM 0.10-1.00</div>
@@ -577,14 +1227,14 @@ User query: ${userQuery}`;
                   <div className="text-xs text-gray-400">Time Required</div>
                 </div>
               </div>
-              
+
               <div className="mt-4 p-3 bg-green-900/20 rounded-lg border border-green-700/30">
                 <div className="text-center">
                   <div className="text-xl font-bold text-green-400">Up to RM 3.00</div>
                   <div className="text-xs text-green-300">Complete all 3 surveys</div>
                 </div>
               </div>
-              
+
               <div className="mt-4 text-center">
                 <p className="text-xs text-gray-400">
                   🎯 Start earning now and order your favorite food!
@@ -648,7 +1298,7 @@ User query: ${userQuery}`;
                         <div className="prose prose-sm prose-invert max-w-none">
                           {formatAIResponse(message.content)}
                         </div>
-                        
+
                         {/* Quick Action Buttons from AI response */}
                         {extractActionButtons(message.content).length > 0 && (
                           <div className="mt-4 space-y-2">
@@ -665,6 +1315,25 @@ User query: ${userQuery}`;
                           </div>
                         )}
 
+                        {/* Receipt Download Button for Successful Orders */}
+                        {message.content.includes('Payment Successful') && (
+                          <div className="mt-4">
+                            <button
+                              onClick={() => {
+                                const latestOrder = completedOrders.length > 0 ? completedOrders[0] : 
+                                                   userOrderHistory.length > 0 ? userOrderHistory[0] : null;
+                                if (latestOrder) {
+                                  generateOrderReceipt(latestOrder);
+                                }
+                              }}
+                              className="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 justify-center"
+                            >
+                              <Download size={16} />
+                              Download Receipt (PDF)
+                            </button>
+                          </div>
+                        )}
+
                         {/* Timestamp */}
                         <p className="text-xs opacity-50 mt-3">
                           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -675,6 +1344,114 @@ User query: ${userQuery}`;
                 </div>
               </div>
             ))}
+
+            {/* Payment Options Modal */}
+            {showPaymentOptions && pendingOrder && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 mx-6 max-w-sm w-full">
+                  <div className="text-center mb-4">
+                    <h3 className="text-lg font-bold text-gray-800">Choose Payment Method</h3>
+                    <p className="text-gray-600 text-sm mt-1">
+                      Total: RM {pendingOrder.total.toFixed(2)}
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {/* Points Payment */}
+                    <button
+                      onClick={() => handlePaymentSelection('points')}
+                      disabled={orderProcessing || !canAfford(pendingOrder.total)}
+                      className={`w-full p-3 rounded-lg border text-left transition-colors ${
+                        canAfford(pendingOrder.total)
+                          ? 'border-green-300 bg-green-50 hover:bg-green-100'
+                          : 'border-gray-300 bg-gray-100 cursor-not-allowed'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <DollarSign size={20} className={canAfford(pendingOrder.total) ? 'text-green-600' : 'text-gray-400'} />
+                          <div>
+                            <div className={`font-medium ${canAfford(pendingOrder.total) ? 'text-green-800' : 'text-gray-500'}`}>
+                              Points Balance
+                            </div>
+                            <div className={`text-sm ${canAfford(pendingOrder.total) ? 'text-green-600' : 'text-gray-400'}`}>
+                              {availableRM} available
+                            </div>
+                          </div>
+                        </div>
+                        {canAfford(pendingOrder.total) && <CheckCircle size={16} className="text-green-600" />}
+                      </div>
+                    </button>
+
+                    {/* Card Payment */}
+                    <button
+                      onClick={() => handlePaymentSelection('card')}
+                      disabled={orderProcessing}
+                      className="w-full p-3 rounded-lg border border-blue-300 bg-blue-50 hover:bg-blue-100 text-left transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <CreditCard size={20} className="text-blue-600" />
+                        <div>
+                          <div className="font-medium text-blue-800">Bank Transfer</div>
+                          <div className="text-sm text-blue-600">FPX / Online Banking</div>
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* GrabPay */}
+                    <button
+                      onClick={() => handlePaymentSelection('grabpay')}
+                      disabled={orderProcessing}
+                      className="w-full p-3 rounded-lg border border-green-300 bg-green-50 hover:bg-green-100 text-left transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-5 h-5 bg-green-600 rounded text-white text-xs flex items-center justify-center font-bold">G</div>
+                        <div>
+                          <div className="font-medium text-green-800">GrabPay</div>
+                          <div className="text-sm text-green-600">Digital wallet</div>
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* Touch 'n Go */}
+                    <button
+                      onClick={() => handlePaymentSelection('touchngo')}
+                      disabled={orderProcessing}
+                      className="w-full p-3 rounded-lg border border-purple-300 bg-purple-50 hover:bg-purple-100 text-left transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-5 h-5 bg-purple-600 rounded text-white text-xs flex items-center justify-center font-bold">T</div>
+                        <div>
+                          <div className="font-medium text-purple-800">Touch 'n Go</div>
+                          <div className="text-sm text-purple-600">eWallet</div>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setShowPaymentOptions(false);
+                      setPendingOrder(null);
+                    }}
+                    disabled={orderProcessing}
+                    className="w-full mt-4 p-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  >
+                    Cancel Order
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Order Processing Indicator */}
+            {orderProcessing && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Processing your order...</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -705,6 +1482,12 @@ User query: ${userQuery}`;
           {/* Quick suggestion buttons */}
           <div className="flex gap-2 mt-3 overflow-x-auto">
             <button
+              onClick={() => setInputValue('I want to order food for dinner')}
+              className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs whitespace-nowrap hover:bg-gray-600 transition-colors"
+            >
+              Order food
+            </button>
+            <button
               onClick={() => setInputValue('Recommend food within my budget')}
               className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs whitespace-nowrap hover:bg-gray-600 transition-colors"
             >
@@ -727,12 +1510,6 @@ User query: ${userQuery}`;
               className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs whitespace-nowrap hover:bg-gray-600 transition-colors"
             >
               What can I afford?
-            </button>
-            <button
-              onClick={() => setInputValue('Plan my food and accommodation budget')}
-              className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs whitespace-nowrap hover:bg-gray-600 transition-colors"
-            >
-              Budget planning
             </button>
           </div>
         </div>

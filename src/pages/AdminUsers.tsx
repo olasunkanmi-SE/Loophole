@@ -303,7 +303,7 @@ export default function AdminUsers() {
                     </span>
                   </button>
                   <button
-                    onClick={() => setLocation(`/admin/users/${selectedUser._id}/orders`)}
+                    onClick={() => setLocation(`/admin/user-orders/${encodeURIComponent(selectedUser.email)}`)}
                     className="flex items-center justify-center gap-2 p-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
                   >
                     <ShoppingCart size={16} />

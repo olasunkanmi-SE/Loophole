@@ -1311,8 +1311,8 @@ ${categoryHint ? `CONTEXT: This question relates to ${categoryHint}` : ''}
                 <div
                   className={`max-w-[80%] ${
                     message.sender === 'user'
-                      ? 'bg-blue-600 text-white rounded-2xl p-3'
-                      : 'bg-gray-800 text-gray-100 border border-gray-700 rounded-2xl overflow-hidden'
+                      ? 'bg-blue-600 text-white rounded-xl p-3'
+                      : 'bg-gray-800 text-gray-100 border border-gray-700 rounded-xl overflow-hidden py-2'
                   }`}
                 >
                   {message.sender === 'user' ? (

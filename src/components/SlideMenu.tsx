@@ -51,27 +51,30 @@ export default function SlideMenu({ isOpen, onClose }: SlideMenuProps) {
             </button>
           </div>
 
-          <nav className="space-y-4">
-            <button onClick={() => handleNavigation('/home')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
+          <nav className="mt-8 space-y-4">
+            <button onClick={() => handleNavigation('/')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
               Home
             </button>
-            <button onClick={() => handleNavigation('/location')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
-              Location
+            <button onClick={() => handleNavigation('/menu')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
+              Food Menu
             </button>
-            <button onClick={() => handleNavigation('#')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
-              Questionnaires
+            <button onClick={() => handleNavigation('/order-history')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
+              Order History
             </button>
-            <button onClick={() => handleNavigation('/quiz')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
-              Quizzes
+            <button onClick={() => handleNavigation('/questionnaire')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
+              Surveys
             </button>
             <button onClick={() => handleNavigation('/points')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
-              Points
+              Points & Rewards
+            </button>
+            <button onClick={() => handleNavigation('/housing')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
+              Housing
+            </button>
+            <button onClick={() => handleNavigation('/chat')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
+              AI Assistant
             </button>
             <button onClick={() => handleNavigation('/profile')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
               Profile
-            </button>
-            <button onClick={() => handleNavigation('/signin')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
-              Sign In
             </button>
             <button onClick={() => handleNavigation('/settings')} className="block w-full text-left py-2 px-4 text-gray-700 hover:bg-gray-100 rounded">
               Settings

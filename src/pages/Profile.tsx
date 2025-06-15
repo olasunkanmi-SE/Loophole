@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import MobileHeader from "../components/MobileHeader";
 import { useLocation } from "wouter";
-import { User, Edit3, Settings, LogOut } from "lucide-react";
+import { User, Mail, MapPin, Star, ShoppingBag, Settings, ChevronRight, Trophy, Users, Bell } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { updateProfile } from "../api/client";
 
@@ -50,17 +49,17 @@ export default function Profile() {
 
   const handleSave = async () => {
     if (!user) return;
-    
+
     setLoading(true);
     setError("");
 
     try {
       // Update profile data
       await updateProfile(user.email, formData);
-      
+
       // Refresh profile to get updated data
       await refreshProfile();
-      
+
       setIsEditing(false);
     } catch (err: any) {
       setError(err.message || "Failed to update profile");

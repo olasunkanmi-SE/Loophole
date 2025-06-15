@@ -4,6 +4,9 @@ import MobileHeader from "../components/MobileHeader";
 import MobileContainer from "../components/MobileContainer";
 import { useLocation } from "wouter";
 import { usePoints } from "../contexts/PointsContext";
+import { useGamification } from "../contexts/GamificationContext";
+import { useNotifications } from "../contexts/NotificationContext";
+import { useOffline } from "../contexts/OfflineContext";
 
 interface Question {
   id: string;
@@ -51,6 +54,9 @@ export default function LifestyleQuestionnaire() {
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [, setLocation] = useLocation();
   const { addPoints } = usePoints();
+  const { unlockAchievement, updateStreak, addExperience } = useGamification();
+  const { addNotification } = useNotifications();
+  const { isOnline, cacheSurvey, completeCachedSurvey } = useOffline();
 
   const currentQ = questions[currentQuestion];
   const progress = (currentQuestion / questions.length) * 100;
@@ -90,6 +96,33 @@ export default function LifestyleQuestionnaire() {
       // Questionnaire completed - calculate and award points
       const earnedPoints = calculatePoints();
       addPoints('lifestyle', earnedPoints);
+      
+      // Add experience points
+      addExperience(earnedPoints * 2);
+      
+      // Update survey streak
+      updateStreak('survey');
+      
+      // Check for achievements
+      unlockAchievement('first_survey');
+      
+      // Send notification
+      addNotification({
+        type: 'survey',
+        title: 'Survey Completed! 🎉',
+        message: `You earned ${earnedPoints} points from the Lifestyle & Shopping survey!`,
+      });
+      
+      // Cache survey if offline
+      if (!isOnline) {
+        const surveyId = cacheSurvey({
+          category: 'lifestyle',
+          questions: questions,
+          answers: answers,
+        });
+        completeCachedSurvey(surveyId);
+      }
+      
       setShowCompletionModal(true);
     }
   };

@@ -4,14 +4,16 @@ import { useState } from "react";
 import SlideMenu from "./SlideMenu";
 import { useCart } from "../contexts/CartContext";
 import { usePoints } from "../contexts/PointsContext";
+import NotificationBell from "./NotificationBell";
 
 interface MobileHeaderProps {
   title?: string;
   onBack?: () => void;
   cartCount?: number;
+  showNotifications?: boolean;
 }
 
-export default function MobileHeader({ title = "Back", onBack, cartCount = 0 }: MobileHeaderProps) {
+export default function MobileHeader({ title = "Back", onBack, cartCount = 0, showNotifications = true }: MobileHeaderProps) {
   const [, setLocation] = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { getTotalItems } = useCart();
@@ -29,7 +31,7 @@ export default function MobileHeader({ title = "Back", onBack, cartCount = 0 }: 
           <ArrowLeft size={20} />
           {title}
         </button>
-        
+
         <div className="flex items-center gap-3">
           {/* Points Display */}
           {totalPoints > 0 && (
@@ -63,7 +65,9 @@ export default function MobileHeader({ title = "Back", onBack, cartCount = 0 }: 
               </span>
             )}
           </div>
-          
+
+          {showNotifications && <NotificationBell />}
+
           <button
             onClick={() => setIsMenuOpen(true)}
             className="p-2 bg-gray-100 rounded-full"

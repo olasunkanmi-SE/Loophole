@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import MobileHeader from "../components/MobileHeader";
 import MobileContainer from "../components/MobileContainer";
 import { getBridges } from "../api/client";
+import { CreditCard, ArrowRight, Gift, Star, ShoppingBag, Users, Map, TrendingUp, Package } from "lucide-react";
 
 // Define the Bridge interface (if not already imported from a shared types file)
 interface Bridge {

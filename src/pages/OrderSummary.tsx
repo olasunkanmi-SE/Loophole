@@ -5,6 +5,7 @@ import { useCart } from "../contexts/CartContext";
 import { usePoints } from "../contexts/PointsContext";
 import { usePayment } from "../contexts/PaymentContext";
 import type { PaymentMethod } from "../contexts/PaymentContext";
+import { useAuth } from "../contexts/AuthContext";
 import PaymentMethodSelector from "../components/PaymentMethodSelector";
 import PaymentProcessing from "../components/PaymentProcessing";
 
@@ -25,9 +26,59 @@ export default function OrderSummary() {
   } = useCart();
   const { canAfford, deductRM, getFormattedRM, getTotalPoints } = usePoints();
   const { processPayment, isProcessing } = usePayment();
+  const { user } = useAuth();
 
   const handlePaymentMethodSelect = (method: PaymentMethod) => {
     setSelectedPaymentMethod(method);
+  };
+
+  const createOrder = async (paymentSuccess: boolean, transactionId?: string) => {
+    try {
+      const orderData = {
+        userEmail: user?.email || 'guest',
+        items: cartItems.map(item => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          addOns: item.addOns || []
+        })),
+        totalAmount: parseFloat(getTotalPrice()),
+        paymentMethod: {
+          type: selectedPaymentMethod?.type,
+          name: selectedPaymentMethod?.name
+        }
+      };
+
+      const response = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      if (response.ok) {
+        const order = await response.json();
+        
+        // Update order status based on payment success
+        await fetch('/api/update-order-status', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderId: order.orderId,
+            status: paymentSuccess ? 'completed' : 'cancelled',
+            transactionId
+          }),
+        });
+
+        return order;
+      }
+    } catch (error) {
+      console.error('Error creating order:', error);
+    }
   };
 
   const handlePlaceOrder = async () => {
@@ -45,6 +96,7 @@ export default function OrderSummary() {
       }
 
       if (deductRM(orderTotal)) {
+        await createOrder(true);
         setPaymentSuccess(true);
         setShowPaymentProcessing(true);
         setTimeout(() => {
@@ -61,10 +113,15 @@ export default function OrderSummary() {
       setPaymentSuccess(success);
 
       if (success) {
+        // Create order with transaction ID from payment processing
+        await createOrder(success, `txn_${Date.now()}`);
         setTimeout(() => {
           clearCart();
           setLocation("/");
         }, 2000);
+      } else {
+        // Create order as cancelled
+        await createOrder(false);
       }
     }
   };

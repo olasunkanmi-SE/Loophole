@@ -248,6 +248,77 @@ app.get('/api/payment-history/:email', checkDbConnection, async (req, res) => {
   }
 });
 
+// Order management endpoints
+app.post('/api/create-order', checkDbConnection, async (req, res) => {
+  try {
+    const { userEmail, items, totalAmount, paymentMethod } = req.body;
+    
+    const ordersCollection = db.collection('orders');
+    const orderId = `ORD${Date.now()}${Math.floor(Math.random() * 1000)}`;
+    
+    const order = {
+      orderId,
+      userEmail,
+      items,
+      totalAmount,
+      paymentMethod,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    const result = await ordersCollection.insertOne(order);
+    res.json({ ...order, _id: result.insertedId });
+  } catch (error) {
+    console.error('Create order error:', error);
+    res.status(500).json({ error: 'Failed to create order' });
+  }
+});
+
+app.put('/api/update-order-status', checkDbConnection, async (req, res) => {
+  try {
+    const { orderId, status, transactionId } = req.body;
+    
+    const ordersCollection = db.collection('orders');
+    const updateData = {
+      status,
+      updated_at: new Date().toISOString()
+    };
+    
+    if (transactionId) {
+      updateData.transactionId = transactionId;
+    }
+    
+    await ordersCollection.updateOne(
+      { orderId },
+      { $set: updateData }
+    );
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Update order status error:', error);
+    res.status(500).json({ error: 'Failed to update order status' });
+  }
+});
+
+app.get('/api/order-history/:email', checkDbConnection, async (req, res) => {
+  try {
+    const { email } = req.params;
+    
+    const ordersCollection = db.collection('orders');
+    const orders = await ordersCollection
+      .find({ userEmail: email })
+      .sort({ created_at: -1 })
+      .limit(50)
+      .toArray();
+    
+    res.json(orders);
+  } catch (error) {
+    console.error('Get order history error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);
 });

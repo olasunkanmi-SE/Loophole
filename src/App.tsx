@@ -35,6 +35,7 @@ import Housing from './pages/Housing';
 import NotFound from "@/pages/NotFound";
 import Questionnaire from "@/pages/Questionnaire";
 import { PaymentProvider } from "@/contexts/PaymentContext";
+import OrderHistory from "@/pages/OrderHistory";
 
 function App() {
   return (
@@ -175,6 +176,11 @@ function App() {
                   <Settings />
                 </ProtectedRoute>
               </Route>
+              <Route path="/order-history">
+                 <ProtectedRoute>
+                   <OrderHistory />
+                 </ProtectedRoute>
+               </Route>
               <Route path="/listings">
                 <ProtectedRoute>
                   <Listings />

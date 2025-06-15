@@ -81,8 +81,44 @@ export default function Chat() {
     }
   ];
 
+  // Helper function to extract menu items from AI response
+  const extractMenuItems = (content: string) => {
+    const menuItems = [
+      // Drinks
+      { id: "4", name: "Blood Orange Cocktail", price: 12, category: "drink" },
+      { id: "14", name: "Classic Mojito", price: 10, category: "drink" },
+      { id: "15", name: "Espresso Martini", price: 14, category: "drink" },
+      { id: "16", name: "Tropical Paradise", price: 11, category: "drink" },
+      // Chicken
+      { id: "10", name: "Herb Roasted Chicken", price: 16, category: "chicken" },
+      { id: "11", name: "Chicken Tikka Masala", price: 14, category: "chicken" },
+      { id: "12", name: "Buffalo Chicken Wings", price: 12, category: "chicken" },
+      { id: "13", name: "Chicken Cordon Bleu", price: 18, category: "chicken" },
+      // Seafood
+      { id: "2", name: "Maple Bourbon Glazed Salmon", price: 20, category: "seafood" },
+      { id: "8", name: "Garlic Butter Clams", price: 15, category: "seafood" },
+      { id: "9", name: "Grilled Lobster Tail", price: 32, category: "seafood" },
+      { id: "17", name: "Pan-Seared Scallops", price: 24, category: "seafood" },
+      // Meat
+      { id: "1", name: "Grilled Rack of Lamb", price: 20, category: "meat" },
+      { id: "5", name: "Wagyu Beef Steak", price: 35, category: "meat" },
+      { id: "6", name: "BBQ Pork Ribs", price: 18, category: "meat" },
+      { id: "7", name: "Venison Medallions", price: 28, category: "meat" }
+    ];
+
+    const foundItems = menuItems.filter(item => 
+      content.toLowerCase().includes(item.name.toLowerCase()) ||
+      content.toLowerCase().includes(item.name.split(' ')[0].toLowerCase())
+    );
+
+    return foundItems;
+  };
+
   // Helper function to format AI response with better styling
   const formatAIResponse = (content: string) => {
+    // Extract menu items mentioned in the response
+    const mentionedMenuItems = extractMenuItems(content);
+    
     // Split content into paragraphs and format
     const paragraphs = content.split('\n\n').filter(p => p.trim());
     
@@ -111,15 +147,49 @@ export default function Chat() {
         );
       }
       
-      // Check if it's a food recommendation with prices
-      if (paragraph.includes('RM') && (paragraph.includes('recommend') || paragraph.includes('food'))) {
+      // Check if it's a food recommendation with prices - show clickable cards
+      if (paragraph.includes('RM') && (paragraph.includes('recommend') || paragraph.includes('food') || mentionedMenuItems.length > 0)) {
         return (
-          <div key={index} className="bg-gray-700 rounded-lg p-3 mb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <UtensilsCrossed size={16} className="text-orange-400" />
-              <span className="text-orange-400 font-medium text-sm">Food Recommendations</span>
+          <div key={index} className="mb-4">
+            <div className="bg-gray-700 rounded-lg p-3 mb-3">
+              <div className="flex items-center gap-2 mb-2">
+                <UtensilsCrossed size={16} className="text-orange-400" />
+                <span className="text-orange-400 font-medium text-sm">Food Recommendations</span>
+              </div>
+              <p className="text-gray-200 text-sm mb-3">{paragraph}</p>
             </div>
-            <p className="text-gray-200 text-sm">{paragraph}</p>
+            
+            {/* Clickable Menu Item Cards */}
+            {mentionedMenuItems.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-xs text-gray-400 mb-2">Click to view details:</div>
+                <div className="grid grid-cols-1 gap-2">
+                  {mentionedMenuItems.map((item, itemIdx) => (
+                    <button
+                      key={itemIdx}
+                      onClick={() => setLocation(`/menu/${item.id}`)}
+                      className="bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg p-3 text-left transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
+                            <UtensilsCrossed size={16} className="text-white" />
+                          </div>
+                          <div>
+                            <div className="font-medium text-white text-sm">{item.name}</div>
+                            <div className="text-xs text-gray-400 capitalize">{item.category}</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-green-400 font-bold">RM {item.price}</div>
+                          <div className="text-xs text-gray-400">View Details →</div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         );
       }

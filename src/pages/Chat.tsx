@@ -73,9 +73,16 @@ export default function Chat() {
       action: () => setLocation('/menu')
     },
     {
+      id: 'housing',
+      title: 'Find Housing',
+      description: `Book accommodation with your ${availableRM}`,
+      icon: <Home size={16} className="text-purple-500" />,
+      action: () => setLocation('/housing')
+    },
+    {
       id: 'points-status',
       title: 'My Earnings',
-      description: `${totalPoints} points • ${completedSurveys}/3 surveys done`,
+      description: `${totalPoints} points • ${completedSurveys}/8 surveys done`,
       icon: <Award size={16} className="text-blue-500" />,
       action: () => setLocation('/points')
     }
@@ -229,6 +236,17 @@ export default function Chat() {
       });
     }
     
+    // Check for housing/accommodation mentions
+    if (content.toLowerCase().includes('housing') || content.toLowerCase().includes('accommodation') || 
+        content.toLowerCase().includes('hostel') || content.toLowerCase().includes('hotel') ||
+        content.toLowerCase().includes('stay') || content.toLowerCase().includes('lodging')) {
+      actions.push({
+        text: 'View Housing Options',
+        icon: <Home size={16} />,
+        onClick: () => setLocation('/housing')
+      });
+    }
+    
     // Check for survey mentions
     if (content.toLowerCase().includes('survey') || content.toLowerCase().includes('earn more')) {
       actions.push({
@@ -279,6 +297,21 @@ export default function Chat() {
       ]
     };
 
+    const accommodations = {
+      budget: [
+        { name: "Budget Hostel Dorm Bed", price: 15, location: "Petaling Jaya", type: "Shared room", description: "Clean and safe hostel dorm perfect for budget travelers" },
+        { name: "Capsule Pod Experience", price: 20, location: "Bukit Bintang, KL", type: "Unique space", description: "Futuristic capsule hotel experience" },
+        { name: "Student Housing Single Room", price: 25, location: "USJ, Selangor", type: "Private room", description: "Perfect for students with study-friendly environment" }
+      ],
+      midRange: [
+        { name: "Private Room with Breakfast", price: 35, location: "Subang Jaya", type: "Private room", description: "Comfortable private room with breakfast included" },
+        { name: "Cozy Studio in City Center", price: 45, location: "Kuala Lumpur", type: "Entire apartment", description: "Modern studio apartment in the heart of KL" }
+      ],
+      luxury: [
+        { name: "Luxury Condo with Pool", price: 85, location: "KLCC, Kuala Lumpur", type: "Entire apartment", description: "Stunning luxury apartment with city views" }
+      ]
+    };
+
     let baseContext = `You are a comprehensive AI assistant for EarnQuiz, a Malaysian app where people earn money by completing surveys and use that money to order food.
 
 CURRENT USER STATUS:
@@ -298,18 +331,37 @@ Chicken (RM 12-18): ${foodMenu.chicken.map(item => `${item.name} (RM ${item.pric
 Seafood (RM 15-32): ${foodMenu.seafood.map(item => `${item.name} (RM ${item.price})`).join(', ')}
 Meat (RM 18-35): ${foodMenu.meat.map(item => `${item.name} (RM ${item.price})`).join(', ')}
 
+HOUSING & ACCOMMODATION OPTIONS:
+Budget (RM 15-25): ${accommodations.budget.map(item => `${item.name} (RM ${item.price}) in ${item.location}`).join(', ')}
+Mid-Range (RM 35-45): ${accommodations.midRange.map(item => `${item.name} (RM ${item.price}) in ${item.location}`).join(', ')}
+Luxury (RM 85+): ${accommodations.luxury.map(item => `${item.name} (RM ${item.price}) in ${item.location}`).join(', ')}
+
 INTELLIGENT CAPABILITIES:
 - Provide personalized food recommendations based on user's budget
-- Suggest survey combinations to reach specific spending goals
-- Help users understand earning potential vs. food costs
+- Suggest housing/accommodation options within user's budget range
+- Recommend survey combinations to reach specific spending goals for food OR accommodation
+- Help users understand earning potential vs. food AND housing costs
 - Guide users through the app's features and navigation
-- Answer questions about Malaysian food culture and preferences
+- Answer questions about Malaysian food culture, housing options, and preferences
+- Compare costs between food vs accommodation spending strategies
 
 RECOMMENDATION LOGIC:
+Food Recommendations:
 - If user has RM 0-5: Recommend drinks and completing more surveys
 - If user has RM 5-15: Recommend chicken dishes and some seafood
 - If user has RM 15-25: Recommend most menu items except premium options
 - If user has RM 25+: Recommend any menu items including premium meat and seafood
+
+Housing Recommendations:
+- If user has RM 0-15: Suggest completing more surveys, focus on budget hostels (RM 15-25)
+- If user has RM 15-25: Recommend budget hostels and dorm beds
+- If user has RM 25-45: Recommend private rooms and studio apartments
+- If user has RM 45+: Recommend luxury options and private apartments
+
+Combined Strategy:
+- Help users balance between food and accommodation spending
+- Suggest earning goals for multi-day trips (food + accommodation)
+- Recommend cost-effective combinations (e.g., hostel + good meals vs luxury stay + simple food)
 
 CONVERSATION STYLE:
 - Be friendly, knowledgeable, and helpful
@@ -659,6 +711,12 @@ User query: ${userQuery}`;
               Food recommendations
             </button>
             <button
+              onClick={() => setInputValue('Show me affordable housing options')}
+              className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs whitespace-nowrap hover:bg-gray-600 transition-colors"
+            >
+              Housing options
+            </button>
+            <button
               onClick={() => setInputValue('How to earn more money?')}
               className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs whitespace-nowrap hover:bg-gray-600 transition-colors"
             >
@@ -671,10 +729,10 @@ User query: ${userQuery}`;
               What can I afford?
             </button>
             <button
-              onClick={() => setInputValue('Show me the menu with prices')}
+              onClick={() => setInputValue('Plan my food and accommodation budget')}
               className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs whitespace-nowrap hover:bg-gray-600 transition-colors"
             >
-              View menu
+              Budget planning
             </button>
           </div>
         </div>

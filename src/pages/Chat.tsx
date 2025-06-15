@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { MessageCircle, Send, Sparkles, DollarSign, UtensilsCrossed, Home, Award, ArrowUp, CheckCircle, CreditCard } from 'lucide-react';
+import { MessageCircle, Send, Sparkles, DollarSign, UtensilsCrossed, Home, Award, ArrowUp, CheckCircle, CreditCard, Download } from 'lucide-react';
 import MobileContainer from '../components/MobileContainer';
 import { usePoints } from '../contexts/PointsContext';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { usePayment } from '../contexts/PaymentContext';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import jsPDF from 'jspdf';
 
 interface Message {
   id: string;
@@ -46,6 +47,7 @@ export default function Chat() {
   const [pendingOrder, setPendingOrder] = useState<any>(null);
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [orderProcessing, setOrderProcessing] = useState(false);
+  const [completedOrders, setCompletedOrders] = useState<any[]>([]);
   const { getTotalPoints, getFormattedRM, getCompletedCategories, canAfford, deductRM } = usePoints();
   const { addToCart, clearCart } = useCart();
   const { processPayment } = usePayment();
@@ -96,7 +98,7 @@ export default function Chat() {
         } else {
           if (deductRM(pendingOrder.total)) {
             paymentSuccess = true;
-            paymentMessage = `✅ **Payment Successful!**\n\nPaid RM ${pendingOrder.total.toFixed(2)} using your points balance.\n\nYour order has been placed and will be prepared shortly!`;
+            paymentMessage = `✅ **Payment Successful!**\n\nPaid RM ${pendingOrder.total.toFixed(2)} using your points balance.\n\nYour order has been placed and will be prepared shortly!\n\n📄 Your receipt is ready for download.`;
           }
         }
       } else {
@@ -112,7 +114,7 @@ export default function Chat() {
         
         if (result) {
           paymentSuccess = true;
-          paymentMessage = `✅ **Payment Successful!**\n\nPaid RM ${pendingOrder.total.toFixed(2)} using ${selectedMethod.name}.\n\nYour order has been placed and will be prepared shortly!`;
+          paymentMessage = `✅ **Payment Successful!**\n\nPaid RM ${pendingOrder.total.toFixed(2)} using ${selectedMethod.name}.\n\nYour order has been placed and will be prepared shortly!\n\n📄 Your receipt is ready for download.`;
         } else {
           paymentMessage = `❌ **Payment Failed**\n\nThere was an issue processing your ${selectedMethod.name} payment. Please try again or use a different payment method.`;
         }
@@ -175,6 +177,7 @@ export default function Chat() {
         const createdOrder = await response.json();
         
         // Update order status to completed
+        const transactionId = `chat_${Date.now()}`;
         await fetch('/api/update-order-status', {
           method: 'PUT',
           headers: {
@@ -183,13 +186,121 @@ export default function Chat() {
           body: JSON.stringify({
             orderId: createdOrder.orderId,
             status: 'completed',
-            transactionId: `chat_${Date.now()}`
+            transactionId: transactionId
           }),
         });
+
+        // Add to completed orders for receipt generation
+        const completedOrder = {
+          ...createdOrder,
+          status: 'completed',
+          transactionId: transactionId,
+          created_at: new Date().toISOString()
+        };
+        
+        setCompletedOrders(prev => [completedOrder, ...prev]);
       }
     } catch (error) {
       console.error('Error creating chat order:', error);
     }
+  };
+
+  const generateChatOrderReceipt = (order: any) => {
+    const pdf = new jsPDF();
+    
+    // Set font size and style
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    
+    // Header
+    pdf.text('EARNEATS RECEIPT', 105, 20, { align: 'center' });
+    pdf.text('(Chat Order)', 105, 28, { align: 'center' });
+    
+    // Draw line under header
+    pdf.setLineWidth(0.5);
+    pdf.line(20, 32, 190, 32);
+    
+    // Order details
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    let yPosition = 42;
+    
+    pdf.text(`Order ID: ${order.orderId}`, 20, yPosition);
+    yPosition += 6;
+    pdf.text(`Date: ${new Date(order.created_at).toLocaleDateString('en-MY', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })}`, 20, yPosition);
+    yPosition += 6;
+    pdf.text(`Customer: ${order.userEmail}`, 20, yPosition);
+    yPosition += 6;
+    pdf.text(`Order Method: AI Chat Assistant`, 20, yPosition);
+    yPosition += 10;
+    
+    // Items section
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('ITEMS ORDERED:', 20, yPosition);
+    yPosition += 8;
+    
+    pdf.setFont('helvetica', 'normal');
+    order.items.forEach((item: any) => {
+      const itemTotal = item.price * item.quantity;
+      pdf.text(`${item.quantity}x ${item.name}`, 25, yPosition);
+      pdf.text(`RM ${itemTotal.toFixed(2)}`, 150, yPosition);
+      yPosition += 5;
+    });
+    
+    // Payment details
+    yPosition += 5;
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('PAYMENT DETAILS:', 20, yPosition);
+    yPosition += 8;
+    
+    pdf.setFont('helvetica', 'normal');
+    const paymentMethodName = order.paymentMethod.type === 'points' ? 'EarnEats Points' : 
+                             order.paymentMethod.type === 'grabpay' ? 'GrabPay' :
+                             order.paymentMethod.type === 'touchngo' ? "Touch 'n Go" :
+                             order.paymentMethod.type === 'card' ? 'Bank Transfer' : order.paymentMethod.type;
+    
+    pdf.text(`Payment Method: ${paymentMethodName}`, 20, yPosition);
+    yPosition += 6;
+    
+    if (order.transactionId) {
+      pdf.text(`Transaction ID: ${order.transactionId}`, 20, yPosition);
+      yPosition += 6;
+    }
+    
+    pdf.text(`Status: ${order.status.toUpperCase()}`, 20, yPosition);
+    yPosition += 10;
+    
+    // Total
+    pdf.setLineWidth(0.5);
+    pdf.line(20, yPosition, 190, yPosition);
+    yPosition += 8;
+    
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('TOTAL:', 20, yPosition);
+    pdf.text(`RM ${order.totalAmount.toFixed(2)}`, 150, yPosition);
+    yPosition += 15;
+    
+    // Special note for chat orders
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'italic');
+    pdf.text('This order was placed using our AI Chat Assistant', 105, yPosition, { align: 'center' });
+    yPosition += 6;
+    
+    // Footer
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Thank you for your order!', 105, yPosition, { align: 'center' });
+    yPosition += 4;
+    pdf.text('Visit us again at EarnEats.', 105, yPosition, { align: 'center' });
+    
+    // Save the PDF
+    pdf.save(`chat_receipt_${order.orderId}.pdf`);
   };
 
   // Function to save chat history to localStorage (keep last 5 conversations)
@@ -411,6 +522,19 @@ export default function Chat() {
       });
     }
 
+    // Check for receipt/download mentions
+    if (content.toLowerCase().includes('receipt') || content.toLowerCase().includes('download')) {
+      actions.push({
+        text: 'Download Latest Receipt',
+        icon: <Download size={16} />,
+        onClick: () => {
+          if (completedOrders.length > 0) {
+            generateChatOrderReceipt(completedOrders[0]);
+          }
+        }
+      });
+    }
+
     return actions;
   };
 
@@ -584,6 +708,12 @@ ${hasOrderIntent ? `
 ORDER_CONFIRMATION: [{"id": "1", "name": "Grilled Rack of Lamb", "price": 20, "quantity": 1}, {"id": "4", "name": "Blood Orange Cocktail", "price": 12, "quantity": 1}]
 - Only include this ORDER_CONFIRMATION format when the user explicitly agrees to order
 ` : ''}
+
+RECEIPT CAPABILITIES:
+- You can help users download receipts for their completed orders
+- When users ask about receipts or downloading receipts, inform them that you can generate PDF receipts
+- Completed orders from this chat session can have receipts downloaded immediately
+- Tell users that receipts include order details, payment information, and transaction IDs
 
 ${hasConfirmIntent && pendingOrder ? `
 - The user seems to be confirming a previous recommendation
@@ -1048,6 +1178,19 @@ ${categoryHint ? `CONTEXT: This question relates to ${categoryHint}` : ''}
                                 {action.text}
                               </button>
                             ))}
+                          </div>
+                        )}
+
+                        {/* Receipt Download Button for Successful Orders */}
+                        {message.content.includes('Payment Successful') && completedOrders.length > 0 && (
+                          <div className="mt-4">
+                            <button
+                              onClick={() => generateChatOrderReceipt(completedOrders[0])}
+                              className="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 justify-center"
+                            >
+                              <Download size={16} />
+                              Download Receipt (PDF)
+                            </button>
                           </div>
                         )}
 

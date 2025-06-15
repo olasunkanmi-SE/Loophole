@@ -22,13 +22,40 @@ interface QuickAction {
 
 export default function Chat() {
   const [, setLocation] = useLocation();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    // Load chat history from localStorage on initialization
+    const savedMessages = localStorage.getItem('chatHistory');
+    if (savedMessages) {
+      try {
+        const parsed = JSON.parse(savedMessages);
+        // Convert timestamp strings back to Date objects
+        return parsed.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }));
+      } catch (error) {
+        console.error('Error parsing saved chat history:', error);
+      }
+    }
+    return [];
+  });
   const [inputValue, setInputValue] = useState('');
   const { getTotalPoints, getFormattedRM, getCompletedCategories } = usePoints();
 
   const totalPoints = getTotalPoints();
   const availableRM = getFormattedRM();
   const completedSurveys = getCompletedCategories().length;
+
+  // Function to save chat history to localStorage (keep last 5 conversations)
+  const saveChatHistory = (newMessages: Message[]) => {
+    try {
+      // Limit to last 10 messages (approximately 5 conversations assuming user + assistant pairs)
+      const limitedMessages = newMessages.slice(-10);
+      localStorage.setItem('chatHistory', JSON.stringify(limitedMessages));
+    } catch (error) {
+      console.error('Error saving chat history:', error);
+    }
+  };
 
   const quickActions: QuickAction[] = [
     {
@@ -248,7 +275,9 @@ User query: ${userQuery}`;
       timestamp: new Date()
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
+    saveChatHistory(updatedMessages);
     const query = inputValue.trim();
     setInputValue('');
 
@@ -278,7 +307,9 @@ User query: ${userQuery}`;
         timestamp: new Date()
       };
 
-      setMessages(prev => [...prev, assistantMessage]);
+      const finalMessages = [...messages, userMessage, assistantMessage];
+      setMessages(finalMessages);
+      saveChatHistory(finalMessages);
     } catch (error) {
       console.error('Gemini AI error details:', error);
       console.error('Error type:', typeof error);
@@ -303,7 +334,9 @@ User query: ${userQuery}`;
         timestamp: new Date()
       };
 
-      setMessages(prev => [...prev, assistantMessage]);
+      const finalMessages = [...messages, userMessage, assistantMessage];
+      setMessages(finalMessages);
+      saveChatHistory(finalMessages);
     }
   };
 
@@ -322,7 +355,19 @@ User query: ${userQuery}`;
             <MessageCircle size={20} />
             <span className="font-medium">Earnings Assistant</span>
           </div>
-          <div className="w-8" />
+          {messages.length > 0 && (
+            <button
+              onClick={() => {
+                setMessages([]);
+                localStorage.removeItem('chatHistory');
+              }}
+              className="p-2 hover:bg-gray-800 rounded-lg transition-colors text-xs text-gray-400 hover:text-white"
+              title="Clear chat history"
+            >
+              Clear
+            </button>
+          )}
+          {messages.length === 0 && <div className="w-8" />}
         </div>
 
         {/* Earnings Status Bar */}

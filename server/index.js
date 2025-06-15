@@ -81,6 +81,26 @@ const cacheMiddleware = (ttlMinutes = 30) => {
   };
 };
 
+// Cache invalidation helper
+const invalidateCache = (patterns = []) => {
+  if (patterns.length === 0) {
+    // Clear all cache if no specific patterns provided
+    cache.clear();
+    console.log('All cache cleared');
+    return;
+  }
+  
+  // Clear cache entries matching patterns
+  for (const [key] of cache.cache.entries()) {
+    for (const pattern of patterns) {
+      if (key.includes(pattern)) {
+        cache.cache.delete(key);
+        console.log(`Cache invalidated for: ${key}`);
+      }
+    }
+  }
+};
+
 // Cleanup expired cache entries every 10 minutes
 setInterval(() => {
   cache.cleanup();
@@ -396,6 +416,10 @@ app.post("/api/profile", checkDbConnection, async (req, res) => {
     };
 
     await profilesCollection.insertOne(profile);
+    
+    // Invalidate profile cache
+    invalidateCache([`/api/profile/${profileData.email}`]);
+    
     res.json(profile);
   } catch (error) {
     console.error("Create profile error:", error);
@@ -430,6 +454,10 @@ app.put("/api/profile/:email", checkDbConnection, async (req, res) => {
 
     // Fetch and return updated profile
     const profile = await profilesCollection.findOne({ email });
+    
+    // Invalidate profile cache
+    invalidateCache([`/api/profile/${email}`]);
+    
     res.json(profile);
   } catch (error) {
     console.error("Update profile error:", error);
@@ -460,6 +488,9 @@ app.post("/api/reset-password", checkDbConnection, async (req, res) => {
       { email },
       { $set: { password: newPassword, updated_at: new Date().toISOString() } },
     );
+
+    // Invalidate user-related cache
+    invalidateCache([`/api/profile/${email}`]);
 
     res.json({ message: "Password reset successfully" });
   } catch (error) {
@@ -515,6 +546,9 @@ app.post("/api/process-payment", checkDbConnection, async (req, res) => {
         status: "completed",
         created_at: new Date().toISOString(),
       });
+      
+      // Invalidate payment history cache
+      invalidateCache([`/api/payment-history/${userEmail}`]);
     }
 
     res.json(paymentResult);
@@ -562,6 +596,14 @@ app.post("/api/create-order", checkDbConnection, async (req, res) => {
     };
 
     const result = await ordersCollection.insertOne(order);
+    
+    // Invalidate order and admin cache
+    invalidateCache([
+      `/api/order-history/${userEmail}`,
+      '/api/admin/dashboard-stats',
+      '/api/admin/orders'
+    ]);
+    
     res.json({ ...order, _id: result.insertedId });
   } catch (error) {
     console.error("Create order error:", error);
@@ -584,6 +626,16 @@ app.put("/api/update-order-status", checkDbConnection, async (req, res) => {
     }
 
     await ordersCollection.updateOne({ orderId }, { $set: updateData });
+
+    // Get order to invalidate user-specific cache
+    const order = await ordersCollection.findOne({ orderId });
+    if (order) {
+      invalidateCache([
+        `/api/order-history/${order.userEmail}`,
+        '/api/admin/dashboard-stats',
+        '/api/admin/orders'
+      ]);
+    }
 
     res.json({ success: true });
   } catch (error) {
@@ -718,6 +770,9 @@ app.post(
           { _id: new db.collection("users").s.pkFactory(userId) },
           { $set: { status, updated_at: new Date().toISOString() } },
         );
+        
+        // Invalidate admin cache
+        invalidateCache(['/api/admin/users', '/api/admin/dashboard-stats']);
       }
 
       res.json({ success: true });
@@ -756,6 +811,9 @@ app.put(
         { orderId },
         { $set: { status, updated_at: new Date().toISOString() } },
       );
+
+      // Invalidate admin and order cache
+      invalidateCache(['/api/admin/orders', '/api/admin/dashboard-stats']);
 
       res.json({ success: true });
     } catch (error) {
@@ -902,6 +960,10 @@ app.post("/api/admin/surveys", checkDbConnection, async (req, res) => {
     };
 
     await surveysCollection.insertOne(survey);
+    
+    // Invalidate survey cache
+    invalidateCache(['/api/admin/surveys']);
+    
     res.json(survey);
   } catch (error) {
     console.error("Create survey error:", error);
@@ -925,6 +987,9 @@ app.put("/api/admin/surveys/:surveyId", checkDbConnection, async (req, res) => {
       },
     );
 
+    // Invalidate survey cache
+    invalidateCache(['/api/admin/surveys', `/api/admin/survey-responses/${surveyId}`]);
+
     res.json({ success: true });
   } catch (error) {
     console.error("Update survey error:", error);
@@ -941,6 +1006,10 @@ app.delete(
       const surveysCollection = db.collection("surveys");
 
       await surveysCollection.deleteOne({ id: surveyId });
+      
+      // Invalidate survey cache
+      invalidateCache(['/api/admin/surveys', `/api/admin/survey-responses/${surveyId}`]);
+      
       res.json({ success: true });
     } catch (error) {
       console.error("Delete survey error:", error);
@@ -984,6 +1053,14 @@ app.post("/api/survey-response", checkDbConnection, async (req, res) => {
     };
 
     await responsesCollection.insertOne(responseRecord);
+    
+    // Invalidate survey-related cache
+    invalidateCache([
+      '/api/admin/surveys',
+      `/api/admin/survey-responses/${surveyId}`,
+      '/api/admin/dashboard-stats'
+    ]);
+    
     res.json({ success: true });
   } catch (error) {
     console.error("Save survey response error:", error);
@@ -1112,6 +1189,10 @@ app.post(
       };
 
       await conversionRatesCollection.insertOne(newRate);
+      
+      // Invalidate financial stats cache
+      invalidateCache(['/api/admin/financial-stats']);
+      
       res.json({ success: true });
     } catch (error) {
       console.error("Update conversion rate error:", error);
@@ -1218,6 +1299,10 @@ app.post("/api/admin/system-settings", checkDbConnection, async (req, res) => {
     };
 
     await settingsCollection.insertOne(newSettings);
+    
+    // Invalidate settings cache
+    invalidateCache(['/api/admin/system-settings']);
+    
     res.json({ success: true });
   } catch (error) {
     console.error("Save system settings error:", error);

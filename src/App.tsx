@@ -41,6 +41,7 @@ import AdminUsers from "@/pages/AdminUsers";
 import AdminOrders from "@/pages/AdminOrders";
 import AdminSurveys from './pages/AdminSurveys';
 import AdminMenu from './pages/AdminMenu';
+import AdminFinance from './pages/AdminFinance';
 
 function App() {
   return (
@@ -216,6 +217,11 @@ function App() {
                <Route path="/admin/menu">
                 <ProtectedRoute>
                   <AdminMenu />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/admin/finance">
+                <ProtectedRoute>
+                  <AdminFinance />
                 </ProtectedRoute>
               </Route>
               <Route path="/housing">

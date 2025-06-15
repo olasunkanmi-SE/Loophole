@@ -657,6 +657,140 @@ app.post('/api/survey-response', checkDbConnection, async (req, res) => {
   }
 });
 
+// Financial management endpoints
+app.get('/api/admin/financial-stats', checkDbConnection, async (req, res) => {
+  try {
+    const ordersCollection = db.collection('orders');
+    const usersCollection = db.collection('users');
+    const paymentsCollection = db.collection('payments');
+    const responsesCollection = db.collection('survey_responses');
+    const conversionRatesCollection = db.collection('conversion_rates');
+
+    // Calculate total revenue from completed orders
+    const completedOrders = await ordersCollection.find({ status: 'completed' }).toArray();
+    const totalRevenue = completedOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+
+    // Calculate points distribution from survey responses
+    const surveyResponses = await responsesCollection.find({}).toArray();
+    const totalPointsDistributed = surveyResponses.reduce((sum, response) => sum + (response.pointsEarned || 0), 0);
+
+    // Calculate points redeemed from orders paid with points
+    const pointOrders = await ordersCollection.find({ paymentMethod: 'points' }).toArray();
+    const totalPointsRedeemed = pointOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+
+    // Get active users count
+    const activeUsers = await usersCollection.countDocuments();
+
+    // Calculate monthly revenue for the last 6 months
+    const monthlyRevenue = [];
+    for (let i = 5; i >= 0; i--) {
+      const startOfMonth = new Date();
+      startOfMonth.setMonth(startOfMonth.getMonth() - i, 1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      
+      const endOfMonth = new Date(startOfMonth);
+      endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+      
+      const monthOrders = await ordersCollection.find({
+        status: 'completed',
+        created_at: {
+          $gte: startOfMonth.toISOString(),
+          $lt: endOfMonth.toISOString()
+        }
+      }).toArray();
+      
+      const monthRevenue = monthOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+      monthlyRevenue.push(monthRevenue);
+    }
+
+    // Payment method analytics
+    const paymentMethods = {};
+    completedOrders.forEach(order => {
+      const method = order.paymentMethod || 'unknown';
+      paymentMethods[method] = (paymentMethods[method] || 0) + 1;
+    });
+
+    // Points distribution by category
+    const pointsDistribution = {};
+    surveyResponses.forEach(response => {
+      const category = response.surveyId || 'unknown';
+      pointsDistribution[category] = (pointsDistribution[category] || 0) + (response.pointsEarned || 0);
+    });
+
+    // Get current conversion rate
+    let conversionRate = await conversionRatesCollection.findOne({}, { sort: { updated_at: -1 } });
+    if (!conversionRate) {
+      conversionRate = {
+        pointsToRM: 1,
+        lastUpdated: new Date().toISOString(),
+        updatedBy: 'system'
+      };
+    }
+
+    const stats = {
+      totalRevenue,
+      totalPointsDistributed,
+      totalPointsRedeemed,
+      activeUsers,
+      monthlyRevenue,
+      paymentMethods,
+      pointsDistribution
+    };
+
+    res.json({ stats, conversionRate });
+  } catch (error) {
+    console.error('Financial stats error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/admin/update-conversion-rate', checkDbConnection, async (req, res) => {
+  try {
+    const { pointsToRM, updatedBy } = req.body;
+    const conversionRatesCollection = db.collection('conversion_rates');
+
+    const newRate = {
+      pointsToRM: parseFloat(pointsToRM),
+      lastUpdated: new Date().toISOString(),
+      updatedBy: updatedBy || 'admin'
+    };
+
+    await conversionRatesCollection.insertOne(newRate);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Update conversion rate error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/admin/export-financial-report', checkDbConnection, async (req, res) => {
+  try {
+    const ordersCollection = db.collection('orders');
+    const paymentsCollection = db.collection('payments');
+    
+    const orders = await ordersCollection.find({}).sort({ created_at: -1 }).toArray();
+    const payments = await paymentsCollection.find({}).sort({ created_at: -1 }).toArray();
+
+    // Create CSV content
+    let csvContent = 'Type,Date,Amount,Payment Method,Status,Order ID,User Email\n';
+    
+    orders.forEach(order => {
+      csvContent += `Order,${order.created_at},${order.totalAmount},${order.paymentMethod || 'N/A'},${order.status},${order.orderId},${order.userEmail}\n`;
+    });
+    
+    payments.forEach(payment => {
+      csvContent += `Payment,${payment.created_at},${payment.amount},${payment.paymentMethod || 'N/A'},${payment.status},${payment.orderId || 'N/A'},${payment.userEmail}\n`;
+    });
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=financial-report.csv');
+    res.send(csvContent);
+  } catch (error) {
+    console.error('Export financial report error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);
 });

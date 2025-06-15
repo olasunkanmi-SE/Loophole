@@ -55,7 +55,7 @@ export default function Chat() {
   ];
 
   // Comprehensive app context for the LLM
-  const getComprehensivePrompt = (categoryHint?: string) => {
+  const getComprehensivePrompt = (userQuery: string, categoryHint?: string) => {
     const foodMenu = {
       drinks: [
         { name: "Blood Orange Cocktail", price: 12, description: "Refreshing citrus cocktail" },
@@ -97,10 +97,10 @@ AVAILABLE SURVEYS:
 3. Food & Dining (2-10 points, 2-3 minutes) - About food preferences, dining habits, cultural food choices
 
 FOOD MENU WITH PRICES:
-Drinks (RM 10-14): ${foodMenu.drinks.map(item => `${item.name} (${item.price})`).join(', ')}
-Chicken (RM 12-18): ${foodMenu.chicken.map(item => `${item.name} (${item.price})`).join(', ')}
-Seafood (RM 15-32): ${foodMenu.seafood.map(item => `${item.name} (${item.price})`).join(', ')}
-Meat (RM 18-35): ${foodMenu.meat.map(item => `${item.name} (${item.price})`).join(', ')}
+Drinks (RM 10-14): ${foodMenu.drinks.map(item => `${item.name} (RM ${item.price})`).join(', ')}
+Chicken (RM 12-18): ${foodMenu.chicken.map(item => `${item.name} (RM ${item.price})`).join(', ')}
+Seafood (RM 15-32): ${foodMenu.seafood.map(item => `${item.name} (RM ${item.price})`).join(', ')}
+Meat (RM 18-35): ${foodMenu.meat.map(item => `${item.name} (RM ${item.price})`).join(', ')}
 
 INTELLIGENT CAPABILITIES:
 - Provide personalized food recommendations based on user's budget
@@ -120,7 +120,8 @@ CONVERSATION STYLE:
 - Provide specific recommendations with prices
 - Encourage earning when appropriate but don't be pushy
 - Use Malaysian context when relevant
-- Be conversational and natural`;
+- Be conversational and natural
+- Always respond to the user's specific question`;
 
     // Add category-specific context if provided
     if (categoryHint) {
@@ -135,7 +136,7 @@ CONVERSATION STYLE:
 
     return `${baseContext}
 
-User query: ${inputValue}`;
+User query: ${userQuery}`;
   };
 
   const handleSendMessage = async (categoryHint?: string) => {
@@ -158,7 +159,7 @@ User query: ${inputValue}`;
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
       // Use comprehensive prompt with category hint if provided
-      const systemPrompt = getComprehensivePrompt(categoryHint);
+      const systemPrompt = getComprehensivePrompt(query, categoryHint);
 
       const result = await model.generateContent(systemPrompt);
       const response = result.response.text();

@@ -5,12 +5,14 @@ import MobileContainer from "../components/MobileContainer";
 import { useLocation } from "wouter";
 import { useSocial } from "../contexts/SocialContext";
 import { usePoints } from "../contexts/PointsContext";
+import { useNotifications } from "../contexts/NotificationContext";
 import { Users, Gift, Crown, Share2, Copy, Mail, Trophy } from "lucide-react";
 
 export default function Social() {
   const [, setLocation] = useLocation();
   const { friends, referrals, referralCode, sendReferral, getLeaderboard } = useSocial();
   const { getTotalPoints } = usePoints();
+  const { addNotification } = useNotifications();
   const [activeTab, setActiveTab] = useState<'friends' | 'referrals' | 'leaderboard'>('friends');
   const [referralEmail, setReferralEmail] = useState('');
 
@@ -21,14 +23,22 @@ export default function Social() {
     if (referralEmail) {
       sendReferral(referralEmail);
       setReferralEmail('');
-      alert('Referral sent! Your friend will earn 5 points when they sign up, and you\'ll get 10 points!');
+      addNotification({
+        type: 'success',
+        title: 'Referral Sent! 🎉',
+        message: 'Your friend will earn 5 points when they sign up, and you\'ll get 10 points!',
+      });
     }
   };
 
   const copyReferralCode = () => {
     const referralLink = `${window.location.origin}?ref=${referralCode}`;
     navigator.clipboard.writeText(referralLink);
-    alert('Referral link copied to clipboard!');
+    addNotification({
+      type: 'success',
+      title: 'Link Copied! 📋',
+      message: 'Referral link copied to clipboard!',
+    });
   };
 
   const shareReferralCode = () => {
@@ -43,7 +53,11 @@ export default function Social() {
       });
     } else {
       navigator.clipboard.writeText(`${text} ${referralLink}`);
-      alert('Referral message copied to clipboard!');
+      addNotification({
+        type: 'info',
+        title: 'Message Shared! 📤',
+        message: 'Referral message copied to clipboard!',
+      });
     }
   };
 

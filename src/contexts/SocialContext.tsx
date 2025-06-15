@@ -123,7 +123,8 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
       // Fallback for browsers without Web Share API
       const shareText = `I just unlocked "${achievement}" on EarnEats! Join me and start earning points for food! ${window.location.origin}?ref=${referralCode}`;
       navigator.clipboard.writeText(shareText);
-      alert('Achievement shared! Link copied to clipboard.');
+      // Note: This would need notification context to be used where shareAchievement is called
+      console.log('Achievement shared! Link copied to clipboard.');
     }
   };
 

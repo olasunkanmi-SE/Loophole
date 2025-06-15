@@ -93,6 +93,12 @@ export default function AdminMenu() {
 
   const handleSaveItem = async () => {
     try {
+      // Validate required fields
+      if (!itemForm.name || !itemForm.description || !itemForm.price) {
+        alert('Please fill in all required fields');
+        return;
+      }
+
       if (editingItem) {
         // Update existing item
         const response = await fetch(`/api/menu-items/${editingItem.id}`, {
@@ -108,6 +114,10 @@ export default function AdminMenu() {
           setMenuItems(prev => prev.map(item => 
             item.id === editingItem.id ? updatedItem : item
           ));
+          alert('Menu item updated successfully!');
+        } else {
+          const error = await response.json();
+          alert(`Error updating item: ${error.error || 'Unknown error'}`);
         }
       } else {
         // Create new item
@@ -128,6 +138,10 @@ export default function AdminMenu() {
         if (response.ok) {
           const createdItem = await response.json();
           setMenuItems(prev => [...prev, createdItem]);
+          alert('Menu item created successfully!');
+        } else {
+          const error = await response.json();
+          alert(`Error creating item: ${error.error || 'Unknown error'}`);
         }
       }
 
@@ -136,6 +150,7 @@ export default function AdminMenu() {
       fetchMenuItems();
     } catch (error) {
       console.error('Error saving menu item:', error);
+      alert('Error saving menu item. Please try again.');
     }
   };
 

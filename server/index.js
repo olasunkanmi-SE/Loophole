@@ -99,7 +99,17 @@ const menuItemSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: { type: String, required: true },
   price: { type: Number, required: true },
-  image: { type: String, default: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=400&fit=crop' },
+  image: { 
+    type: String, 
+    default: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=400&fit=crop',
+    validate: {
+      validator: function(v) {
+        // Allow empty strings, URLs, or base64 data URLs
+        return !v || v.length === 0 || v.startsWith('http') || v.startsWith('data:image/');
+      },
+      message: 'Image must be a valid URL or base64 data'
+    }
+  },
   category: { type: String, required: true },
   available: { type: Boolean, default: true }
 }, { timestamps: true });
@@ -972,9 +982,7 @@ app.get("/api/admin/financial-stats", checkDbConnection, async (req, res) => {
         lastUpdated: new Date().toISOString(),
         updatedBy: "system",
       };
-    }
-
-    const stats = {
+    }    const stats = {
       totalRevenue,
       totalPointsDistributed,
       totalPointsRedeemed,

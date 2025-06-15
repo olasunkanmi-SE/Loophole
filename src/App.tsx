@@ -78,6 +78,21 @@ function App() {
                 <FoodQuestionnaire />
               </ProtectedRoute>
             </Route>
+            <Route path="/questionnaire/lifestyle">
+              <ProtectedRoute>
+                <LifestyleQuestionnaire />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/questionnaire/digital">
+              <ProtectedRoute>
+                <DigitalQuestionnaire />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/questionnaire/food">
+              <ProtectedRoute>
+                <FoodQuestionnaire />
+              </ProtectedRoute>
+            </Route>
             <Route path="/food-menu">
               <ProtectedRoute>
                 <FoodMenu />

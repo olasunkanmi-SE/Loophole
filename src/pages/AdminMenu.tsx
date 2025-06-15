@@ -155,6 +155,13 @@ export default function AdminMenu() {
   };
 
   const handleDeleteItem = async (itemId: string) => {
+    const item = menuItems.find(item => item.id === itemId);
+    if (!item) return;
+
+    if (!confirm(`Are you sure you want to delete "${item.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
     try {
       const response = await fetch(`/api/menu-items/${itemId}`, {
         method: 'DELETE',
@@ -162,10 +169,15 @@ export default function AdminMenu() {
 
       if (response.ok) {
         setMenuItems(prev => prev.filter(item => item.id !== itemId));
+        alert('Menu item deleted successfully!');
         fetchMenuItems();
+      } else {
+        const error = await response.json();
+        alert(`Error deleting item: ${error.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error deleting menu item:', error);
+      alert('Error deleting menu item. Please try again.');
     }
   };
 

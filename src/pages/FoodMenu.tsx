@@ -7,6 +7,7 @@ import MenuItem from "../components/MenuItem";
 import CheckoutBar from "../components/CheckoutBar";
 import { useLocation } from 'wouter';
 import { useCart } from "../contexts/CartContext";
+import { usePoints } from "../contexts/PointsContext";
 
 interface MenuItem {
   id: string;
@@ -167,6 +168,7 @@ export default function FoodMenu() {
   const [activeCategory, setActiveCategory] = useState("drink");
   const { addToCart, getTotalItems, getTotalPrice } = useCart();
   const [location, setLocation] = useLocation();
+  const { getFormattedRM } = usePoints();
 
   const filteredItems = menuItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());

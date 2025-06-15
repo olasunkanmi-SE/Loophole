@@ -3,16 +3,30 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { ArrowLeft, Plus, Minus, X } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
+import { usePoints } from "../contexts/PointsContext";
 
 export default function OrderSummary() {
   const [, setLocation] = useLocation();
+  const [showInsufficientFunds, setShowInsufficientFunds] = useState(false);
   
   const { cartItems, updateQuantity, removeFromCart, clearCart, getTotalPrice } = useCart();
+  const { canAfford, deductRM, getFormattedRM, getTotalPoints } = usePoints();
 
   const handlePlaceOrder = () => {
-    alert(`Order placed successfully! Total: RM ${getTotalPrice()}`);
-    clearCart();
-    setLocation("/");
+    const orderTotal = parseFloat(getTotalPrice());
+    
+    if (!canAfford(orderTotal)) {
+      setShowInsufficientFunds(true);
+      return;
+    }
+    
+    if (deductRM(orderTotal)) {
+      alert(`Order placed successfully! Total: RM ${getTotalPrice()}`);
+      clearCart();
+      setLocation("/");
+    } else {
+      setShowInsufficientFunds(true);
+    }
   };
 
   const getItemTotalPrice = (item: any) => {
@@ -123,8 +137,19 @@ export default function OrderSummary() {
           ))}
         </div>
 
+        {/* Available Balance */}
+        <div className="mt-8 mb-4 p-4 bg-blue-50 rounded-lg">
+          <div className="flex items-center justify-between text-sm text-blue-800">
+            <span>Available Balance</span>
+            <span className="font-medium">{getFormattedRM()}</span>
+          </div>
+          <p className="text-xs text-blue-600 mt-1">
+            {getTotalPoints()} points (10 points = RM 1.00)
+          </p>
+        </div>
+
         {/* Total */}
-        <div className="mt-8 mb-4">
+        <div className="mt-4 mb-4">
           <div className="flex items-center justify-between text-xl font-bold text-gray-800">
             <span>Total</span>
             <span>RM {getTotalPrice()}</span>
@@ -150,6 +175,49 @@ export default function OrderSummary() {
         </div>
         <span className="font-bold text-lg">Total: RM {getTotalPrice()}</span>
       </div>
+
+      {/* Insufficient Funds Modal */}
+      {showInsufficientFunds && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 mx-6 text-center max-w-sm">
+            <div className="text-4xl mb-4">💳</div>
+            <h2 className="text-xl font-bold text-red-600 mb-3">Insufficient Balance</h2>
+            <p className="text-gray-600 text-sm mb-4">
+              You don't have enough money to complete this order.
+            </p>
+            <div className="space-y-2 mb-6">
+              <p className="text-sm">
+                <span className="text-gray-600">Order Total: </span>
+                <span className="font-bold">RM {getTotalPrice()}</span>
+              </p>
+              <p className="text-sm">
+                <span className="text-gray-600">Your Balance: </span>
+                <span className="font-bold text-blue-600">{getFormattedRM()}</span>
+              </p>
+            </div>
+            <p className="text-sm text-blue-600 mb-4">
+              💡 Take more quizzes to earn points and convert them to money!
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => {
+                  setShowInsufficientFunds(false);
+                  setLocation('/');
+                }}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium"
+              >
+                Take Quizzes
+              </button>
+              <button
+                onClick={() => setShowInsufficientFunds(false)}
+                className="text-gray-600 px-4 py-2 rounded-lg"
+              >
+                Continue Shopping
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

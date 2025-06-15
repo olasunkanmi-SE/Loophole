@@ -208,7 +208,8 @@ export default function LifestyleQuestionnaire() {
           <div className="bg-white rounded-lg p-6 mx-6 text-center animate-bounce max-w-sm">
             <div className="text-4xl mb-3 animate-pulse">🎉</div>
             <h2 className="text-xl font-bold text-green-600 mb-2">Yay! Completed!</h2>
-            <p className="text-gray-600 text-sm mb-4">You've successfully completed the Lifestyle & Shopping questionnaire!</p>
+            <p className="text-gray-600 text-sm mb-2">You've successfully completed the Lifestyle & Shopping questionnaire!</p>
+            <p className="text-blue-600 text-sm font-medium mb-4">💰 Points earned can be converted to money for food orders!</p>
             <div className="flex justify-center items-center space-x-2">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>

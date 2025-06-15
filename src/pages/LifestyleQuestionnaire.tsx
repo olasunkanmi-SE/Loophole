@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import MobileHeader from "../components/MobileHeader";
+import MobileContainer from "../components/MobileContainer";
 import { useLocation } from "wouter";
 import { usePoints } from "../contexts/PointsContext";
 
@@ -118,11 +119,12 @@ export default function LifestyleQuestionnaire() {
   };
 
   return (
-    <div className="bg-white min-h-screen relative">
-      <MobileHeader 
-        title="Lifestyle & Shopping" 
-        onBack={() => setLocation('/')}
-      />
+    <MobileContainer>
+      <div className="bg-white min-h-screen relative">
+        <MobileHeader 
+          title="Lifestyle & Shopping" 
+          onBack={() => setLocation('/')}
+        />
 
       {/* Progress Bar */}
       <div className="px-6 py-4">
@@ -215,6 +217,7 @@ export default function LifestyleQuestionnaire() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </MobileContainer>
   );
 }

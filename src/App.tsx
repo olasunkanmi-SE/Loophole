@@ -12,6 +12,11 @@ import OrderSummary from "@/pages/OrderSummary";
 import LifestyleQuestionnaire from "@/pages/LifestyleQuestionnaire";
 import DigitalQuestionnaire from "@/pages/DigitalQuestionnaire";
 import FoodQuestionnaire from "@/pages/FoodQuestionnaire";
+import EntertainmentQuestionnaire from "@/pages/EntertainmentQuestionnaire";
+import TravelQuestionnaire from "@/pages/TravelQuestionnaire";
+import HealthQuestionnaire from "@/pages/HealthQuestionnaire";
+import EducationQuestionnaire from "@/pages/EducationQuestionnaire";
+import FinanceQuestionnaire from "@/pages/FinanceQuestionnaire";
 import Points from "@/pages/Points";
 import Profile from './pages/Profile';
 import SignIn from './pages/SignIn';
@@ -99,6 +104,31 @@ function App() {
             <Route path="/questionnaire/food">
               <ProtectedRoute>
                 <FoodQuestionnaire />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/questionnaire/entertainment">
+              <ProtectedRoute>
+                <EntertainmentQuestionnaire />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/questionnaire/travel">
+              <ProtectedRoute>
+                <TravelQuestionnaire />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/questionnaire/health">
+              <ProtectedRoute>
+                <HealthQuestionnaire />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/questionnaire/education">
+              <ProtectedRoute>
+                <EducationQuestionnaire />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/questionnaire/finance">
+              <ProtectedRoute>
+                <FinanceQuestionnaire />
               </ProtectedRoute>
             </Route>
             <Route path="/food-menu">

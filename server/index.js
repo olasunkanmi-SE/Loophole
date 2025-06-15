@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { MongoClient } from "mongodb";
 import dotenv from "dotenv";
+import mongoose from 'mongoose';
 
 // Load environment variables
 dotenv.config();
@@ -39,6 +40,79 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+app.get('/', (req, res) => {
+  res.json({ message: 'API Server is running!' });
+});
+
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'API is working!' });
+});
+
+// Menu Items Schema
+const menuItemSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true },
+  name: { type: String, required: true },
+  description: { type: String, required: true },
+  price: { type: Number, required: true },
+  image: { type: String, required: true },
+  category: { type: String, required: true },
+  available: { type: Boolean, default: true }
+}, { timestamps: true });
+
+const MenuItem = mongoose.model('MenuItem', menuItemSchema);
+
+// Menu Items API Routes
+app.get('/api/menu-items', async (req, res) => {
+  try {
+    const menuItems = await MenuItem.find();
+    res.json(menuItems);
+  } catch (error) {
+    console.error('Error fetching menu items:', error);
+    res.status(500).json({ error: 'Failed to fetch menu items' });
+  }
+});
+
+app.post('/api/menu-items', async (req, res) => {
+  try {
+    const menuItem = new MenuItem(req.body);
+    await menuItem.save();
+    res.status(201).json(menuItem);
+  } catch (error) {
+    console.error('Error creating menu item:', error);
+    res.status(500).json({ error: 'Failed to create menu item' });
+  }
+});
+
+app.put('/api/menu-items/:id', async (req, res) => {
+  try {
+    const menuItem = await MenuItem.findOneAndUpdate(
+      { id: req.params.id },
+      req.body,
+      { new: true, runValidators: true }
+    );
+    if (!menuItem) {
+      return res.status(404).json({ error: 'Menu item not found' });
+    }
+    res.json(menuItem);
+  } catch (error) {
+    console.error('Error updating menu item:', error);
+    res.status(500).json({ error: 'Failed to update menu item' });
+  }
+});
+
+app.delete('/api/menu-items/:id', async (req, res) => {
+  try {
+    const menuItem = await MenuItem.findOneAndDelete({ id: req.params.id });
+    if (!menuItem) {
+      return res.status(404).json({ error: 'Menu item not found' });
+    }
+    res.json({ message: 'Menu item deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting menu item:', error);
+    res.status(500).json({ error: 'Failed to delete menu item' });
+  }
+});
+
 app.post("/api/signin", checkDbConnection, async (req, res) => {
   try {
     const { email, password } = req.body;

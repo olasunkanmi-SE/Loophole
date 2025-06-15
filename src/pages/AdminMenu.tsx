@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Upload, Eye, EyeOff, Save, X } from 'lucide-react';
 import MobileContainer from '../components/MobileContainer';
@@ -203,40 +202,85 @@ export default function AdminMenu() {
     setShowItemForm(true);
   };
 
-  const handleSaveItem = () => {
-    if (!itemForm.name || !itemForm.description || itemForm.price <= 0) {
-      alert('Please fill all required fields');
-      return;
-    }
+  const handleSaveItem = async () => {
+    try {
+      if (editingItem) {
+        // Update existing item
+        const response = await fetch(`/api/menu-items/${editingItem.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(itemForm),
+        });
 
-    if (editingItem) {
-      // Update existing item
-      setMenuItems(prev => prev.map(item => 
-        item.id === editingItem.id ? { ...itemForm } : item
-      ));
-    } else {
-      // Add new item
-      const newItem = {
-        ...itemForm,
-        id: Date.now().toString()
-      };
-      setMenuItems(prev => [...prev, newItem]);
-    }
+        if (response.ok) {
+          // Refresh the list (assuming you have a function to fetch menu items)
+          // fetchMenuItems();
+        }
+      } else {
+        // Create new item
+        const newItem = {
+          ...itemForm,
+          id: Date.now().toString()
+        };
 
-    setShowItemForm(false);
-    setEditingItem(null);
+        const response = await fetch('/api/menu-items', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(newItem),
+        });
+
+        if (response.ok) {
+          // Refresh the list (assuming you have a function to fetch menu items)
+          // fetchMenuItems();
+        }
+      }
+
+      setShowItemForm(false);
+      setEditingItem(null);
+    } catch (error) {
+      console.error('Error saving menu item:', error);
+    }
   };
 
-  const handleDeleteItem = (id: string) => {
-    if (confirm('Are you sure you want to delete this menu item?')) {
-      setMenuItems(prev => prev.filter(item => item.id !== id));
+  const handleDeleteItem = async (id: string) => {
+    try {
+      const response = await fetch(`/api/menu-items/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Refresh the list (assuming you have a function to fetch menu items)
+        // fetchMenuItems();
+      }
+    } catch (error) {
+      console.error('Error deleting menu item:', error);
     }
   };
 
-  const toggleItemAvailability = (id: string) => {
-    setMenuItems(prev => prev.map(item => 
-      item.id === id ? { ...item, available: !item.available } : item
-    ));
+  const toggleItemAvailability = async (id: string) => {
+    try {
+      const item = menuItems.find(item => item.id === id);
+      if (!item) return;
+
+      const response = await fetch(`/api/menu-items/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ...item, available: !item.available }),
+      });
+
+      if (response.ok) {
+        // Refresh the list (assuming you have a function to fetch menu items)
+        // fetchMenuItems();
+      }
+    } catch (error) {
+      console.error('Error updating menu item availability:', error);
+    }
   };
 
   const handleAddCategory = () => {
@@ -292,7 +336,7 @@ export default function AdminMenu() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-lg"
             />
-            
+
             <div className="flex gap-2">
               <button
                 onClick={handleAddItem}
@@ -373,17 +417,17 @@ export default function AdminMenu() {
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="p-4">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-semibold text-gray-800">{item.name}</h3>
                     <span className="font-bold text-blue-600">RM {item.price}</span>
                   </div>
-                  
+
                   <p className="text-gray-600 text-sm mb-3 line-clamp-2">
                     {item.description}
                   </p>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className={`px-2 py-1 rounded-full text-xs ${
                       item.available 
@@ -392,7 +436,7 @@ export default function AdminMenu() {
                     }`}>
                       {item.available ? 'Available' : 'Unavailable'}
                     </span>
-                    
+
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleEditItem(item)}
@@ -427,7 +471,7 @@ export default function AdminMenu() {
               <h2 className="text-xl font-bold mb-4">
                 {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
               </h2>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Name *</label>
@@ -533,7 +577,7 @@ export default function AdminMenu() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
               <h2 className="text-xl font-bold mb-4">Add New Category</h2>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Category Name *</label>

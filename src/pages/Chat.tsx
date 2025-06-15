@@ -432,7 +432,7 @@ export default function Chat() {
     pdf.text('Thank you for your order.', 105, yPosition, { align: 'center' });
 
     // Save the PDF
-    pdf.save(`chat_receipt_${order.orderId}.pdf`);
+    pdf.save(`chat_receipt_${order.order.orderId}.pdf`);
   };
 
   // Function to save chat history to localStorage (keep last 5 conversations)
@@ -507,6 +507,17 @@ export default function Chat() {
     return foundItems;
   };
 
+    // Helper function to format markdown text
+    const formatMarkdownText = (text: string) => {
+        // Replace **bold text** with <strong>bold text</strong>
+        let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+        // Replace *italic text* with <em>italic text</em>
+        formattedText = formattedText.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+        return formattedText;
+    };
+
   // Helper function to format AI response with better styling
   const formatAIResponse = (content: string) => {
     // Extract menu items mentioned in the response
@@ -526,14 +537,23 @@ export default function Chat() {
                 return (
                   <div key={itemIndex} className="flex items-start gap-2 mb-2">
                     <div className="w-1.5 h-1.5 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
-                    <span className="text-gray-200 text-sm">{item.replace(/[•-]/, '').trim()}</span>
+                    <span 
+                      className="text-gray-200 text-sm"
+                      dangerouslySetInnerHTML={{ 
+                        __html: formatMarkdownText(item.replace(/[•-]/, '').trim()) 
+                      }}
+                    />
                   </div>
                 );
               }
               return (
-                <p key={itemIndex} className="text-gray-100 text-sm mb-2">
-                  {item}
-                </p>
+                <p 
+                  key={itemIndex} 
+                  className="text-gray-100 text-sm mb-2"
+                  dangerouslySetInnerHTML={{ 
+                    __html: formatMarkdownText(item) 
+                  }}
+                />
               );
             })}
           </div>
@@ -549,7 +569,12 @@ export default function Chat() {
                 <UtensilsCrossed size={16} className="text-orange-400" />
                 <span className="text-orange-400 font-medium text-sm">Food Recommendations</span>
               </div>
-              <p className="text-gray-200 text-sm mb-3">{paragraph}</p>
+              <p 
+                className="text-gray-200 text-sm mb-3"
+                dangerouslySetInnerHTML={{ 
+                  __html: formatMarkdownText(paragraph) 
+                }}
+              />
             </div>
 
             {/* Clickable Menu Item Cards */}
@@ -595,16 +620,25 @@ export default function Chat() {
               <DollarSign size={16} className="text-green-400" />
               <span className="text-green-400 font-medium text-sm">Earning Opportunity</span>
             </div>
-            <p className="text-gray-200 text-sm">{paragraph}</p>
+            <p 
+              className="text-gray-200 text-sm"
+              dangerouslySetInnerHTML={{ 
+                __html: formatMarkdownText(paragraph) 
+              }}
+            />
           </div>
         );
       }
 
       // Regular paragraph
       return (
-        <p key={index} className="text-gray-100 text-sm mb-3 leading-relaxed">
-          {paragraph}
-        </p>
+        <p 
+          key={index} 
+          className="text-gray-100 text-sm mb-3 leading-relaxed"
+          dangerouslySetInnerHTML={{ 
+            __html: formatMarkdownText(paragraph) 
+          }}
+        />
       );
     });
   };

@@ -13,12 +13,22 @@ const PORT = process.env.PORT || 3001;
 const DATABASE_URL = process.env.DATABASE_URL || 'mongodb+srv://kosemani:omowunmi888@cluster0.4i82g.mongodb.net/learn?retryWrites=true';
 let db;
 
-// Connect to MongoDB
+// Connect to MongoDB with both native client and Mongoose
 let isConnected = false;
 
+// Mongoose connection
+mongoose.connect(DATABASE_URL)
+  .then(() => {
+    console.log("Mongoose connected to MongoDB Atlas");
+  })
+  .catch((error) => {
+    console.error("Mongoose connection error:", error);
+  });
+
+// Native MongoDB client for legacy endpoints
 MongoClient.connect(DATABASE_URL)
   .then((client) => {
-    console.log("Connected to MongoDB Atlas");
+    console.log("Native MongoDB client connected");
     db = client.db("learn");
     isConnected = true;
   })
@@ -48,7 +58,42 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'API is working!' });
 });
 
-// Menu Items Schema
+// Mongoose Schemas
+const userSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  status: { type: String, default: 'active' },
+  created_at: { type: Date, default: Date.now }
+});
+
+const profileSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true },
+  name: { type: String, required: true },
+  phone: { type: String },
+  dateOfBirth: { type: String },
+  gender: { type: String },
+  nationality: { type: String },
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date, default: Date.now }
+});
+
+const orderSchema = new mongoose.Schema({
+  orderId: { type: String, required: true, unique: true },
+  userEmail: { type: String, required: true },
+  items: [{ 
+    id: String,
+    name: String,
+    price: Number,
+    quantity: Number 
+  }],
+  totalAmount: { type: Number, required: true },
+  paymentMethod: { type: String, required: true },
+  status: { type: String, default: 'pending' },
+  transactionId: { type: String },
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date, default: Date.now }
+});
+
 const menuItemSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
   name: { type: String, required: true },
@@ -59,7 +104,31 @@ const menuItemSchema = new mongoose.Schema({
   available: { type: Boolean, default: true }
 }, { timestamps: true });
 
+const paymentSchema = new mongoose.Schema({
+  transactionId: { type: String, required: true, unique: true },
+  amount: { type: Number, required: true },
+  paymentMethod: { type: String, required: true },
+  orderId: { type: String, required: true },
+  userEmail: { type: String, required: true },
+  status: { type: String, default: 'pending' },
+  created_at: { type: Date, default: Date.now }
+});
+
+const surveyResponseSchema = new mongoose.Schema({
+  userEmail: { type: String, required: true },
+  surveyId: { type: String, required: true },
+  responses: { type: Object, required: true },
+  pointsEarned: { type: Number, default: 0 },
+  completed_at: { type: Date, default: Date.now }
+});
+
+// Models
+const User = mongoose.model('User', userSchema);
+const Profile = mongoose.model('Profile', profileSchema);
+const Order = mongoose.model('Order', orderSchema);
 const MenuItem = mongoose.model('MenuItem', menuItemSchema);
+const Payment = mongoose.model('Payment', paymentSchema);
+const SurveyResponse = mongoose.model('SurveyResponse', surveyResponseSchema);
 
 // Menu Items API Routes
 app.get('/api/menu-items', async (req, res) => {

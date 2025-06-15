@@ -39,7 +39,8 @@ import OrderHistory from "@/pages/OrderHistory";
 import AdminDashboard from "@/pages/AdminDashboard";
 import AdminUsers from "@/pages/AdminUsers";
 import AdminOrders from "@/pages/AdminOrders";
-import AdminSurveys from "@/pages/AdminSurveys";
+import AdminSurveys from './pages/AdminSurveys';
+import AdminMenu from './pages/AdminMenu';
 
 function App() {
   return (
@@ -210,6 +211,11 @@ function App() {
               <Route path="/admin/surveys">
                 <ProtectedRoute>
                   <AdminSurveys />
+                </ProtectedRoute>
+              </Route>
+               <Route path="/admin/menu">
+                <ProtectedRoute>
+                  <AdminMenu />
                 </ProtectedRoute>
               </Route>
               <Route path="/housing">

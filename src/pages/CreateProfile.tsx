@@ -65,13 +65,8 @@ export default function CreateProfile() {
 
       console.log("Profile created successfully:", data);
 
-      // Refresh the user profile in context
-      await refreshProfile();
-
-      // Small delay to ensure context is updated
-      setTimeout(() => {
-        setLocation('/');
-      }, 100);
+      // Redirect to sign-in page so user can log in with their new credentials
+      setLocation('/signin');
     } catch (err: any) {
       setError(err.message);
       console.error("Error creating profile:", err);

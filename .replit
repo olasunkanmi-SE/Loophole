@@ -20,7 +20,7 @@ localPort = 5174
 externalPort = 3000
 
 [workflows]
-runButton = "Full Stack"
+runButton = "Full Stack with Knowledge Check"
 
 [[workflows.workflow]]
 name = "Run with JSON Server"
@@ -56,3 +56,16 @@ args = "node server/index.js"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev"
+
+[[workflows.workflow]]
+name = "Full Stack with Knowledge Check"
+author = 22621996
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node scripts/check-recent-changes.js"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node server/index.js & npm run dev"

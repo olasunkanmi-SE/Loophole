@@ -500,13 +500,31 @@ export default function Chat() {
     // Knowledge base functions
     const fetchKnowledgeContext = async () => {
       try {
+        // First try to get from server
         const response = await fetch('/api/knowledge-context');
-        if (!response.ok) {
-          console.error('Failed to fetch knowledge context:', response.status);
-          return null;
+        if (response.ok) {
+          const data = await response.json();
+          return data;
         }
-        const data = await response.json();
-        return data;
+        
+        // Fallback: check for local knowledge updates
+        try {
+          const localUpdatesResponse = await fetch('/knowledge-updates.json');
+          if (localUpdatesResponse.ok) {
+            const localUpdates = await localUpdatesResponse.json();
+            console.log('📚 Using local knowledge updates:', localUpdates.length, 'recent updates');
+            return {
+              recentUpdates: localUpdates,
+              currentFiles: [],
+              lastUpdated: new Date().toISOString(),
+              source: 'local'
+            };
+          }
+        } catch (localError) {
+          console.log('No local knowledge updates found');
+        }
+        
+        return null;
       } catch (error) {
         console.error('Error fetching knowledge context:', error);
         return null;

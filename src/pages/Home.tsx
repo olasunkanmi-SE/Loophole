@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import MobileHeader from "../components/MobileHeader";
-import Layout from "../components/Layout";
+import MobileContainer from "../components/MobileContainer";
 import { getBridges } from "../api/client";
 
 // Define the Bridge interface (if not already imported from a shared types file)
@@ -116,7 +116,7 @@ export default function Home() {
 
 
   return (
-    <Layout>
+    <MobileContainer>
       <div className="flex flex-col h-screen">
         <MobileHeader 
           title="Location" 
@@ -221,6 +221,6 @@ export default function Home() {
         </div>
       )}
       </div>
-    </Layout>
+    </MobileContainer>
   );
 }

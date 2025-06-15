@@ -38,6 +38,8 @@ export default function AdminOrders() {
   const [dateFilter, setDateFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState<OrderData | null>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
+  const [showPartialRefundModal, setShowPartialRefundModal] = useState(false);
+  const [partialRefundAmount, setPartialRefundAmount] = useState('');
 
   useEffect(() => {
     fetchOrders();
@@ -72,6 +74,82 @@ export default function AdminOrders() {
       }
     } catch (error) {
       console.error('Error updating order status:', error);
+    }
+  };
+
+  const verifyPayment = async (orderId: string) => {
+    try {
+      const transactionId = `verified_${Date.now()}`;
+      const response = await fetch(`/api/admin/orders/${orderId}/verify-payment`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ transactionId }),
+      });
+      if (response.ok) {
+        fetchOrders();
+        alert('Payment verified successfully!');
+      }
+    } catch (error) {
+      console.error('Error verifying payment:', error);
+      alert('Failed to verify payment');
+    }
+  };
+
+  const processRefund = async (orderId: string, amount: number) => {
+    if (!confirm(`Are you sure you want to process a refund of RM ${amount.toFixed(2)}?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}/refund`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount, type: 'full' }),
+      });
+      if (response.ok) {
+        fetchOrders();
+        setShowOrderModal(false);
+        alert('Refund processed successfully!');
+      }
+    } catch (error) {
+      console.error('Error processing refund:', error);
+      alert('Failed to process refund');
+    }
+  };
+
+  const processPartialRefund = async () => {
+    const amount = parseFloat(partialRefundAmount);
+    if (!amount || amount <= 0 || amount > (selectedOrder?.totalAmount || 0)) {
+      alert('Please enter a valid refund amount');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to process a partial refund of RM ${amount.toFixed(2)}?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/orders/${selectedOrder?.orderId}/refund`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount, type: 'partial' }),
+      });
+      if (response.ok) {
+        fetchOrders();
+        setShowOrderModal(false);
+        setShowPartialRefundModal(false);
+        setPartialRefundAmount('');
+        alert('Partial refund processed successfully!');
+      }
+    } catch (error) {
+      console.error('Error processing partial refund:', error);
+      alert('Failed to process partial refund');
     }
   };
 
@@ -283,29 +361,56 @@ export default function AdminOrders() {
             </div>
           </div>
 
-          {/* Stats Summary */}
-          <div className="grid grid-cols-4 gap-2">
-            <div className="bg-white p-3 rounded-lg text-center">
-              <div className="font-semibold text-lg">{orders.length}</div>
-              <div className="text-xs text-gray-500">Total</div>
-            </div>
-            <div className="bg-white p-3 rounded-lg text-center">
-              <div className="font-semibold text-lg text-yellow-600">
-                {orders.filter(o => o.status === 'pending').length}
+          {/* Enhanced Analytics */}
+          <div className="bg-white rounded-lg p-4 space-y-4">
+            <h3 className="font-semibold text-gray-800">Order Analytics</h3>
+            
+            {/* Main Stats */}
+            <div className="grid grid-cols-4 gap-2">
+              <div className="bg-blue-50 p-3 rounded-lg text-center">
+                <div className="font-semibold text-lg">{orders.length}</div>
+                <div className="text-xs text-gray-500">Total Orders</div>
               </div>
-              <div className="text-xs text-gray-500">Pending</div>
-            </div>
-            <div className="bg-white p-3 rounded-lg text-center">
-              <div className="font-semibold text-lg text-green-600">
-                {orders.filter(o => o.status === 'completed').length}
+              <div className="bg-yellow-50 p-3 rounded-lg text-center">
+                <div className="font-semibold text-lg text-yellow-600">
+                  {orders.filter(o => o.status === 'pending').length}
+                </div>
+                <div className="text-xs text-gray-500">Pending</div>
               </div>
-              <div className="text-xs text-gray-500">Completed</div>
-            </div>
-            <div className="bg-white p-3 rounded-lg text-center">
-              <div className="font-semibold text-sm text-blue-600">
-                RM {totalRevenue.toFixed(0)}
+              <div className="bg-green-50 p-3 rounded-lg text-center">
+                <div className="font-semibold text-lg text-green-600">
+                  {orders.filter(o => o.status === 'completed').length}
+                </div>
+                <div className="text-xs text-gray-500">Completed</div>
               </div>
-              <div className="text-xs text-gray-500">Revenue</div>
+              <div className="bg-blue-50 p-3 rounded-lg text-center">
+                <div className="font-semibold text-sm text-blue-600">
+                  RM {totalRevenue.toFixed(0)}
+                </div>
+                <div className="text-xs text-gray-500">Revenue</div>
+              </div>
+            </div>
+
+            {/* Additional Metrics */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-red-50 p-3 rounded-lg text-center">
+                <div className="font-semibold text-sm text-red-600">
+                  {orders.filter(o => o.status === 'cancelled').length}
+                </div>
+                <div className="text-xs text-gray-500">Cancelled</div>
+              </div>
+              <div className="bg-purple-50 p-3 rounded-lg text-center">
+                <div className="font-semibold text-sm text-purple-600">
+                  {orders.filter(o => o.status === 'refunded').length}
+                </div>
+                <div className="text-xs text-gray-500">Refunded</div>
+              </div>
+              <div className="bg-gray-50 p-3 rounded-lg text-center">
+                <div className="font-semibold text-sm text-gray-600">
+                  RM {orders.length > 0 ? (totalRevenue / orders.filter(o => o.status === 'completed').length || 1).toFixed(0) : '0'}
+                </div>
+                <div className="text-xs text-gray-500">Avg Order</div>
+              </div>
             </div>
           </div>
 
@@ -323,6 +428,53 @@ export default function AdminOrders() {
             </div>
           )}
         </div>
+
+        {/* Partial Refund Modal */}
+        {showPartialRefundModal && selectedOrder && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-sm w-full">
+              <div className="p-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold">Partial Refund</h3>
+                <p className="text-sm text-gray-600">Order: {selectedOrder.orderId}</p>
+              </div>
+              
+              <div className="p-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Refund Amount (Max: RM {selectedOrder.totalAmount.toFixed(2)})
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    max={selectedOrder.totalAmount}
+                    value={partialRefundAmount}
+                    onChange={(e) => setPartialRefundAmount(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setShowPartialRefundModal(false);
+                      setPartialRefundAmount('');
+                    }}
+                    className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={processPartialRefund}
+                    className="flex-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                  >
+                    Process Refund
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Order Details Modal */}
         {showOrderModal && selectedOrder && (
@@ -368,7 +520,7 @@ export default function AdminOrders() {
 
                 <div>
                   <h4 className="font-medium mb-2">Status</h4>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     {['pending', 'completed', 'cancelled', 'refunded'].map(status => (
                       <button
                         key={status}
@@ -384,6 +536,52 @@ export default function AdminOrders() {
                     ))}
                   </div>
                 </div>
+
+                {/* Payment Verification Section */}
+                <div>
+                  <h4 className="font-medium mb-2">Payment Verification</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Payment Status:</span>
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        selectedOrder.transactionId 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {selectedOrder.transactionId ? 'Verified' : 'Pending'}
+                      </span>
+                    </div>
+                    {!selectedOrder.transactionId && selectedOrder.status === 'pending' && (
+                      <button
+                        onClick={() => verifyPayment(selectedOrder.orderId)}
+                        className="w-full py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
+                      >
+                        Verify Payment
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Refund Processing Section */}
+                {selectedOrder.status === 'completed' && selectedOrder.transactionId && (
+                  <div>
+                    <h4 className="font-medium mb-2">Refund Processing</h4>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => processRefund(selectedOrder.orderId, selectedOrder.totalAmount)}
+                        className="w-full py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700"
+                      >
+                        Process Full Refund (RM {selectedOrder.totalAmount.toFixed(2)})
+                      </button>
+                      <button
+                        onClick={() => setShowPartialRefundModal(true)}
+                        className="w-full py-2 bg-yellow-600 text-white rounded-lg text-sm hover:bg-yellow-700"
+                      >
+                        Process Partial Refund
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="text-xs text-gray-500 space-y-1">
                   <p>Created: {new Date(selectedOrder.created_at).toLocaleString()}</p>

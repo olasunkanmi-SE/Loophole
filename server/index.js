@@ -454,6 +454,88 @@ app.put('/api/admin/orders/:orderId/status', checkDbConnection, async (req, res)
   }
 });
 
+app.put('/api/admin/orders/:orderId/verify-payment', checkDbConnection, async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { transactionId } = req.body;
+    
+    const ordersCollection = db.collection('orders');
+    await ordersCollection.updateOne(
+      { orderId },
+      { 
+        $set: { 
+          transactionId, 
+          status: 'completed',
+          updated_at: new Date().toISOString() 
+        } 
+      }
+    );
+
+    // Log payment verification
+    const paymentsCollection = db.collection('payments');
+    await paymentsCollection.insertOne({
+      orderId,
+      transactionId,
+      action: 'payment_verified',
+      verifiedBy: 'admin',
+      verified_at: new Date().toISOString()
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Verify payment error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/admin/orders/:orderId/refund', checkDbConnection, async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { amount, type } = req.body;
+    
+    const ordersCollection = db.collection('orders');
+    const order = await ordersCollection.findOne({ orderId });
+    
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    // Create refund record
+    const refundsCollection = db.collection('refunds');
+    const refundId = `REF_${Date.now()}`;
+    
+    await refundsCollection.insertOne({
+      refundId,
+      orderId,
+      originalAmount: order.totalAmount,
+      refundAmount: amount,
+      refundType: type,
+      status: 'processed',
+      processedBy: 'admin',
+      processed_at: new Date().toISOString()
+    });
+
+    // Update order status
+    const newStatus = type === 'full' ? 'refunded' : order.status;
+    await ordersCollection.updateOne(
+      { orderId },
+      { 
+        $set: { 
+          status: newStatus,
+          refund_status: type === 'full' ? 'full_refund' : 'partial_refund',
+          refund_amount: amount,
+          updated_at: new Date().toISOString() 
+        } 
+      }
+    );
+
+    res.json({ success: true, refundId });
+  } catch (error) {
+    console.error('Process refund error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Survey management endpoints
 app.get('/api/admin/surveys', checkDbConnection, async (req, res) => {
   try {

@@ -126,9 +126,15 @@ export default function NewHome() {
             {surveyCategories.map((category) => (
               <button
                 key={category.id}
-                onClick={() => setLocation(category.route)}
-                className={`w-full p-4 rounded-2xl border transition-all duration-200 ${
-                  category.completed
+                onClick={() => {
+                    if (!category.completed) {
+                      // Store the survey category for chat context
+                      localStorage.setItem('selectedSurveyCategory', category.id);
+                      setLocation(category.route);
+                    }
+                  }}
+                  className={`w-full p-4 rounded-2xl border transition-all duration-200 ${
+                    category.completed
                     ? 'bg-green-50 border-green-200 opacity-75'
                     : 'bg-white/80 backdrop-blur-sm border-white/50 hover:bg-white/90 hover:scale-[1.02] shadow-lg'
                 }`}

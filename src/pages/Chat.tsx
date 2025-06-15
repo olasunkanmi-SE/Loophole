@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { MessageCircle, Send, Sparkles, DollarSign, UtensilsCrossed, Home, Award, ArrowUp } from 'lucide-react';
@@ -55,7 +54,88 @@ export default function Chat() {
     }
   ];
 
-  const handleSendMessage = async () => {
+  // Optimized prompts for each survey category
+  const getCategoryPrompt = (category: string) => {
+    const baseContext = `You are a helpful AI assistant for EarnQuiz, an app where people earn money by completing quick surveys. Current user status: ${totalPoints} points (${availableRM}), ${completedSurveys}/3 surveys completed.`;
+
+    switch (category) {
+      case 'lifestyle':
+        return `${baseContext}
+
+The user is interested in the Lifestyle & Shopping survey. This survey focuses on:
+- Shopping habits and preferences
+- Sustainable living choices
+- Consumer behavior patterns
+- Product preferences
+- Environmental consciousness
+
+Key benefits to highlight:
+- Earn 2-10 points (RM 0.20-1.00) in just 2-3 minutes
+- Help brands understand Malaysian consumer preferences
+- Questions about eco-friendly products and shopping habits
+- No wrong answers - just share your honest opinions
+
+Be encouraging and explain how their lifestyle insights are valuable to Malaysian businesses looking to serve customers better.
+
+User query: ${inputValue}`;
+
+      case 'digital':
+        return `${baseContext}
+
+The user is interested in the Digital & Tech survey. This survey focuses on:
+- Technology usage patterns
+- Digital entertainment preferences
+- Streaming service habits
+- App and platform preferences
+- Digital lifestyle trends
+
+Key benefits to highlight:
+- Earn 2-10 points (RM 0.20-1.00) in just 2-3 minutes
+- Share your tech preferences and digital habits
+- Help tech companies understand Malaysian users
+- Questions about streaming, apps, and digital services
+- Your insights help shape better digital experiences
+
+Be encouraging and explain how their tech insights help companies create better digital products for Malaysians.
+
+User query: ${inputValue}`;
+
+      case 'food':
+        return `${baseContext}
+
+The user is interested in the Food & Dining survey. This survey focuses on:
+- Food preferences and dietary habits
+- Restaurant and dining experiences
+- Cooking habits and meal preferences
+- Food delivery and ordering patterns
+- Cultural food preferences
+
+Key benefits to highlight:
+- Earn 2-10 points (RM 0.20-1.00) in just 2-3 minutes
+- Share your food preferences and dining habits
+- Help food businesses understand Malaysian tastes
+- Questions about local cuisine, dining, and food culture
+- Your insights help restaurants serve you better
+
+Be encouraging and explain how their food insights help the food industry better serve Malaysian preferences.
+
+User query: ${inputValue}`;
+
+      default:
+        return `${baseContext}
+
+Guidelines:
+- Answer naturally like a helpful friend
+- Only mention surveys/earning when relevant to their question
+- Help with any questions about the app, points, food ordering, or general queries
+- Be encouraging but not pushy
+- Keep responses conversational and not too long
+
+Respond naturally to: ${inputValue}`;
+    }
+  };
+
+  const handleSendMessage = async (categoryHint?: string) => {
     if (!inputValue.trim()) return;
 
     const userMessage: Message = {
@@ -74,23 +154,8 @@ export default function Chat() {
       const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyCZ2i4mYhfTC59fZSQoAIUsIJJmMqvQ5fE');
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
-      // Create context about the app - more conversational approach
-      const systemPrompt = `You are a helpful AI assistant for EarnQuiz, an app where people earn money by completing quick surveys. Be conversational, natural, and helpful.
-
-Current user status:
-- Points: ${totalPoints} (worth ${availableRM})
-- Completed surveys: ${completedSurveys}/3 available
-- Available surveys: Lifestyle & Shopping, Digital & Tech, Food & Dining
-- Conversion rate: 10 points = RM 1.00
-
-Guidelines:
-- Answer naturally like a helpful friend
-- Only mention surveys/earning when relevant to their question
-- Help with any questions about the app, points, food ordering, or general queries
-- Be encouraging but not pushy
-- Keep responses conversational and not too long
-
-Respond naturally to: ${query}`;
+      // Use category-specific prompt if provided, otherwise use general prompt
+      const systemPrompt = categoryHint ? getCategoryPrompt(categoryHint) : getCategoryPrompt('general');
 
       const result = await model.generateContent(systemPrompt);
       const response = result.response.text();
@@ -105,10 +170,10 @@ Respond naturally to: ${query}`;
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Gemini AI error:', error);
-      
+
       // Fallback response - more natural
       const fallbackResponse = `Hey! I'm having trouble connecting to my AI brain right now, but I'm still here to help! You've got ${totalPoints} points (${availableRM}) so far. Feel free to ask me anything about the app, surveys, or how to use your points for food orders!`;
-      
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: fallbackResponse,
@@ -260,7 +325,7 @@ Respond naturally to: ${query}`;
               <Send size={16} />
             </button>
           </div>
-          
+
           {/* Quick suggestion buttons */}
           <div className="flex gap-2 mt-3 overflow-x-auto">
             <button

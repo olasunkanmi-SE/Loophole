@@ -319,6 +319,141 @@ app.get('/api/order-history/:email', checkDbConnection, async (req, res) => {
   }
 });
 
+// Admin endpoints
+app.get('/api/admin/dashboard-stats', checkDbConnection, async (req, res) => {
+  try {
+    const usersCollection = db.collection('users');
+    const ordersCollection = db.collection('orders');
+    const profilesCollection = db.collection('profiles');
+
+    // Get counts
+    const totalUsers = await usersCollection.countDocuments();
+    const totalOrders = await ordersCollection.countDocuments();
+    
+    // Get revenue from completed orders
+    const completedOrders = await ordersCollection.find({ status: 'completed' }).toArray();
+    const totalRevenue = completedOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+    
+    // Get today's orders
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayOrders = await ordersCollection.countDocuments({
+      created_at: { $gte: today.toISOString() }
+    });
+
+    // Get recent orders
+    const recentOrders = await ordersCollection
+      .find({})
+      .sort({ created_at: -1 })
+      .limit(10)
+      .toArray();
+
+    const stats = {
+      totalUsers,
+      totalOrders,
+      totalSurveys: 0, // This would come from survey responses
+      totalRevenue,
+      todayOrders,
+      activeUsers: totalUsers, // Simplified - could be based on recent activity
+      recentOrders
+    };
+
+    res.json(stats);
+  } catch (error) {
+    console.error('Admin dashboard stats error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/admin/users', checkDbConnection, async (req, res) => {
+  try {
+    const usersCollection = db.collection('users');
+    const profilesCollection = db.collection('profiles');
+    const ordersCollection = db.collection('orders');
+
+    // Get all users
+    const users = await usersCollection.find({}).toArray();
+    
+    // Enhance users with profile data and stats
+    const enhancedUsers = await Promise.all(users.map(async (user) => {
+      const profile = await profilesCollection.findOne({ email: user.email });
+      const userOrders = await ordersCollection.find({ userEmail: user.email }).toArray();
+      
+      const stats = {
+        totalOrders: userOrders.length,
+        totalSpent: userOrders.reduce((sum, order) => sum + order.totalAmount, 0),
+        pointsEarned: 0, // This would come from points system
+        lastActive: user.created_at // Simplified
+      };
+
+      return {
+        ...user,
+        profile,
+        stats,
+        status: 'active' // Default status - you might want to add this field to your user schema
+      };
+    }));
+
+    res.json(enhancedUsers);
+  } catch (error) {
+    console.error('Admin users error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/admin/users/:userId/:action', checkDbConnection, async (req, res) => {
+  try {
+    const { userId, action } = req.params;
+    const usersCollection = db.collection('users');
+
+    if (action === 'suspend' || action === 'activate') {
+      const status = action === 'suspend' ? 'suspended' : 'active';
+      await usersCollection.updateOne(
+        { _id: new db.collection('users').s.pkFactory(userId) },
+        { $set: { status, updated_at: new Date().toISOString() } }
+      );
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Admin user action error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/admin/orders', checkDbConnection, async (req, res) => {
+  try {
+    const ordersCollection = db.collection('orders');
+    const orders = await ordersCollection
+      .find({})
+      .sort({ created_at: -1 })
+      .toArray();
+
+    res.json(orders);
+  } catch (error) {
+    console.error('Admin orders error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.put('/api/admin/orders/:orderId/status', checkDbConnection, async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { status } = req.body;
+    
+    const ordersCollection = db.collection('orders');
+    await ordersCollection.updateOne(
+      { orderId },
+      { $set: { status, updated_at: new Date().toISOString() } }
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Update order status error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);
 });

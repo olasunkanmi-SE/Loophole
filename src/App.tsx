@@ -36,6 +36,9 @@ import NotFound from "@/pages/NotFound";
 import Questionnaire from "@/pages/Questionnaire";
 import { PaymentProvider } from "@/contexts/PaymentContext";
 import OrderHistory from "@/pages/OrderHistory";
+import AdminDashboard from "@/pages/AdminDashboard";
+import AdminUsers from "@/pages/AdminUsers";
+import AdminOrders from "@/pages/AdminOrders";
 
 function App() {
   return (
@@ -181,21 +184,26 @@ function App() {
                    <OrderHistory />
                  </ProtectedRoute>
                </Route>
-              <Route path="/listings">
-                <ProtectedRoute>
-                  <Listings />
-                </ProtectedRoute>
-              </Route>
-              <Route path="/listing/:id">
-                {(params) => (
-                  <ProtectedRoute>
-                    <Listing id={params.id} />
-                  </ProtectedRoute>
-                )}
-              </Route>
               <Route path="/chat">
                 <ProtectedRoute>
                   <Chat />
+                </ProtectedRoute>
+              </Route>
+
+              {/* Admin Routes */}
+              <Route path="/admin/dashboard">
+                <ProtectedRoute>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/admin/users">
+                <ProtectedRoute>
+                  <AdminUsers />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/admin/orders">
+                <ProtectedRoute>
+                  <AdminOrders />
                 </ProtectedRoute>
               </Route>
               <Route path="/housing">

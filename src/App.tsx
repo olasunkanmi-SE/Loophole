@@ -33,6 +33,7 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import { GamificationProvider } from './contexts/GamificationContext';
 import { SocialProvider } from './contexts/SocialContext';
 import { OfflineProvider } from './contexts/OfflineContext';
+import { SurveyProvider } from './contexts/SurveyContext';
 import ProtectedRoute from "@/components/ProtectedRoute";
 import FloatingChatIcon from "@/components/FloatingChatIcon";
 import Chat from "@/pages/Chat";
@@ -61,231 +62,233 @@ function App() {
         <PointsProvider>
           <PaymentProvider>
             <NotificationProvider>
-              <GamificationProvider>
-                <SocialProvider>
-                  <OfflineProvider>
-                    <Switch>
-                      {/* Public routes */}
-                      <Route path="/signin">
-                        <SignIn />
-                      </Route>
-                      <Route path="/signup">
-                        <SignUp />
-                      </Route>
-                      <Route path="/create-profile">
-                        <CreateProfile />
-                      </Route>
-                      <Route path="/reset-password">
-                        <ResetPassword />
-                      </Route>
+              <SurveyProvider>
+                <GamificationProvider>
+                  <SocialProvider>
+                    <OfflineProvider>
+                      <Switch>
+                        {/* Public routes */}
+                        <Route path="/signin">
+                          <SignIn />
+                        </Route>
+                        <Route path="/signup">
+                          <SignUp />
+                        </Route>
+                        <Route path="/create-profile">
+                          <CreateProfile />
+                        </Route>
+                        <Route path="/reset-password">
+                          <ResetPassword />
+                        </Route>
 
-                      {/* Protected routes */}
-                      <Route path="/">
-                        <ProtectedRoute>
-                          <NewHome />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/quiz">
-                        <ProtectedRoute>
-                          <Home />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/home">
-                        <ProtectedRoute>
-                          <NewHome />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/lifestyle">
-                        <ProtectedRoute>
-                          <LifestyleQuestionnaire />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/digital">
-                        <ProtectedRoute>
-                          <DigitalQuestionnaire />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/food">
-                        <ProtectedRoute>
-                          <FoodQuestionnaire />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/questionnaire">
-                        <ProtectedRoute>
-                          <Questionnaire />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/questionnaire/lifestyle">
-                        <ProtectedRoute>
-                          <LifestyleQuestionnaire />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/questionnaire/digital">
-                        <ProtectedRoute>
-                          <DigitalQuestionnaire />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/questionnaire/food">
-                        <ProtectedRoute>
-                          <FoodQuestionnaire />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/questionnaire/entertainment">
-                        <ProtectedRoute>
-                          <EntertainmentQuestionnaire />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/questionnaire/travel">
-                        <ProtectedRoute>
-                          <TravelQuestionnaire />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/questionnaire/health">
-                        <ProtectedRoute>
-                          <HealthQuestionnaire />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/questionnaire/education">
-                        <ProtectedRoute>
-                          <EducationQuestionnaire />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/questionnaire/finance">
-                        <ProtectedRoute>
-                          <FinanceQuestionnaire />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/food-menu">
-                        <ProtectedRoute>
-                          <FoodMenu />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/menu">
-                        <ProtectedRoute>
-                          <FoodMenu />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/menu/:id">
-                        {(params) => (
+                        {/* Protected routes */}
+                        <Route path="/">
                           <ProtectedRoute>
-                            <MenuItemDetail id={params.id} />
+                            <NewHome />
                           </ProtectedRoute>
-                        )}
-                      </Route>
-                      <Route path="/order-summary">
-                        <ProtectedRoute>
-                          <OrderSummary />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/points">
-                        <ProtectedRoute>
-                          <Points />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/location">
-                        <ProtectedRoute>
-                          <NewHome />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/profile">
-                        <ProtectedRoute>
-                          <Profile />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/settings">
-                        <ProtectedRoute>
-                          <Settings />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/notifications">
-                        <ProtectedRoute>
-                          <Notifications />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/achievements">
-                        <ProtectedRoute>
-                          <Achievements />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/social">
-                        <ProtectedRoute>
-                          <Social />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/order-history">
-                         <ProtectedRoute>
-                           <OrderHistory />
-                         </ProtectedRoute>
-                       </Route>
-                      <Route path="/chat">
-                        <ProtectedRoute>
-                          <Chat />
-                        </ProtectedRoute>
-                      </Route>
+                        </Route>
+                        <Route path="/quiz">
+                          <ProtectedRoute>
+                            <Home />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/home">
+                          <ProtectedRoute>
+                            <NewHome />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/lifestyle">
+                          <ProtectedRoute>
+                            <LifestyleQuestionnaire />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/digital">
+                          <ProtectedRoute>
+                            <DigitalQuestionnaire />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/food">
+                          <ProtectedRoute>
+                            <FoodQuestionnaire />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/questionnaire">
+                          <ProtectedRoute>
+                            <Questionnaire />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/questionnaire/lifestyle">
+                          <ProtectedRoute>
+                            <LifestyleQuestionnaire />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/questionnaire/digital">
+                          <ProtectedRoute>
+                            <DigitalQuestionnaire />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/questionnaire/food">
+                          <ProtectedRoute>
+                            <FoodQuestionnaire />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/questionnaire/entertainment">
+                          <ProtectedRoute>
+                            <EntertainmentQuestionnaire />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/questionnaire/travel">
+                          <ProtectedRoute>
+                            <TravelQuestionnaire />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/questionnaire/health">
+                          <ProtectedRoute>
+                            <HealthQuestionnaire />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/questionnaire/education">
+                          <ProtectedRoute>
+                            <EducationQuestionnaire />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/questionnaire/finance">
+                          <ProtectedRoute>
+                            <FinanceQuestionnaire />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/food-menu">
+                          <ProtectedRoute>
+                            <FoodMenu />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/menu">
+                          <ProtectedRoute>
+                            <FoodMenu />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/menu/:id">
+                          {(params) => (
+                            <ProtectedRoute>
+                              <MenuItemDetail id={params.id} />
+                            </ProtectedRoute>
+                          )}
+                        </Route>
+                        <Route path="/order-summary">
+                          <ProtectedRoute>
+                            <OrderSummary />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/points">
+                          <ProtectedRoute>
+                            <Points />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/location">
+                          <ProtectedRoute>
+                            <NewHome />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/profile">
+                          <ProtectedRoute>
+                            <Profile />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/settings">
+                          <ProtectedRoute>
+                            <Settings />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/notifications">
+                          <ProtectedRoute>
+                            <Notifications />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/achievements">
+                          <ProtectedRoute>
+                            <Achievements />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/social">
+                          <ProtectedRoute>
+                            <Social />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/order-history">
+                           <ProtectedRoute>
+                             <OrderHistory />
+                           </ProtectedRoute>
+                         </Route>
+                        <Route path="/chat">
+                          <ProtectedRoute>
+                            <Chat />
+                          </ProtectedRoute>
+                        </Route>
 
-                      {/* Admin Routes */}
-                      <Route path="/admin/dashboard">
-                        <ProtectedRoute>
-                          <AdminDashboard />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/admin/users">
-                        <ProtectedRoute>
-                          <AdminUsers />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/admin/orders">
-                        <ProtectedRoute>
-                          <AdminOrders />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/admin/surveys">
-                        <ProtectedRoute>
-                          <AdminSurveys />
-                        </ProtectedRoute>
-                      </Route>
-                       <Route path="/admin/menu">
-                        <ProtectedRoute>
-                          <AdminMenu />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/admin/finance">
-                        <ProtectedRoute>
-                          <AdminFinance />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/admin/content">
-                        <ProtectedRoute>
-                          <AdminContent />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/admin/housing">
-                        <ProtectedRoute>
-                          <AdminHousing />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/admin/settings">
-                        <ProtectedRoute>
-                          <AdminSettings />
-                        </ProtectedRoute>
-                      </Route>
-                      <Route path="/housing">
-                        <ProtectedRoute>
-                          <Housing />
-                        </ProtectedRoute>
-                      </Route>
+                        {/* Admin Routes */}
+                        <Route path="/admin/dashboard">
+                          <ProtectedRoute>
+                            <AdminDashboard />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/admin/users">
+                          <ProtectedRoute>
+                            <AdminUsers />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/admin/orders">
+                          <ProtectedRoute>
+                            <AdminOrders />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/admin/surveys">
+                          <ProtectedRoute>
+                            <AdminSurveys />
+                          </ProtectedRoute>
+                        </Route>
+                         <Route path="/admin/menu">
+                          <ProtectedRoute>
+                            <AdminMenu />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/admin/finance">
+                          <ProtectedRoute>
+                            <AdminFinance />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/admin/content">
+                          <ProtectedRoute>
+                            <AdminContent />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/admin/housing">
+                          <ProtectedRoute>
+                            <AdminHousing />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/admin/settings">
+                          <ProtectedRoute>
+                            <AdminSettings />
+                          </ProtectedRoute>
+                        </Route>
+                        <Route path="/housing">
+                          <ProtectedRoute>
+                            <Housing />
+                          </ProtectedRoute>
+                        </Route>
 
-                      {/* Catch-all route for 404 - must be last */}
-                      <Route>
-                        <ProtectedRoute>
-                          <NotFound />
-                        </ProtectedRoute>
-                      </Route>
-                    </Switch>
-                    <OfflineIndicator />
-                  </OfflineProvider>
-                </SocialProvider>
-              </GamificationProvider>
+                        {/* Catch-all route for 404 - must be last */}
+                        <Route>
+                          <ProtectedRoute>
+                            <NotFound />
+                          </ProtectedRoute>
+                        </Route>
+                      </Switch>
+                      <OfflineIndicator />
+                    </OfflineProvider>
+                  </SocialProvider>
+                </GamificationProvider>
+              </SurveyProvider>
             </NotificationProvider>
           </PaymentProvider>
         </PointsProvider>

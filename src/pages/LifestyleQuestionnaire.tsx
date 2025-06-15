@@ -7,6 +7,7 @@ import { usePoints } from "../contexts/PointsContext";
 import { useGamification } from "../contexts/GamificationContext";
 import { useNotifications } from "../contexts/NotificationContext";
 import { useOffline } from "../contexts/OfflineContext";
+import { useSurvey } from "../contexts/SurveyContext";
 
 interface Question {
   id: string;
@@ -52,14 +53,53 @@ export default function LifestyleQuestionnaire() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string[] | string>>({});
   const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
   const [, setLocation] = useLocation();
   const { addPoints } = usePoints();
   const { unlockAchievement, updateStreak, addExperience } = useGamification();
   const { addNotification } = useNotifications();
   const { isOnline, cacheSurvey, completeCachedSurvey } = useOffline();
+  const { 
+    surveyProgress, 
+    startSurvey, 
+    saveSurveyProgress, 
+    completeSurvey, 
+    getEstimatedPoints, 
+    currentMultiplier 
+  } = useSurvey();
 
   const currentQ = questions[currentQuestion];
   const progress = (currentQuestion / questions.length) * 100;
+  const surveyId = 'lifestyle';
+
+  // Initialize survey and load saved progress
+  useEffect(() => {
+    const existingProgress = surveyProgress[surveyId];
+    if (existingProgress) {
+      setAnswers(existingProgress.answers);
+      setCurrentQuestion(existingProgress.currentQuestion);
+      addNotification({
+        type: 'survey',
+        title: 'Welcome Back! 👋',
+        message: 'Your previous progress has been restored.',
+      });
+    } else {
+      startSurvey(surveyId);
+    }
+    setIsLoaded(true);
+  }, []);
+
+  // Auto-save progress every 30 seconds or when answers change
+  useEffect(() => {
+    if (!isLoaded) return;
+    
+    const saveProgress = () => {
+      saveSurveyProgress(surveyId, answers, currentQuestion);
+    };
+
+    const timer = setTimeout(saveProgress, 2000); // Save 2 seconds after last change
+    return () => clearTimeout(timer);
+  }, [answers, currentQuestion, isLoaded]);
 
   const handleAnswer = (answer: string) => {
     if (currentQ.type === 'single') {
@@ -93,8 +133,8 @@ export default function LifestyleQuestionnaire() {
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(prev => prev + 1);
     } else {
-      // Questionnaire completed - calculate and award points
-      const earnedPoints = calculatePoints();
+      // Questionnaire completed - use enhanced survey system
+      const earnedPoints = completeSurvey(surveyId, answers);
       addPoints('lifestyle', earnedPoints);
       
       // Add experience points
@@ -106,21 +146,25 @@ export default function LifestyleQuestionnaire() {
       // Check for achievements
       unlockAchievement('first_survey');
       
-      // Send notification
+      // Send notification with bonus info
+      const bonusMessage = currentMultiplier > 1 
+        ? ` (${currentMultiplier}x weekend bonus!)` 
+        : '';
+      
       addNotification({
         type: 'survey',
         title: 'Survey Completed! 🎉',
-        message: `You earned ${earnedPoints} points from the Lifestyle & Shopping survey!`,
+        message: `You earned ${earnedPoints} points from the Lifestyle & Shopping survey!${bonusMessage}`,
       });
       
       // Cache survey if offline
       if (!isOnline) {
-        const surveyId = cacheSurvey({
+        const cachedSurveyId = cacheSurvey({
           category: 'lifestyle',
           questions: questions,
           answers: answers,
         });
-        completeCachedSurvey(surveyId);
+        completeCachedSurvey(cachedSurveyId);
       }
       
       setShowCompletionModal(true);
@@ -163,7 +207,14 @@ export default function LifestyleQuestionnaire() {
       <div className="px-6 py-4">
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm text-gray-600">Question {currentQuestion + 1} of {questions.length}</span>
-          <span className="text-sm text-gray-600">{Math.round(progress)}%</span>
+          <div className="flex items-center space-x-2">
+            {currentMultiplier > 1 && (
+              <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                {currentMultiplier}x bonus
+              </span>
+            )}
+            <span className="text-sm text-gray-600">{Math.round(progress)}%</span>
+          </div>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div 
@@ -171,6 +222,14 @@ export default function LifestyleQuestionnaire() {
             style={{ width: `${progress}%` }}
           />
         </div>
+        {isLoaded && (
+          <div className="flex justify-between items-center mt-2">
+            <span className="text-xs text-green-600">✓ Progress auto-saved</span>
+            <span className="text-xs text-gray-500">
+              Estimated points: {getEstimatedPoints(surveyId)}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="px-6 py-4">

@@ -1,109 +1,189 @@
 
-import { useState } from "react";
-import { ArrowLeft, Send, Paperclip, Mic, MapPin, Sparkles, MessageCircle } from "lucide-react";
-import { useLocation } from "wouter";
-import MobileContainer from "../components/MobileContainer";
+import { useState } from 'react';
+import { useLocation } from 'wouter';
+import { MessageCircle, Send, Sparkles, DollarSign, UtensilsCrossed, Home, Award, ArrowUp } from 'lucide-react';
+import MobileContainer from '../components/MobileContainer';
+import { usePoints } from '../contexts/PointsContext';
 
 interface Message {
   id: string;
   content: string;
-  sender: 'user' | 'ai';
+  sender: 'user' | 'assistant';
   timestamp: Date;
+}
+
+interface QuickAction {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  action: () => void;
 }
 
 export default function Chat() {
   const [, setLocation] = useLocation();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputMessage, setInputMessage] = useState("");
+  const [inputValue, setInputValue] = useState('');
+  const { getTotalPoints, getFormattedRM, getCompletedCategories } = usePoints();
+
+  const totalPoints = getTotalPoints();
+  const availableRM = getFormattedRM();
+  const completedSurveys = getCompletedCategories().length;
+
+  const quickActions: QuickAction[] = [
+    {
+      id: 'earn-money',
+      title: 'Start Earning',
+      description: 'Complete surveys to earn money for food & accommodation',
+      icon: <DollarSign size={16} className="text-green-500" />,
+      action: () => setLocation('/')
+    },
+    {
+      id: 'food-order',
+      title: 'Order Food',
+      description: `Use your ${availableRM} to order delicious meals`,
+      icon: <UtensilsCrossed size={16} className="text-orange-500" />,
+      action: () => setLocation('/menu')
+    },
+    {
+      id: 'points-status',
+      title: 'My Earnings',
+      description: `${totalPoints} points • ${completedSurveys}/3 surveys done`,
+      icon: <Award size={16} className="text-blue-500" />,
+      action: () => setLocation('/points')
+    }
+  ];
 
   const handleSendMessage = () => {
-    if (!inputMessage.trim()) return;
+    if (!inputValue.trim()) return;
 
-    const newMessage: Message = {
+    const userMessage: Message = {
       id: Date.now().toString(),
-      content: inputMessage,
+      content: inputValue.trim(),
       sender: 'user',
       timestamp: new Date()
     };
 
-    setMessages(prev => [...prev, newMessage]);
-    setInputMessage("");
+    setMessages(prev => [...prev, userMessage]);
 
-    // Simulate AI response
+    // Auto-response based on common queries
     setTimeout(() => {
-      const aiResponse: Message = {
+      let response = '';
+      const query = inputValue.toLowerCase();
+
+      if (query.includes('earn') || query.includes('money') || query.includes('points')) {
+        response = `You can earn money by completing our 3 survey categories! Each survey takes 2-3 minutes and earns you points that convert to real money (10 points = RM 1.00). You currently have ${totalPoints} points (${availableRM}). Complete surveys in Lifestyle & Shopping, Digital & Tech, and Food & Dining to maximize your earnings!`;
+      } else if (query.includes('food') || query.includes('order') || query.includes('eat')) {
+        response = `Use your earned points to order food! You have ${availableRM} available. Every 10 points = RM 1.00 that you can spend on delicious meals. Complete more surveys to earn more money for food orders.`;
+      } else if (query.includes('accommodation') || query.includes('housing') || query.includes('stay')) {
+        response = `While our current focus is on food orders, you're earning real money through surveys! Complete all 3 survey categories to maximize your earnings. Each survey gives you points that convert to money you can use.`;
+      } else if (query.includes('survey') || query.includes('quiz')) {
+        response = `We have 3 survey categories: Lifestyle & Shopping, Digital & Tech, and Food & Dining. Each takes 2-3 minutes and earns you 1-10 points. You've completed ${completedSurveys}/3 surveys. Complete the remaining ones to earn more money!`;
+      } else {
+        response = `Hi! I'm here to help you earn money through quick surveys. Complete our 3 survey categories (2-3 minutes each) to earn points that convert to real money for food orders. You currently have ${totalPoints} points (${availableRM}). How can I help you start earning?`;
+      }
+
+      const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: "Hello! I'm here to help you with any questions about your orders, points, or recommendations. How can I assist you today?",
-        sender: 'ai',
+        content: response,
+        sender: 'assistant',
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, aiResponse]);
-    }, 1000);
-  };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
+      setMessages(prev => [...prev, assistantMessage]);
+    }, 1000);
+
+    setInputValue('');
   };
 
   return (
     <MobileContainer>
       <div className="bg-gray-900 min-h-screen text-white flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+        <div className="p-4 border-b border-gray-800 flex items-center justify-between">
           <button 
             onClick={() => setLocation('/')}
-            className="text-gray-300 hover:text-white"
+            className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
           >
-            <ArrowLeft size={24} />
+            <ArrowUp size={20} className="rotate-180" />
           </button>
           <div className="flex items-center gap-2">
-            <Sparkles size={20} className="text-blue-400" />
-            <h1 className="text-xl font-bold">EcoWares AI</h1>
+            <MessageCircle size={20} />
+            <span className="font-medium">Earnings Assistant</span>
           </div>
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"></div>
+          <div className="w-8" />
         </div>
 
-        {/* Welcome Screen */}
+        {/* Earnings Status Bar */}
+        <div className="p-4 bg-gradient-to-r from-green-600 to-blue-600 border-b border-gray-800">
+          <div className="text-center">
+            <div className="text-2xl font-bold">{availableRM}</div>
+            <div className="text-sm opacity-90">Available for food orders</div>
+            <div className="text-xs opacity-75 mt-1">
+              {totalPoints} points • {completedSurveys}/3 surveys completed
+            </div>
+          </div>
+        </div>
+
+        {/* Welcome Message & Quick Actions */}
         {messages.length === 0 && (
-          <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-            <div className="mb-8">
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <Sparkles size={32} className="text-blue-400" />
-                <h2 className="text-3xl font-bold">EcoWares AI</h2>
+          <div className="flex-1 p-4 space-y-6">
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center mx-auto">
+                <DollarSign size={32} />
               </div>
-              <p className="text-gray-400 text-lg">Your sustainable lifestyle assistant</p>
+              <div>
+                <h2 className="text-xl font-bold mb-2">Earn Money for Food & Living</h2>
+                <p className="text-gray-400 text-sm">
+                  Complete quick 2-3 minute surveys to earn points that convert to real money. Use your earnings to order food!
+                </p>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 w-full max-w-sm mb-8">
-              <button className="bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-xl p-4 text-left transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-                    <Sparkles size={16} />
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Sparkles size={18} />
+                Quick Actions
+              </h3>
+              {quickActions.map((action) => (
+                <button
+                  key={action.id}
+                  onClick={action.action}
+                  className="w-full bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-xl p-4 text-left transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
+                      {action.icon}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium">{action.title}</div>
+                      <div className="text-sm text-gray-400">{action.description}</div>
+                    </div>
                   </div>
-                  <span className="font-medium">Eco Tips</span>
-                </div>
-              </button>
+                </button>
+              ))}
+            </div>
 
-              <button className="bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-xl p-4 text-left transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <MessageCircle size={16} />
-                  </div>
-                  <span className="font-medium">Order Help</span>
+            {/* Earning Potential */}
+            <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
+              <h4 className="font-semibold mb-2 flex items-center gap-2">
+                <Award size={16} className="text-yellow-500" />
+                Earning Potential
+              </h4>
+              <div className="space-y-2 text-sm text-gray-300">
+                <div className="flex justify-between">
+                  <span>Each survey:</span>
+                  <span className="text-green-400">RM 0.10 - RM 1.00</span>
                 </div>
-              </button>
-
-              <button className="bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-xl p-4 text-left transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
-                    <Sparkles size={16} />
-                  </div>
-                  <span className="font-medium">Points Guide</span>
+                <div className="flex justify-between">
+                  <span>All 3 surveys:</span>
+                  <span className="text-green-400">Up to RM 3.00</span>
                 </div>
-              </button>
+                <div className="flex justify-between">
+                  <span>Time per survey:</span>
+                  <span className="text-blue-400">2-3 minutes</span>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -133,37 +213,50 @@ export default function Chat() {
           </div>
         )}
 
-        {/* Input Area */}
-        <div className="p-4 border-t border-gray-700">
-          <div className="bg-gray-800 rounded-2xl border border-gray-600 flex items-center p-2">
-            <button className="p-2 text-gray-400 hover:text-white">
-              <Paperclip size={20} />
-            </button>
+        {/* Input */}
+        <div className="p-4 border-t border-gray-800">
+          <div className="flex items-center gap-3 bg-gray-800 rounded-2xl p-3 border border-gray-700">
             <input
               type="text"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="What do you want to know?"
-              className="flex-1 bg-transparent text-white placeholder-gray-400 px-2 py-1 focus:outline-none"
+              placeholder="Ask about earning money or food orders..."
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+              className="flex-1 bg-transparent text-white placeholder-gray-400 outline-none text-sm"
             />
-            <button className="p-2 text-gray-400 hover:text-white">
-              <MapPin size={20} />
-            </button>
-            <button className="p-2 text-gray-400 hover:text-white">
-              <Mic size={20} />
-            </button>
-            <button 
+            <button
               onClick={handleSendMessage}
-              disabled={!inputMessage.trim()}
-              className="p-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-xl transition-colors"
+              disabled={!inputValue.trim()}
+              className={`p-2 rounded-xl transition-colors ${
+                inputValue.trim()
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+              }`}
             >
-              <Send size={20} />
+              <Send size={16} />
             </button>
           </div>
           
-          <div className="flex items-center justify-center mt-2">
-            <span className="text-gray-500 text-xs">EcoWares AI • Powered by sustainability</span>
+          {/* Quick suggestion buttons */}
+          <div className="flex gap-2 mt-3 overflow-x-auto">
+            <button
+              onClick={() => setInputValue('How can I earn money?')}
+              className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs whitespace-nowrap hover:bg-gray-600 transition-colors"
+            >
+              How to earn money?
+            </button>
+            <button
+              onClick={() => setInputValue('Show me available surveys')}
+              className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs whitespace-nowrap hover:bg-gray-600 transition-colors"
+            >
+              Available surveys
+            </button>
+            <button
+              onClick={() => setInputValue('Order food with my points')}
+              className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs whitespace-nowrap hover:bg-gray-600 transition-colors"
+            >
+              Order food
+            </button>
           </div>
         </div>
       </div>

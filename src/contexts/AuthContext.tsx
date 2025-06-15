@@ -35,19 +35,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refreshProfile = async () => {
-    if (!user?.email) return;
-
-    try {
-      const profile = await getProfile(user.email);
-      setUserProfile(profile);
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
+    if (user?.email) {
+      try {
+        console.log('Refreshing profile for:', user.email);
+        const profile = await getProfile(user.email);
+        console.log('Profile loaded:', profile);
+        setUserProfile(profile);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        setUserProfile(null);
+      }
     }
   };
 
   const signIn = async (email: string, password: string) => {
-    const user = await apiSignIn(email, password);
-    setUser(user);
+    try {
+      console.log('Signing in user:', email);
+      const userData = await apiSignIn(email, password);
+      console.log('User data received:', userData);
+      setUser(userData);
+
+      // Fetch user profile
+      console.log('Fetching profile for:', email);
+      const profile = await getProfile(email);
+      console.log('Profile fetched:', profile);
+      setUserProfile(profile);
+    } catch (error) {
+      console.error('Sign in error:', error);
+      throw error;
+    }
   };
 
   const signUp = async (email: string, password: string) => {

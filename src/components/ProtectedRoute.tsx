@@ -12,13 +12,17 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
+    console.log('ProtectedRoute - Loading:', loading, 'User:', user, 'Profile:', userProfile);
+    
     if (!loading) {
       if (!user) {
-        // Not authenticated, redirect to sign in
+        console.log('No user, redirecting to signin');
         setLocation('/signin');
       } else if (!userProfile) {
-        // Authenticated but no profile, redirect to create profile
+        console.log('User exists but no profile, redirecting to create-profile');
         setLocation('/create-profile');
+      } else {
+        console.log('User and profile exist, allowing access');
       }
     }
   }, [user, userProfile, loading, setLocation]);

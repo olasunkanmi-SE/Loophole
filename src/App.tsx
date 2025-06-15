@@ -39,6 +39,7 @@ import OrderHistory from "@/pages/OrderHistory";
 import AdminDashboard from "@/pages/AdminDashboard";
 import AdminUsers from "@/pages/AdminUsers";
 import AdminOrders from "@/pages/AdminOrders";
+import AdminSurveys from "@/pages/AdminSurveys";
 
 function App() {
   return (
@@ -204,6 +205,11 @@ function App() {
               <Route path="/admin/orders">
                 <ProtectedRoute>
                   <AdminOrders />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/admin/surveys">
+                <ProtectedRoute>
+                  <AdminSurveys />
                 </ProtectedRoute>
               </Route>
               <Route path="/housing">

@@ -454,6 +454,127 @@ app.put('/api/admin/orders/:orderId/status', checkDbConnection, async (req, res)
   }
 });
 
+// Survey management endpoints
+app.get('/api/admin/surveys', checkDbConnection, async (req, res) => {
+  try {
+    const surveysCollection = db.collection('surveys');
+    const surveys = await surveysCollection.find({}).toArray();
+    
+    // Add completion stats for each survey
+    const surveysWithStats = await Promise.all(surveys.map(async (survey) => {
+      const responsesCollection = db.collection('survey_responses');
+      const totalResponses = await responsesCollection.countDocuments({ surveyId: survey.id });
+      const usersCollection = db.collection('users');
+      const totalUsers = await usersCollection.countDocuments();
+      
+      return {
+        ...survey,
+        totalResponses,
+        completionRate: totalUsers > 0 ? Math.round((totalResponses / totalUsers) * 100) : 0
+      };
+    }));
+
+    res.json(surveysWithStats);
+  } catch (error) {
+    console.error('Get surveys error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/admin/surveys', checkDbConnection, async (req, res) => {
+  try {
+    const surveyData = req.body;
+    const surveysCollection = db.collection('surveys');
+    
+    const survey = {
+      ...surveyData,
+      id: surveyData.id || `survey_${Date.now()}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    await surveysCollection.insertOne(survey);
+    res.json(survey);
+  } catch (error) {
+    console.error('Create survey error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.put('/api/admin/surveys/:surveyId', checkDbConnection, async (req, res) => {
+  try {
+    const { surveyId } = req.params;
+    const updateData = req.body;
+    const surveysCollection = db.collection('surveys');
+    
+    await surveysCollection.updateOne(
+      { id: surveyId },
+      { 
+        $set: { 
+          ...updateData, 
+          updated_at: new Date().toISOString() 
+        } 
+      }
+    );
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Update survey error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.delete('/api/admin/surveys/:surveyId', checkDbConnection, async (req, res) => {
+  try {
+    const { surveyId } = req.params;
+    const surveysCollection = db.collection('surveys');
+    
+    await surveysCollection.deleteOne({ id: surveyId });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete survey error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/admin/survey-responses/:surveyId', checkDbConnection, async (req, res) => {
+  try {
+    const { surveyId } = req.params;
+    const responsesCollection = db.collection('survey_responses');
+    
+    const responses = await responsesCollection
+      .find({ surveyId })
+      .sort({ completed_at: -1 })
+      .toArray();
+      
+    res.json(responses);
+  } catch (error) {
+    console.error('Get survey responses error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/survey-response', checkDbConnection, async (req, res) => {
+  try {
+    const { userEmail, surveyId, responses, pointsEarned } = req.body;
+    const responsesCollection = db.collection('survey_responses');
+    
+    const responseRecord = {
+      userEmail,
+      surveyId,
+      responses,
+      pointsEarned,
+      completed_at: new Date().toISOString()
+    };
+    
+    await responsesCollection.insertOne(responseRecord);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Save survey response error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);
 });

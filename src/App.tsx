@@ -26,6 +26,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import FloatingChatIcon from "@/components/FloatingChatIcon";
 import Chat from "@/pages/Chat";
+import Housing from './pages/Housing';
 import NotFound from "@/pages/NotFound";
 import Questionnaire from "@/pages/Questionnaire";
 
@@ -159,7 +160,12 @@ function App() {
                 <Chat />
               </ProtectedRoute>
             </Route>
-            
+            <Route path="/housing">
+              <ProtectedRoute>
+                <Housing />
+              </ProtectedRoute>
+            </Route>
+
             {/* Catch-all route for 404 - must be last */}
             <Route>
               <ProtectedRoute>

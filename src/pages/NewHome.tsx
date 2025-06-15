@@ -149,20 +149,61 @@ export default function NewHome() {
             )}
           </div>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-3 gap-3 mb-8">
-            <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3 border border-white/30">
-              <div className="text-lg font-bold text-blue-600">{completedSurveys}/{totalSurveys}</div>
-              <div className="text-xs text-gray-600">Surveys Done</div>
-            </div>
-            <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3 border border-white/30">
-              <div className="text-lg font-bold text-green-600">2-3min</div>
-              <div className="text-xs text-gray-600">Per Survey</div>
-            </div>
-            <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3 border border-white/30">
-              <div className="text-lg font-bold text-purple-600">RM 1.00</div>
-              <div className="text-xs text-gray-600">Max/Survey</div>
-            </div>
+          {/* Quick Actions */}
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            <button 
+              onClick={() => setLocation('/food-menu')}
+              className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-white/50 shadow-lg hover:shadow-xl transition-all"
+            >
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center mb-3">
+                  <UtensilsCrossed size={24} className="text-white" />
+                </div>
+                <span className="font-semibold text-gray-900">Order Food</span>
+                <span className="text-xs text-gray-600 mt-1">Use your points</span>
+              </div>
+            </button>
+
+            <button 
+              onClick={() => setLocation('/housing')}
+              className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-white/50 shadow-lg hover:shadow-xl transition-all"
+            >
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 bg-pink-500 rounded-xl flex items-center justify-center mb-3">
+                  <Home size={24} className="text-white" />
+                </div>
+                <span className="font-semibold text-gray-900">Housing</span>
+                <span className="text-xs text-gray-600 mt-1">Book stays</span>
+              </div>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            <button 
+              onClick={() => setLocation('/points')}
+              className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-white/50 shadow-lg hover:shadow-xl transition-all"
+            >
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mb-3">
+                  <Award size={24} className="text-white" />
+                </div>
+                <span className="font-semibold text-gray-900">My Points</span>
+                <span className="text-xs text-gray-600 mt-1">Track earnings</span>
+              </div>
+            </button>
+
+            <button 
+              onClick={() => setLocation('/chat')}
+              className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-white/50 shadow-lg hover:shadow-xl transition-all"
+            >
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center mb-3">
+                  <Sparkles size={24} className="text-white" />
+                </div>
+                <span className="font-semibold text-gray-900">AI Chat</span>
+                <span className="text-xs text-gray-600 mt-1">Get recommendations</span>
+              </div>
+            </button>
           </div>
         </div>
 

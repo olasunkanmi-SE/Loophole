@@ -891,17 +891,58 @@ USER SPENDING ANALYTICS:
       ).join('\n\n');
 
     const housingContext = `AVAILABLE HOUSING OPTIONS:
-Budget options (RM 15-25/night):
-- Budget Hostel Dorm Bed: RM 15, Petaling Jaya, shared room, clean and safe for budget travelers
-- Capsule Pod Experience: RM 20, Bukit Bintang, unique capsule hotel
-- Student Housing Single Room: RM 25, USJ, private, study-friendly
 
-Mid-range options (RM 25-45/night):
-- Private Room with Breakfast: RM 35, Subang Jaya, private, includes breakfast
-- Cozy Studio in City Center: RM 45, Kuala Lumpur, entire apartment, modern
+BUDGET ACCOMMODATIONS (RM 15-25/night):
+- Budget Hostel Dorm Bed: RM 15/night, Petaling Jaya
+  • Type: Shared dorm room (1 guest)
+  • Amenities: WiFi, shared kitchen, lockers, common area
+  • Perfect for: Budget travelers, backpackers
+  • Rating: 4.2/5 (89 reviews)
+  
+- Capsule Pod Experience: RM 20/night, Bukit Bintang, KL
+  • Type: Unique capsule space (1 guest)
+  • Amenities: WiFi, climate control, charging ports, security
+  • Perfect for: Solo travelers, unique experience
+  • Rating: 4.1/5 (45 reviews)
+  
+- Student Housing Single Room: RM 25/night, USJ, Selangor
+  • Type: Private room in student housing (1 guest)
+  • Amenities: WiFi, study desk, shared kitchen, laundry
+  • Perfect for: Students, long-term stays
+  • Rating: 4.3/5 (67 reviews)
 
-Luxury options (RM 45+/night):
-- Luxury Condo with Pool: RM 85, KLCC, Kuala Lumpur, entire apartment, stunning views`;
+MID-RANGE ACCOMMODATIONS (RM 35-45/night):
+- Private Room with Breakfast: RM 35/night, Subang Jaya
+  • Type: Private room in family home (2 guests)
+  • Amenities: WiFi, breakfast included, private bathroom, parking
+  • Perfect for: Couples, comfort seekers
+  • Rating: 4.6/5 (156 reviews)
+  
+- Cozy Studio in City Center: RM 45/night, Kuala Lumpur
+  • Type: Entire studio apartment (2 guests)
+  • Amenities: WiFi, kitchen, air conditioning, TV
+  • Perfect for: Independence, central location
+  • Rating: 4.8/5 (127 reviews)
+
+LUXURY ACCOMMODATIONS (RM 85+/night):
+- Luxury Condo with Pool: RM 85/night, KLCC, Kuala Lumpur
+  • Type: Entire luxury apartment (4 guests, 2 bedrooms, 2 bathrooms)
+  • Amenities: WiFi, pool, gym, concierge, city view
+  • Perfect for: Groups, luxury experience
+  • Rating: 4.9/5 (203 reviews)
+
+HOUSING BOOKING PROCESS:
+1. Check your available balance: ${availableRM}
+2. Filter options within your budget
+3. View detailed property information
+4. Book directly using your points balance
+5. Instant confirmation and booking details
+
+HOUSING RECOMMENDATIONS BASED ON BUDGET:
+- Under RM 20: Budget Hostel Dorm or Capsule Pod
+- RM 20-35: Student Housing or upgrade to Private Room
+- RM 35-50: Private Room with Breakfast or City Center Studio
+- RM 50+: Consider the Luxury Condo for special occasions`;
 
     return `You are EarnEats Assistant, a helpful AI for the EarnEats food delivery app in Malaysia.
 
@@ -1028,15 +1069,17 @@ CAPABILITIES:
 
 RESPONSE GUIDELINES:
 - Always be helpful, friendly, and supportive
-- Focus on helping users earn points through surveys and convert them to money for food
+- Focus on helping users earn points through surveys and convert them to money for food AND housing
 - When asked about earning money or available surveys, provide specific details from the survey list above
+- When asked about HOUSING/ACCOMMODATION/LODGING/STAYING, prioritize housing recommendations from the detailed housing options above
+- When asked about FOOD/EATING/MEALS/RESTAURANTS, prioritize food recommendations from the menu above
 - Recommend specific surveys based on user interest and time available
 - Explain the points-to-money conversion clearly (10 points = RM 1.00)
 - Mention weekend bonuses (2x points) when relevant
-- If they ask about food, recommend items from the menu above
-- If they ask about housing, recommend options from the available housing list
+- For housing queries: Show specific properties, prices, amenities, and booking process
+- For food queries: Show specific menu items, prices, and ordering process
 - Guide users to the "Questionnaire" section to start earning
-- Be encouraging and specific about earning potential
+- Be encouraging and specific about earning potential for BOTH food and housing
 
 Current user message: "${userMessage}"
 

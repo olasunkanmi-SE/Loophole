@@ -78,37 +78,83 @@ interface SurveyProviderProps {
 }
 
 export const SurveyProvider: React.FC<SurveyProviderProps> = ({ children }) => {
-  const [surveys, setSurveys] = useState<Survey[]>(() => {
-    const saved = localStorage.getItem('surveys');
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 'lifestyle',
-        title: 'Lifestyle & Shopping',
-        category: 'Consumer Behavior',
-        description: 'Questions about shopping habits and lifestyle preferences',
-        estimatedTime: '3-5 min',
-        basePoints: 8,
-        questions: [],
-        schedule: { type: 'weekly', frequency: 1, nextAvailable: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
-        targeting: { userBehavior: ['new_user'], completedCategories: [], pointsRange: { min: 0, max: 50 } },
-        isActive: true,
-        multiplier: 1
-      },
-      {
-        id: 'daily_checkin',
-        title: 'Daily Check-in',
-        category: 'Quick Survey',
-        description: 'Quick daily questions about your day',
-        estimatedTime: '1-2 min',
-        basePoints: 3,
-        questions: [],
-        schedule: { type: 'daily', frequency: 1, nextAvailable: new Date() },
-        targeting: { userBehavior: ['active_user'], completedCategories: [], pointsRange: { min: 0, max: 1000 } },
-        isActive: true,
-        multiplier: 1
+  const [surveys, setSurveys] = useState<Survey[]>([]);
+  const [surveysLoaded, setSurveysLoaded] = useState(false);
+
+  // Load surveys from database
+  useEffect(() => {
+    const loadSurveys = async () => {
+      try {
+        const response = await fetch('/api/admin/surveys');
+        if (response.ok) {
+          const dbSurveys = await response.json();
+          
+          // Convert database surveys to survey format
+          const formattedSurveys: Survey[] = dbSurveys.map((dbSurvey: any) => ({
+            id: dbSurvey.id,
+            title: dbSurvey.title,
+            category: dbSurvey.category,
+            description: dbSurvey.description,
+            estimatedTime: dbSurvey.estimatedTime,
+            basePoints: dbSurvey.basePoints,
+            questions: dbSurvey.questions || [],
+            schedule: dbSurvey.schedule ? {
+              ...dbSurvey.schedule,
+              nextAvailable: new Date(dbSurvey.schedule.nextAvailable)
+            } : undefined,
+            targeting: dbSurvey.targeting,
+            isActive: dbSurvey.isActive,
+            multiplier: dbSurvey.multiplier || 1
+          }));
+          
+          setSurveys(formattedSurveys);
+        } else {
+          // Fallback to default surveys if API fails
+          const defaultSurveys = [
+            {
+              id: 'lifestyle',
+              title: 'Lifestyle & Shopping',
+              category: 'Consumer Behavior',
+              description: 'Questions about shopping habits and lifestyle preferences',
+              estimatedTime: '3-5 min',
+              basePoints: 8,
+              questions: [],
+              schedule: { type: 'weekly' as const, frequency: 1, nextAvailable: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+              targeting: { userBehavior: ['new_user'], completedCategories: [], pointsRange: { min: 0, max: 50 } },
+              isActive: true,
+              multiplier: 1
+            }
+          ];
+          setSurveys(defaultSurveys);
+        }
+      } catch (error) {
+        console.error('Failed to load surveys:', error);
+        // Use fallback surveys
+        const defaultSurveys = [
+          {
+            id: 'lifestyle',
+            title: 'Lifestyle & Shopping',
+            category: 'Consumer Behavior',
+            description: 'Questions about shopping habits and lifestyle preferences',
+            estimatedTime: '3-5 min',
+            basePoints: 8,
+            questions: [],
+            schedule: { type: 'weekly' as const, frequency: 1, nextAvailable: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+            targeting: { userBehavior: ['new_user'], completedCategories: [], pointsRange: { min: 0, max: 50 } },
+            isActive: true,
+            multiplier: 1
+          }
+        ];
+        setSurveys(defaultSurveys);
+      } finally {
+        setSurveysLoaded(true);
       }
-    ];
-  });
+    };
+
+    if (!surveysLoaded) {
+      loadSurveys();
+    }
+  }, [surveysLoaded]);
 
   const [userBehavior, setUserBehavior] = useState<UserBehavior>(() => {
     const saved = localStorage.getItem('userBehavior');

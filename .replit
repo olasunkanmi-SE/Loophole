@@ -20,7 +20,7 @@ localPort = 5174
 externalPort = 3000
 
 [workflows]
-runButton = "Full Stack with Knowledge Check"
+runButton = "Full Stack Survey System"
 
 [[workflows.workflow]]
 name = "Run with JSON Server"
@@ -69,3 +69,29 @@ args = "node -e \"if(process.env.NODE_ENV !== 'production' && !process.env.REPLI
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node server/index.js & npm run dev"
+
+[[workflows.workflow]]
+name = "Full Stack Survey System"
+author = 22621996
+mode = "parallel"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node server/index.js"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+
+[[workflows.workflow]]
+name = "Full Stack Survey System"
+author = 22621996
+mode = "parallel"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node server/index.js"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"

@@ -89,7 +89,7 @@ CURRENT USER STATUS:
 - Total Points: ${totalPoints} points
 - Available Money: ${availableRM}
 - Completed Surveys: ${completedSurveys}/3
-- Conversion Rate: 10 points = RM 1.00
+- Conversion Rate: 1 point = RM 1.00
 
 AVAILABLE SURVEYS:
 1. Lifestyle & Shopping (2-10 points, 2-3 minutes) - About shopping habits, sustainable living, consumer behavior

@@ -13,7 +13,7 @@ export default function NewHome() {
   const totalPoints = getTotalPoints();
   const availableRM = getFormattedRM();
   const completedSurveys = getCompletedCategories().length;
-  const potentialEarnings = (3 - completedSurveys) * 1.0; // Up to RM 1.00 per survey
+  const potentialEarnings = (3 - completedSurveys) * 10.0; // Up to RM 10.00 per survey
 
   useEffect(() => {
     setAnimateCounter(true);

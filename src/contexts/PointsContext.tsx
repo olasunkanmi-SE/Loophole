@@ -91,7 +91,7 @@ export const PointsProvider: React.FC<PointsProviderProps> = ({ children }) => {
     }
     
     // Calculate points to deduct (amount * conversion rate)
-    const pointsToDeduct = amount * 10; // 10 points = 1 RM
+    const pointsToDeduct = amount * 1; // 1 point = 1 RM
     let remainingToDeduct = pointsToDeduct;
     
     // Deduct from categories proportionally

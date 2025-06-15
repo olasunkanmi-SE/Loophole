@@ -41,7 +41,7 @@ export default function Points() {
           <div className="text-3xl font-light text-gray-900 mb-1">{totalPoints}</div>
           <p className="text-sm font-medium text-green-600 mb-1">{getFormattedRM()}</p>
           <p className="text-xs text-gray-400">
-            {completedCategories.length}/3 completed • 10 points = RM 1.00
+            {completedCategories.length}/3 completed • 1 point = RM 1.00
           </p>
         </div>
 

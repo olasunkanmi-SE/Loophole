@@ -144,7 +144,7 @@ export default function OrderSummary() {
             <span className="font-medium">{getFormattedRM()}</span>
           </div>
           <p className="text-xs text-blue-600 mt-1">
-            {getTotalPoints()} points (10 points = RM 1.00)
+            {getTotalPoints()} points (1 point = RM 1.00)
           </p>
         </div>
 

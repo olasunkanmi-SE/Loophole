@@ -42,6 +42,7 @@ import AdminOrders from "@/pages/AdminOrders";
 import AdminSurveys from './pages/AdminSurveys';
 import AdminMenu from './pages/AdminMenu';
 import AdminFinance from './pages/AdminFinance';
+import AdminContent from './pages/AdminContent';
 
 function App() {
   return (
@@ -222,6 +223,11 @@ function App() {
               <Route path="/admin/finance">
                 <ProtectedRoute>
                   <AdminFinance />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/admin/content">
+                <ProtectedRoute>
+                  <AdminContent />
                 </ProtectedRoute>
               </Route>
               <Route path="/housing">

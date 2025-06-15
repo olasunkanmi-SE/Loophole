@@ -188,6 +188,13 @@ export default function AdminDashboard() {
                 <CreditCard size={20} />
                 <span className="text-sm font-medium">Finance</span>
               </button>
+              <button
+                onClick={() => setLocation('/admin/content')}
+                className="flex items-center gap-2 p-3 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors"
+              >
+                <FileText size={20} />
+                <span className="text-sm font-medium">Content</span>
+              </button>
             </div>
           </div>
 

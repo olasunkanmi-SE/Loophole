@@ -3,7 +3,12 @@ import { MessageCircle } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function FloatingChatIcon() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+
+  // Don't show chat icon on the chat page itself
+  if (location === '/chat') {
+    return null;
+  }
 
   return (
     <button

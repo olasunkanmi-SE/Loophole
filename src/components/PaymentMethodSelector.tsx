@@ -1,7 +1,8 @@
 
 import { useState } from 'react';
 import { Check, CreditCard } from 'lucide-react';
-import { usePayment, PaymentMethod } from '../contexts/PaymentContext';
+import { usePayment } from '../contexts/PaymentContext';
+import type { PaymentMethod } from '../contexts/PaymentContext';
 import { usePoints } from '../contexts/PointsContext';
 
 interface PaymentMethodSelectorProps {

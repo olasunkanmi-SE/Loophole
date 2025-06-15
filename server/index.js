@@ -4,6 +4,89 @@ import { MongoClient } from "mongodb";
 import dotenv from "dotenv";
 import mongoose from 'mongoose';
 
+// Simple in-memory cache with TTL
+class SimpleCache {
+  constructor() {
+    this.cache = new Map();
+  }
+
+  set(key, value, ttlMinutes = 30) {
+    const expiry = Date.now() + (ttlMinutes * 60 * 1000);
+    this.cache.set(key, { value, expiry });
+  }
+
+  get(key) {
+    const item = this.cache.get(key);
+    if (!item) return null;
+    
+    if (Date.now() > item.expiry) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    return item.value;
+  }
+
+  clear() {
+    this.cache.clear();
+  }
+
+  // Clean expired entries
+  cleanup() {
+    const now = Date.now();
+    for (const [key, item] of this.cache.entries()) {
+      if (now > item.expiry) {
+        this.cache.delete(key);
+      }
+    }
+  }
+}
+
+const cache = new SimpleCache();
+
+// Cache middleware for GET requests
+const cacheMiddleware = (ttlMinutes = 30) => {
+  return (req, res, next) => {
+    // Only cache GET requests
+    if (req.method !== 'GET') {
+      return next();
+    }
+
+    // Create cache key from URL and query parameters
+    const cacheKey = `${req.originalUrl || req.url}`;
+    
+    // Try to get from cache
+    const cachedResponse = cache.get(cacheKey);
+    if (cachedResponse) {
+      console.log(`Cache hit for: ${cacheKey}`);
+      return res.json(cachedResponse);
+    }
+
+    // Store original json method
+    const originalJson = res.json;
+    
+    // Override json method to cache the response
+    res.json = function(data) {
+      // Cache successful responses (status < 400)
+      if (res.statusCode < 400) {
+        console.log(`Caching response for: ${cacheKey}`);
+        cache.set(cacheKey, data, ttlMinutes);
+      }
+      
+      // Call original json method
+      return originalJson.call(this, data);
+    };
+
+    next();
+  };
+};
+
+// Cleanup expired cache entries every 10 minutes
+setInterval(() => {
+  cache.cleanup();
+  console.log('Cache cleanup completed');
+}, 10 * 60 * 1000);
+
 // Load environment variables
 dotenv.config();
 
@@ -142,7 +225,7 @@ const Payment = mongoose.model('Payment', paymentSchema);
 const SurveyResponse = mongoose.model('SurveyResponse', surveyResponseSchema);
 
 // Menu Items API Routes
-app.get('/api/menu-items', async (req, res) => {
+app.get('/api/menu-items', cacheMiddleware(30), async (req, res) => {
   try {
     const menuItems = await MenuItem.find();
     res.json(menuItems);
@@ -156,6 +239,11 @@ app.post('/api/menu-items', async (req, res) => {
   try {
     const menuItem = new MenuItem(req.body);
     await menuItem.save();
+    
+    // Invalidate menu items cache
+    cache.clear();
+    console.log('Cache cleared due to menu item creation');
+    
     res.status(201).json(menuItem);
   } catch (error) {
     console.error('Error creating menu item:', error);
@@ -173,6 +261,11 @@ app.put('/api/menu-items/:id', async (req, res) => {
     if (!menuItem) {
       return res.status(404).json({ error: 'Menu item not found' });
     }
+    
+    // Invalidate menu items cache
+    cache.clear();
+    console.log('Cache cleared due to menu item update');
+    
     res.json(menuItem);
   } catch (error) {
     console.error('Error updating menu item:', error);
@@ -186,6 +279,11 @@ app.delete('/api/menu-items/:id', async (req, res) => {
     if (!menuItem) {
       return res.status(404).json({ error: 'Menu item not found' });
     }
+    
+    // Invalidate menu items cache
+    cache.clear();
+    console.log('Cache cleared due to menu item deletion');
+    
     res.json({ message: 'Menu item deleted successfully' });
   } catch (error) {
     console.error('Error deleting menu item:', error);
@@ -239,7 +337,7 @@ app.post("/api/signup", checkDbConnection, async (req, res) => {
   }
 });
 
-app.get("/api/profile/:email", checkDbConnection, async (req, res) => {
+app.get("/api/profile/:email", checkDbConnection, cacheMiddleware(15), async (req, res) => {
   try {
     const { email } = req.params;
 
@@ -426,7 +524,7 @@ app.post("/api/process-payment", checkDbConnection, async (req, res) => {
   }
 });
 
-app.get("/api/payment-history/:email", checkDbConnection, async (req, res) => {
+app.get("/api/payment-history/:email", checkDbConnection, cacheMiddleware(10), async (req, res) => {
   try {
     const { email } = req.params;
 
@@ -494,7 +592,7 @@ app.put("/api/update-order-status", checkDbConnection, async (req, res) => {
   }
 });
 
-app.get("/api/order-history/:email", checkDbConnection, async (req, res) => {
+app.get("/api/order-history/:email", checkDbConnection, cacheMiddleware(10), async (req, res) => {
   try {
     const { email } = req.params;
 
@@ -513,7 +611,7 @@ app.get("/api/order-history/:email", checkDbConnection, async (req, res) => {
 });
 
 // Admin endpoints
-app.get("/api/admin/dashboard-stats", checkDbConnection, async (req, res) => {
+app.get("/api/admin/dashboard-stats", checkDbConnection, cacheMiddleware(5), async (req, res) => {
   try {
     const usersCollection = db.collection("users");
     const ordersCollection = db.collection("orders");
@@ -563,7 +661,7 @@ app.get("/api/admin/dashboard-stats", checkDbConnection, async (req, res) => {
   }
 });
 
-app.get("/api/admin/users", checkDbConnection, async (req, res) => {
+app.get("/api/admin/users", checkDbConnection, cacheMiddleware(10), async (req, res) => {
   try {
     const usersCollection = db.collection("users");
     const profilesCollection = db.collection("profiles");

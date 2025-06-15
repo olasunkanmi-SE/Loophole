@@ -1,5 +1,6 @@
 import { useState } from "react";
 import MobileHeader from "../components/MobileHeader";
+import MobileContainer from "../components/MobileContainer";
 import SearchBar from "../components/SearchBar";
 import CategoryFilter from "../components/CategoryFilter";
 import MenuItem from "../components/MenuItem";
@@ -188,12 +189,13 @@ export default function FoodMenu() {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <MobileHeader 
-        title="Back" 
-        onBack={() => window.history.back()} 
-        cartCount={getTotalItems()}
-      />
+    <MobileContainer>
+      <div className="bg-gray-50 min-h-screen">
+        <MobileHeader 
+          title="Back" 
+          onBack={() => window.history.back()} 
+          cartCount={getTotalItems()}
+        />
 
       <SearchBar 
         placeholder="Search"
@@ -226,6 +228,7 @@ export default function FoodMenu() {
         itemCount={getTotalItems()}
         onCheckout={() => setLocation('/order-summary')}
       />
-    </div>
+      </div>
+    </MobileContainer>
   );
 }

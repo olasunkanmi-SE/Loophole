@@ -13,7 +13,8 @@ export default function NewHome() {
   const totalPoints = getTotalPoints();
   const availableRM = getFormattedRM();
   const completedSurveys = getCompletedCategories().length;
-  const potentialEarnings = (3 - completedSurveys) * 10.0; // Up to RM 10.00 per survey
+  const totalSurveys = 8; // Updated total survey count
+  const potentialEarnings = (totalSurveys - completedSurveys) * 1.0; // Up to RM 1.00 per survey
 
   useEffect(() => {
     setAnimateCounter(true);
@@ -47,6 +48,56 @@ export default function NewHome() {
       icon: <UtensilsCrossed size={20} className="text-orange-500" />,
       completed: getCompletedCategories().includes('food'),
       route: '/questionnaire/food',
+      estimatedTime: '2-3 min',
+      points: '2-10 points'
+    },
+    {
+      id: 'entertainment',
+      title: 'Entertainment & Media',
+      description: 'Tell us about your entertainment preferences',
+      icon: <Star size={20} className="text-pink-500" />,
+      completed: getCompletedCategories().includes('entertainment'),
+      route: '/questionnaire/entertainment',
+      estimatedTime: '2-3 min',
+      points: '2-10 points'
+    },
+    {
+      id: 'travel',
+      title: 'Travel & Transport',
+      description: 'Share your travel habits and experiences',
+      icon: <TrendingUp size={20} className="text-green-500" />,
+      completed: getCompletedCategories().includes('travel'),
+      route: '/questionnaire/travel',
+      estimatedTime: '2-3 min',
+      points: '2-10 points'
+    },
+    {
+      id: 'health',
+      title: 'Health & Wellness',
+      description: 'Share your health and fitness routines',
+      icon: <CheckCircle size={20} className="text-red-500" />,
+      completed: getCompletedCategories().includes('health'),
+      route: '/questionnaire/health',
+      estimatedTime: '2-3 min',
+      points: '2-10 points'
+    },
+    {
+      id: 'education',
+      title: 'Education & Learning',
+      description: 'Tell us about your learning preferences',
+      icon: <Award size={20} className="text-indigo-500" />,
+      completed: getCompletedCategories().includes('education'),
+      route: '/questionnaire/education',
+      estimatedTime: '2-3 min',
+      points: '2-10 points'
+    },
+    {
+      id: 'finance',
+      title: 'Finance & Money',
+      description: 'Share your financial habits and goals',
+      icon: <DollarSign size={20} className="text-yellow-500" />,
+      completed: getCompletedCategories().includes('finance'),
+      route: '/questionnaire/finance',
       estimatedTime: '2-3 min',
       points: '2-10 points'
     }
@@ -101,7 +152,7 @@ export default function NewHome() {
           {/* Quick Stats */}
           <div className="grid grid-cols-3 gap-3 mb-8">
             <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3 border border-white/30">
-              <div className="text-lg font-bold text-blue-600">{completedSurveys}/3</div>
+              <div className="text-lg font-bold text-blue-600">{completedSurveys}/{totalSurveys}</div>
               <div className="text-xs text-gray-600">Surveys Done</div>
             </div>
             <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3 border border-white/30">
@@ -196,7 +247,7 @@ export default function NewHome() {
             <h3 className="font-semibold text-gray-900 mb-2">💡 Did You Know?</h3>
             <p className="text-sm text-gray-700">
               Each survey takes just 2-3 minutes and can earn you up to RM 1.00! 
-              Complete all 3 surveys to maximize your earnings for food and accommodation.
+              Complete all {totalSurveys} surveys to maximize your earnings for food and accommodation.
             </p>
             {potentialEarnings > 0 && (
               <div className="mt-3 text-sm font-medium text-purple-700">

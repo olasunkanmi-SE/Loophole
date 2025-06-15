@@ -1,12 +1,14 @@
 import Layout from "@/components/Layout";
 import { Route, Switch } from "wouter";
+import Home from "./pages/Home";
+import NewHome from "./pages/NewHome";
+import Quiz from "./pages/Quiz";
 import Listing from "@/pages/Listing";
 import Listings from "@/pages/Listings";
-import Home from "@/pages/Home"; // Import Home
+// Import Home
 import FoodMenu from "@/pages/FoodMenu";
 import MenuItemDetail from "@/pages/MenuItemDetail";
 import OrderSummary from "@/pages/OrderSummary";
-import Quiz from "@/pages/Quiz";
 import LifestyleQuestionnaire from "@/pages/LifestyleQuestionnaire";
 import DigitalQuestionnaire from "@/pages/DigitalQuestionnaire";
 import FoodQuestionnaire from "@/pages/FoodQuestionnaire";
@@ -48,12 +50,17 @@ function App() {
             {/* Protected routes */}
             <Route path="/">
               <ProtectedRoute>
-                <Quiz />
+                <NewHome />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/quiz">
+              <ProtectedRoute>
+                <Home />
               </ProtectedRoute>
             </Route>
             <Route path="/home">
               <ProtectedRoute>
-                <Home />
+                <NewHome />
               </ProtectedRoute>
             </Route>
             <Route path="/lifestyle">
@@ -100,7 +107,7 @@ function App() {
             </Route>
             <Route path="/location">
               <ProtectedRoute>
-                <Home />
+                <NewHome />
               </ProtectedRoute>
             </Route>
             <Route path="/profile">
@@ -131,7 +138,7 @@ function App() {
               </ProtectedRoute>
             </Route>
           </Switch>
-          
+
           {/* Floating Chat Icon - appears on all protected routes */}
           <FloatingChatIcon />
         </PointsProvider>

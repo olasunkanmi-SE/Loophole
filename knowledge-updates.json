@@ -66,5 +66,21 @@
       "server/index.js"
     ],
     "totalFiles": 1
+  },
+  {
+    "timestamp": "2025-06-15T14:41:32.483Z",
+    "commit": {
+      "hash": "2ecbb1f723619c859f5b8dadb236d8924551e148",
+      "author": "Oyinlola Olasunkanmi Raymond",
+      "message": "Assistant checkpoint: Enhanced survey system with scheduling, targeting, bonuses, previews, and partial save",
+      "date": "2025-06-15 14:41:23 +0000"
+    },
+    "relevantFiles": [
+      "src/App.tsx",
+      "src/contexts/SurveyContext.tsx",
+      "src/pages/LifestyleQuestionnaire.tsx",
+      "src/pages/Questionnaire.tsx"
+    ],
+    "totalFiles": 4
   }
 ]

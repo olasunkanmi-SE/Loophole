@@ -16,6 +16,9 @@ EarnEats is a comprehensive web application that allows users to earn real money
 - **Smart Budget Integration**: Only show affordable items based on current balance
 - **Detailed Item Pages**: Full descriptions, pricing, and nutritional information
 - **Shopping Cart System**: Add multiple items and manage orders
+- **Multiple Payment Methods**: EarnEats Points, GrabPay, Touch 'n Go, Bank Transfer
+- **Order History**: Track all past orders with detailed receipts
+- **PDF Receipt Generation**: Modern, minimalistic receipt downloads
 
 ### 🏠 Accommodation Booking
 - **Housing Options**: Budget hostels, private rooms, luxury apartments
@@ -28,6 +31,18 @@ EarnEats is a comprehensive web application that allows users to earn real money
 - **Budget Planning**: Smart spending advice based on current balance
 - **Contextual Help**: Survey guidance and earning optimization tips
 - **Natural Language Processing**: Powered by Google Gemini AI
+- **Order Analytics**: Spending patterns and user insights
+- **Quick Actions**: Streamlined ordering and booking processes
+
+### 👨‍💼 Admin Dashboard
+- **Dashboard Overview**: Real-time statistics and analytics
+- **User Management**: View, edit, and manage user accounts
+- **Order Management**: Complete order lifecycle management
+- **Survey Management**: Create and manage survey categories and questions
+- **Food Menu Management**: Add, edit, and manage menu items
+- **Points & Financial Management**: Monitor and control financial operations
+- **Content Management**: Manage notifications, terms, and promotional content
+- **System Settings**: App configuration and maintenance tools
 
 ### 👤 User Management
 - **Secure Authentication**: Email/password login with validation
@@ -44,6 +59,7 @@ EarnEats is a comprehensive web application that allows users to earn real money
 - **Wouter** for client-side routing
 - **Context API** for state management
 - **Lucide React** for icons
+- **jsPDF** for receipt generation
 
 ### Backend
 - **Node.js** with Express.js
@@ -95,7 +111,8 @@ EarnEats is designed with a mobile-first approach, featuring:
    Create a `.env` file in the root directory:
    ```env
    GEMINI_API_KEY=your_google_ai_api_key_here
-   MONGODB_URI=your_mongodb_connection_string
+   DATABASE_URL=your_mongodb_connection_string
+   VITE_DATABASE_URL=your_mongodb_connection_string
    ```
 
 4. **Start the development servers**
@@ -137,6 +154,21 @@ EarnEats is designed with a mobile-first approach, featuring:
 }
 ```
 
+### Orders Collection
+```javascript
+{
+  _id: ObjectId,
+  orderId: String,
+  userEmail: String,
+  items: Array,
+  totalAmount: Number,
+  paymentMethod: Object,
+  status: String,
+  transactionId: String,
+  created_at: String
+}
+```
+
 ### Points System (Local Storage)
 ```javascript
 {
@@ -162,6 +194,19 @@ EarnEats is designed with a mobile-first approach, featuring:
 - `GET /api/profile/:email` - Get user profile
 - `POST /api/profile` - Create/update user profile
 
+### Order Management
+- `POST /api/orders` - Create new order
+- `GET /api/orders/:email` - Get user orders
+- `PUT /api/orders/:orderId` - Update order status
+- `DELETE /api/orders/:orderId` - Cancel order
+
+### Admin Endpoints
+- `GET /api/admin/stats` - Dashboard statistics
+- `GET /api/admin/users` - Get all users
+- `GET /api/admin/orders` - Get all orders
+- `PUT /api/admin/users/:id` - Update user
+- `DELETE /api/admin/users/:id` - Delete user
+
 ## 📁 Project Structure
 
 ```
@@ -170,18 +215,25 @@ src/
 │   ├── MobileContainer.tsx
 │   ├── MobileHeader.tsx
 │   ├── ProtectedRoute.tsx
-│   └── FloatingChatIcon.tsx
+│   ├── FloatingChatIcon.tsx
+│   ├── MenuItem.tsx
+│   ├── CheckoutBar.tsx
+│   └── PaymentMethodSelector.tsx
 ├── contexts/           # React Context providers
 │   ├── AuthContext.tsx
 │   ├── CartContext.tsx
-│   └── PointsContext.tsx
+│   ├── PointsContext.tsx
+│   └── PaymentContext.tsx
 ├── pages/              # Page components
 │   ├── NewHome.tsx     # Main dashboard
 │   ├── Chat.tsx        # AI assistant
 │   ├── FoodMenu.tsx    # Food ordering
 │   ├── Housing.tsx     # Accommodation booking
+│   ├── OrderHistory.tsx # Order tracking
+│   ├── Admin*.tsx      # Admin pages
 │   └── [Questionnaire].tsx # Survey pages
 ├── utils/              # Utility functions
+│   └── pointsConverter.ts
 └── App.tsx            # Main application component
 
 server/
@@ -202,12 +254,22 @@ server/
 - **Point Conversion** (1 point = RM 1.00)
 - **Budget Constraints** ensuring users can only spend what they've earned
 - **Spending Categories** for food and accommodation
+- **Transaction History** with detailed records
 
 ### AI Assistant
 - **Contextual Recommendations** based on current balance and preferences
 - **Budget Planning** suggestions for food and accommodation
 - **Interactive Chat** with natural language processing
 - **Quick Actions** for common tasks (ordering food, booking accommodation)
+- **User Analytics** for spending insights
+
+### Admin Panel
+- **Comprehensive Dashboard** with real-time metrics
+- **User Management** with full CRUD operations
+- **Order Processing** and status management
+- **Financial Oversight** with revenue tracking
+- **Content Management** for app-wide settings
+- **System Configuration** and maintenance tools
 
 ## 🔧 Configuration
 
@@ -261,6 +323,11 @@ The Express server is configured with:
 - Check API key permissions and quotas
 - Review network connectivity
 
+**Admin panel access issues**
+- Ensure proper user authentication
+- Check database permissions
+- Verify API endpoints are accessible
+
 ### Debug Mode
 Enable debug logging by checking browser console for:
 - Authentication status
@@ -290,6 +357,7 @@ Enable debug logging by checking browser console for:
 - **CORS Configuration** for API security
 - **Environment Variables** for sensitive data
 - **Error Handling** to prevent information leakage
+- **Admin Route Protection** with authentication checks
 
 ### Security Recommendations for Production
 - Implement password hashing (bcrypt)
@@ -298,6 +366,7 @@ Enable debug logging by checking browser console for:
 - Implement JWT tokens for authentication
 - Add input sanitization
 - Set up proper CORS policies
+- Implement role-based access control for admin features
 
 ## 🤝 Contributing
 
@@ -336,6 +405,6 @@ For support and questions:
 
 ---
 
-**Version**: 1.0.0  
+**Version**: 2.0.0  
 **Last Updated**: January 2025  
 **Maintainer**: EarnEats Development Team

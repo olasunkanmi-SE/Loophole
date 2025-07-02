@@ -17,7 +17,16 @@ jobs:
         id: git_diff
         run: |
           git fetch origin ${{ github.base_ref }}
-          git diff origin/${{ github.base_ref }} ${{ github.head_ref }} > diff.txt
+          git fetch origin ${{ github.head_ref }}
+          if ! git rev-parse --verify origin/${{ github.base_ref }}; then
+            echo "Error: Base branch does not exist"
+            exit 1
+          fi
+          if ! git rev-parse --verify origin/${{ github.head_ref }}; then
+            echo "Error: Head branch does not exist"
+            exit 1
+          fi
+          git diff origin/${{ github.base_ref }} origin/${{ github.head_ref }} > diff.txt
           echo "diff<<EOF" >> $GITHUB_OUTPUT
           cat diff.txt >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT

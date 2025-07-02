@@ -806,7 +806,7 @@ export default function Chat() {
     ];
 
     // Generate user analytics summary
-    const generateAnalyticsSummary = (analytics: any) => {
+    const generateAnalyticsSummary = (analytics:any) => {
       if (!analytics || !analytics.orders || !analytics.payments) {
         return "No user data available for analysis.";
       }
@@ -890,6 +890,60 @@ USER SPENDING ANALYTICS:
         `${category.toUpperCase()}:\n${items.map(item => `- ${item.name}: RM ${item.price} (${item.description})`).join('\n')}`
       ).join('\n\n');
 
+    const housingContext = `AVAILABLE HOUSING OPTIONS:
+
+BUDGET ACCOMMODATIONS (RM 15-25/night):
+- Budget Hostel Dorm Bed: RM 15/night, Petaling Jaya
+  • Type: Shared dorm room (1 guest)
+  • Amenities: WiFi, shared kitchen, lockers, common area
+  • Perfect for: Budget travelers, backpackers
+  • Rating: 4.2/5 (89 reviews)
+  
+- Capsule Pod Experience: RM 20/night, Bukit Bintang, KL
+  • Type: Unique capsule space (1 guest)
+  • Amenities: WiFi, climate control, charging ports, security
+  • Perfect for: Solo travelers, unique experience
+  • Rating: 4.1/5 (45 reviews)
+  
+- Student Housing Single Room: RM 25/night, USJ, Selangor
+  • Type: Private room in student housing (1 guest)
+  • Amenities: WiFi, study desk, shared kitchen, laundry
+  • Perfect for: Students, long-term stays
+  • Rating: 4.3/5 (67 reviews)
+
+MID-RANGE ACCOMMODATIONS (RM 35-45/night):
+- Private Room with Breakfast: RM 35/night, Subang Jaya
+  • Type: Private room in family home (2 guests)
+  • Amenities: WiFi, breakfast included, private bathroom, parking
+  • Perfect for: Couples, comfort seekers
+  • Rating: 4.6/5 (156 reviews)
+  
+- Cozy Studio in City Center: RM 45/night, Kuala Lumpur
+  • Type: Entire studio apartment (2 guests)
+  • Amenities: WiFi, kitchen, air conditioning, TV
+  • Perfect for: Independence, central location
+  • Rating: 4.8/5 (127 reviews)
+
+LUXURY ACCOMMODATIONS (RM 85+/night):
+- Luxury Condo with Pool: RM 85/night, KLCC, Kuala Lumpur
+  • Type: Entire luxury apartment (4 guests, 2 bedrooms, 2 bathrooms)
+  • Amenities: WiFi, pool, gym, concierge, city view
+  • Perfect for: Groups, luxury experience
+  • Rating: 4.9/5 (203 reviews)
+
+HOUSING BOOKING PROCESS:
+1. Check your available balance: ${availableRM}
+2. Filter options within your budget
+3. View detailed property information
+4. Book directly using your points balance
+5. Instant confirmation and booking details
+
+HOUSING RECOMMENDATIONS BASED ON BUDGET:
+- Under RM 20: Budget Hostel Dorm or Capsule Pod
+- RM 20-35: Student Housing or upgrade to Private Room
+- RM 35-50: Private Room with Breakfast or City Center Studio
+- RM 50+: Consider the Luxury Condo for special occasions`;
+
     return `You are EarnEats Assistant, a helpful AI for the EarnEats food delivery app in Malaysia.
 
 CURRENT USER STATUS:
@@ -903,8 +957,7 @@ ${analyticsText}
 AVAILABLE FOOD MENU:
 ${menuItemsText}
 
-HOUSING OPTIONS AVAILABLE:
-${housingOptions.map(option => `- ${option.type}: ${option.price} (${option.description})`).join('\n')}
+${housingContext}
 
 CURRENT SHOPPING CART:
 ${cartInfo}
@@ -958,11 +1011,94 @@ ${relevantFiles.map((file: any) =>
 ).join('\n')}`;
       }
     }
+       const availableSurveys = [
+      {
+        title: "Lifestyle & Shopping Habits",
+        reward: "RM 1.20",
+        time: "4-6 minutes",
+        category: "Consumer Behavior",
+        description: "Help us understand your shopping preferences and lifestyle choices. High-paying survey!",
+        points: 12,
+        status: "Available Now"
+      },
+      {
+        title: "Daily Mood Check-in",
+        reward: "RM 0.50",
+        time: "2-3 minutes", 
+        category: "Wellness",
+        description: "Quick daily survey about your mood and well-being.",
+        points: 5,
+        status: "Available Daily"
+      },
+      {
+        title: "Technology Preferences",
+        reward: "RM 1.00",
+        time: "5-7 minutes",
+        category: "Technology", 
+        description: "Share your thoughts on technology and digital habits.",
+        points: 10,
+        status: "Available Now"
+      },
+      {
+        title: "Food & Dining Habits",
+        reward: "RM 0.80",
+        time: "4-5 minutes",
+        category: "Food & Beverage",
+        description: "Tell us about your food preferences and dining experiences.",
+        points: 8,
+        status: "Available Now"
+      },
+      {
+        title: "Health & Wellness Survey",
+        reward: "RM 1.50",
+        time: "6-8 minutes",
+        category: "Health",
+        description: "Questions about your health and wellness routines. Premium survey!",
+        points: 15,
+        status: "Available Now"
+      },
+      {
+        title: "Weekend Bonus Survey",
+        reward: "RM 2.00",
+        time: "5-7 minutes",
+        category: "Special Bonus",
+        description: "Special weekend survey with DOUBLE POINTS! Limited time only!",
+        points: 20,
+        status: "Weekend Only - 2x Points"
+      }
+    ];
+
+    const surveyList = `🎯 AVAILABLE SURVEYS TO EARN MONEY:
+
+${availableSurveys.map((survey, index) => 
+`${index + 1}. **${survey.title}** 
+   💰 Reward: ${survey.reward} (${survey.points} points)
+   ⏱️ Time: ${survey.time}
+   📂 Category: ${survey.category}
+   ✅ Status: ${survey.status}
+   📝 ${survey.description}`
+).join("\n\n")}
+
+💡 HOW TO START EARNING:
+- Go to the "Questionnaire" section in the app
+- Choose any available survey
+- Complete all questions honestly  
+- Earn points instantly upon completion
+- Convert points to money for food/housing (10 points = RM 1.00)
+
+🏆 EARNING TIPS:
+- Complete all surveys to maximize earnings
+- Weekend surveys offer DOUBLE points
+- Each survey can only be completed once
+- Points never expire`;
 
     const systemPrompt = `You are EarnEats AI Assistant, a helpful food recommendation and ordering assistant for the EarnEats platform.
 
 CURRENT AVAILABLE MENU ITEMS:
 ${menuItemsText}
+
+AVAILABLE SURVEYS:
+${surveyList}
 
 USER CONTEXT:
 - User Email: ${userEmail || 'Not provided'}
@@ -978,14 +1114,17 @@ CAPABILITIES:
 6. System Updates - I have access to recent code changes and can provide information about new features
 
 RESPONSE GUIDELINES:
-- Always be helpful, friendly, and conversational
-- Format recommendations with item names, prices, and brief descriptions
-- Include relevant menu item details when making suggestions
-- Use emojis sparingly for a friendly tone
-- Keep responses concise but informative
-- If asked about orders, payments, or account issues, direct users to appropriate sections
-- Always recommend items from the available menu when discussing food
-- If asked about app features or recent changes, use the system knowledge context
+- Always be helpful, friendly, and supportive
+- **PRIORITY**: When asked about SURVEYS/EARNING/AVAILABLE SURVEYS/QUESTIONNAIRES, respond with the complete survey list above
+- When asked about earning money or "what surveys are available", show ALL surveys from the detailed list above
+- When asked about HOUSING/ACCOMMODATION/LODGING/STAYING, prioritize housing recommendations
+- When asked about FOOD/EATING/MEALS/RESTAURANTS, prioritize food recommendations  
+- **SURVEY RESPONSES**: Always include survey titles, rewards, time estimates, categories, and descriptions
+- Explain the points-to-money conversion clearly (10 points = RM 1.00)
+- Mention weekend bonuses (2x points) when relevant
+- Guide users to the "Questionnaire" section to start earning
+- Be specific about earning potential - mention exact amounts and survey details
+- **DO NOT** recommend food when user asks about surveys or earning money
 
 Current user message: "${userMessage}"
 

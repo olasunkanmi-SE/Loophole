@@ -192,7 +192,7 @@ const accommodations: Accommodation[] = [
 
 export default function Housing() {
   const [, setLocation] = useLocation();
-  const { getTotalPoints, getFormattedRM } = usePoints();
+  const { getTotalPoints, getFormattedRM, canAfford, deductRM } = usePoints();
   const [selectedListing, setSelectedListing] = useState<Accommodation | null>(
     null,
   );
@@ -208,7 +208,7 @@ export default function Housing() {
   );
 
   const affordableAccommodations = accommodations.filter(
-    (acc) => acc.price <= availableRM && acc.available,
+    (acc) => canAfford(acc.price) && acc.available,
   );
 
   const toggleFavorite = (id: string) => {
@@ -218,18 +218,30 @@ export default function Housing() {
   };
 
   const handleBooking = (accommodation: Accommodation) => {
-    if (accommodation.price <= availableRM) {
+    if (canAfford(accommodation.price)) {
       setSelectedListing(accommodation);
       setShowBookingModal(true);
+    } else {
+      alert(`Insufficient balance! You need RM ${accommodation.price.toFixed(2)} but only have ${getFormattedRM()}`);
     }
   };
 
   const confirmBooking = () => {
-    // Here you would integrate with the points system to deduct the cost
-    setShowBookingModal(false);
-    setSelectedListing(null);
-    // For now, just show success
-    alert("Booking confirmed! Points will be deducted from your balance.");
+    if (!selectedListing) return;
+    
+    if (canAfford(selectedListing.price)) {
+      const success = deductRM(selectedListing.price);
+      if (success) {
+        setShowBookingModal(false);
+        setSelectedListing(null);
+        alert(`Booking confirmed! RM ${selectedListing.price.toFixed(2)} has been deducted from your balance.`);
+      } else {
+        alert("Error processing payment. Please try again.");
+      }
+    } else {
+      alert(`Insufficient balance! You need RM ${selectedListing.price.toFixed(2)} but only have ${getFormattedRM()}`);
+      setShowBookingModal(false);
+    }
   };
 
   return (
@@ -400,20 +412,20 @@ export default function Housing() {
                         e.stopPropagation();
                         handleBooking(accommodation);
                       }}
-                      disabled={accommodation.price > availableRM}
+                      disabled={!canAfford(accommodation.price)}
                       className={`px-4 py-2 rounded-lg font-medium text-sm ${
-                        accommodation.price <= availableRM
+                        canAfford(accommodation.price)
                           ? "bg-pink-600 text-white hover:bg-pink-700"
                           : "bg-gray-200 text-gray-500 cursor-not-allowed"
                       }`}
                     >
-                      {accommodation.price <= availableRM
+                      {canAfford(accommodation.price)
                         ? "Book Now"
                         : "Insufficient Budget"}
                     </button>
                   </div>
 
-                  {accommodation.price <= availableRM && (
+                  {canAfford(accommodation.price) && (
                     <div className="mt-2 text-xs text-green-600 font-medium">
                       ✓ Within your budget
                     </div>
@@ -568,7 +580,7 @@ export default function Housing() {
                       <p className="text-sm text-gray-600">
                         Your Budget: {getFormattedRM()}
                       </p>
-                      {selectedListing.price <= availableRM ? (
+                      {canAfford(selectedListing.price) ? (
                         <p className="text-sm text-green-600">✓ Affordable</p>
                       ) : (
                         <p className="text-sm text-red-600">× Over budget</p>
@@ -581,14 +593,14 @@ export default function Housing() {
                       setShowDetailModal(false);
                       handleBooking(selectedListing);
                     }}
-                    disabled={selectedListing.price > availableRM}
+                    disabled={!canAfford(selectedListing.price)}
                     className={`w-full py-3 px-4 rounded-lg font-medium ${
-                      selectedListing.price <= availableRM
+                      canAfford(selectedListing.price)
                         ? "bg-blue-600 text-white hover:bg-blue-700"
                         : "bg-gray-100 text-gray-400 cursor-not-allowed"
                     }`}
                   >
-                    {selectedListing.price <= availableRM
+                    {canAfford(selectedListing.price)
                       ? "Reserve Now"
                       : "Insufficient Budget"}
                   </button>

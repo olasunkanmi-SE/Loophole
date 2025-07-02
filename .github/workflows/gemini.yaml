@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.head_ref }} # Checkout the pull request branch
+          ref: ${{ github.head_ref }}
 
       - name: Get git diff
         id: git_diff
@@ -68,9 +68,14 @@ jobs:
 
       - name: Process Code Review
         run: |
-          review=$(jq -r '.code_review // "No code review generated"' output.json)
+          raw_file=$(jq -r '.code_review_raw // ""' output.json)
           timestamp=$(date +%s)
-          echo "$review" > code-reviews/${timestamp}-code-review.md
+          if [ -n "$raw_file" ] && [ -f "$raw_file" ]; then
+            cp "$raw_file" code-reviews/${timestamp}-code-review.md
+          else
+            review=$(jq -r '.code_review // "No code review generated"' output.json)
+            echo "$review" > code-reviews/${timestamp}-code-review.md
+          fi
 
       - name: Process Documentation
         run: |
@@ -104,4 +109,4 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          rm -f diff.txt output.json
+          rm -f diff.txt output.json code_review_raw.md

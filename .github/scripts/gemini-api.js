@@ -1,5 +1,5 @@
 import axios from "axios";
-import fs from "fs"; // Import fs for writing to $GITHUB_OUTPUT
+import fs from "fs"; // Import fs for writing to $GITHUB_OUTPUT and temporary files
 
 async function callGeminiApi(prompt, diff) {
   const geminiApiKey = process.env.GEMINI_API_KEY;
@@ -44,7 +44,7 @@ async function callGeminiApi(prompt, diff) {
       };
     }
 
-    // Clean the response
+    // Clean the response by removing markdown backticks
     const cleanedText = result.candidates[0].content.parts[0].text
       .replace(/```json/g, "")
       .replace(/```/g, "")
@@ -85,7 +85,7 @@ async function callGeminiApi(prompt, diff) {
         for (const line of docLines) {
           if (line.startsWith("File: ")) {
             if (currentFile) {
-              documentation[currentFile] = currentContent.join(" ").trim();
+              documentation[currentFile] = currentContent.join("\n").trim();
               currentContent = [];
             }
             currentFile = line.substring(6).trim();
@@ -94,26 +94,25 @@ async function callGeminiApi(prompt, diff) {
           }
         }
         if (currentFile && currentContent.length) {
-          documentation[currentFile] = currentContent.join(" ").trim();
+          documentation[currentFile] = currentContent.join("\n").trim();
         }
       }
-    } else {
-      // Fallback: generate basic documentation for each file
-      files.forEach((file) => {
-        documentation[
-          file
-        ] = `Documentation for ${file}: This file was modified in the pull request.`;
-      });
     }
 
-    // Sanitize code_review for shell compatibility
-    codeReview = codeReview
-      .replace(/[\n\r]+/g, " ")
+    // Write raw code review to a temporary file to preserve markdown
+    fs.writeFileSync("code_review_raw.md", codeReview);
+
+    // Sanitize code_review for JSON output (remove quotes and backslashes)
+    const jsonSafeCodeReview = codeReview
       .replace(/["\\]/g, " ")
       .replace(/\s+/g, " ")
       .trim();
 
-    return { code_review: codeReview, documentation };
+    return {
+      code_review: jsonSafeCodeReview,
+      code_review_raw: "code_review_raw.md",
+      documentation,
+    };
   } catch (error) {
     console.error(
       "Error: Failed to call Gemini API.",
@@ -121,11 +120,14 @@ async function callGeminiApi(prompt, diff) {
     );
     const errorMessage =
       `Error: Failed to generate code review. ${error.message}`
-        .replace(/[\n\r]+/g, " ")
         .replace(/["\\]/g, " ")
         .replace(/\s+/g, " ")
         .trim();
-    return { code_review: errorMessage, documentation: {} };
+    return {
+      code_review: errorMessage,
+      code_review_raw: "",
+      documentation: {},
+    };
   }
 }
 
@@ -137,6 +139,7 @@ async function callGeminiApi(prompt, diff) {
     console.error("Usage: node gemini-api.js <prompt> <diff>");
     const errorResult = {
       code_review: "Error: Missing prompt or diff.",
+      code_review_raw: "",
       documentation: {},
     };
     console.log(JSON.stringify(errorResult));
@@ -158,10 +161,10 @@ async function callGeminiApi(prompt, diff) {
     console.error("Error:", error.message);
     const errorResult = {
       code_review: `Error: Script execution failed. ${error.message}`
-        .replace(/[\n\r]+/g, " ")
         .replace(/["\\]/g, " ")
         .replace(/\s+/g, " ")
         .trim(),
+      code_review_raw: "",
       documentation: {},
     };
     console.log(JSON.stringify(errorResult));

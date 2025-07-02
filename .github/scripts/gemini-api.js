@@ -1,4 +1,4 @@
-import fetch from "node-fetch";
+import { fetch } from "undici";
 global.fetch = fetch;
 import { GoogleGenAI } from "@google/genai";
 

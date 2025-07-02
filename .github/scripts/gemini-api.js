@@ -1,6 +1,5 @@
 import axios from "axios";
-import fs from "fs";
-import crypto from "crypto"; // Import crypto for hashing
+import fs from "fs"; // Import fs for file operations
 
 async function callGeminiApi(prompt, diff) {
   const geminiApiKey = process.env.GEMINI_API_KEY;
@@ -10,8 +9,10 @@ async function callGeminiApi(prompt, diff) {
     process.exit(1);
   }
 
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+  // Updated model to gemini-2.5-flash
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
 
+  // The JSON body for the API request
   const geminiBody = {
     contents: [
       {
@@ -25,12 +26,14 @@ async function callGeminiApi(prompt, diff) {
   };
 
   try {
+    // Use axios to make the POST request
     const response = await axios.post(geminiUrl, geminiBody, {
       headers: {
         "Content-Type": "application/json",
       },
     });
 
+    // Access the response data
     const result = response.data;
 
     if (!result.candidates || !result.candidates[0]?.content?.parts[0]?.text) {
@@ -50,39 +53,31 @@ async function callGeminiApi(prompt, diff) {
 }
 
 (async () => {
-  const promptPath = process.argv[2];
+  const prompt = process.argv[2];
   const diff = process.argv[3];
   const outputDir = "output";
 
-  if (!promptPath || !diff) {
-    console.error("Usage: node gemini-api.js <promptPath> <diff>");
+  if (!prompt || !diff) {
+    console.error("Usage: node gemini-api.js <prompt> <diff>");
     process.exit(1);
   }
 
   try {
-    const prompt = fs.readFileSync(promptPath, "utf-8");
     const result = await callGeminiApi(prompt, diff);
 
+    // Create output directory if it doesn't exist
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir);
     }
 
-    if (promptPath.includes("code-review")) {
-      fs.writeFileSync(`${outputDir}/code_review.md`, result);
-      console.log("Code review has been generated in the 'output' directory.");
-    } else if (promptPath.includes("documentation")) {
-      // Generate a safe filename using a hash of the diff content
-      const hash = crypto
-        .createHash("sha256")
-        .update(diff)
-        .digest("hex")
-        .slice(0, 16);
-      const safeFileName = `documentation_${hash}.md`;
-      fs.writeFileSync(`${outputDir}/${safeFileName}`, result);
-      console.log(
-        `Documentation has been generated in the 'output' directory with filename: ${safeFileName}`
-      );
-    }
+    // Write result to code_review.md
+    fs.writeFileSync(`${outputDir}/code_review.md`, result);
+
+    // Set output for GitHub Actions
+    fs.appendFileSync(
+      process.env.GITHUB_OUTPUT,
+      `result=${JSON.stringify(result)}\n`
+    );
   } catch (error) {
     console.error("Error:", error.message);
     process.exit(1);

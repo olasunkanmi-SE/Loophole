@@ -79,7 +79,6 @@ async function callGeminiApi(prompt, diff) {
       codeReview = sections[0].trim();
       const docSection = sections[1]?.trim();
       if (docSection) {
-        // Simple parsing: assume documentation is formatted as "File: <path>\n<content>"
         const docLines = docSection.split("\n");
         let currentFile = null;
         let currentContent = [];
@@ -98,6 +97,13 @@ async function callGeminiApi(prompt, diff) {
           documentation[currentFile] = currentContent.join(" ").trim();
         }
       }
+    } else {
+      // Fallback: generate basic documentation for each file
+      files.forEach((file) => {
+        documentation[
+          file
+        ] = `Documentation for ${file}: This file was modified in the pull request.`;
+      });
     }
 
     // Sanitize code_review for shell compatibility

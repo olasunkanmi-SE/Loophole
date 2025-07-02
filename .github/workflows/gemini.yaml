@@ -95,10 +95,17 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "Add AI-generated code review and documentation"
-            git push origin HEAD:${{ github.head_ref }}
+            git push https://x-access-token:${{ secrets.REPO_ACCESS_TOKEN }}@github.com/olasunkanmi-SE/Loophole.git HEAD:${{ github.head_ref }}
           fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-outputs
+          path: |
+            code-reviews/
+            docs/
 
       - name: Logging Outputs
         run: |

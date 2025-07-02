@@ -42,26 +42,32 @@ async function callGeminiApi(prompt, diff) {
       process.exit(1);
     }
 
-    // Extract the JSON object from the response
-    const textResponse = result.candidates[0].content.parts[0].text;
-    const jsonStart = textResponse.indexOf("{");
-    const jsonEnd = textResponse.lastIndexOf("}");
+    // Clean the response by removing markdown backticks and 'json' specifier
+    const cleanedText = result.candidates[0].content.parts[0].text
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
 
-    if (jsonStart === -1 || jsonEnd === -1) {
-      console.error("Error: Could not find a JSON object in the response.");
-      console.error("Response Text:", textResponse);
-      process.exit(1);
-    }
-
-    const jsonString = textResponse.substring(jsonStart, jsonEnd + 1);
-
+    // Attempt to parse the cleaned text as JSON
     try {
-      return JSON.parse(jsonString);
+      return JSON.parse(cleanedText);
     } catch (jsonError) {
-      console.error("Error: Failed to parse extracted JSON.");
-      console.error("Extracted JSON String:", jsonString);
-      console.error("Original Error:", jsonError.message);
-      process.exit(1);
+      try {
+        // If JSON parsing fails, try to parse as URL-encoded string
+        const params = new URLSearchParams(cleanedText);
+        const json = {};
+        for (const [key, value] of params) {
+          json[key] = value;
+        }
+        return json;
+      } catch (urlParamsError) {
+        // If both parsing methods fail, log the errors and exit
+        console.error("Error: API response is not valid JSON or URL-encoded.");
+        console.error("Cleaned Text:", cleanedText);
+        console.error("JSON Error:", jsonError.message);
+        console.error("URLSearchParams Error:", urlParamsError.message);
+        process.exit(1);
+      }
     }
   } catch (error) {
     console.error(

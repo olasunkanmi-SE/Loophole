@@ -44,16 +44,70 @@ async function callGeminiApi(prompt, diff) {
       };
     }
 
-    // Clean the response, removing markdown and special characters
+    // Clean the response
     const cleanedText = result.candidates[0].content.parts[0].text
       .replace(/```json/g, "")
       .replace(/```/g, "")
-      .replace(/[\n\r]+/g, " ") // Replace newlines with spaces
-      .replace(/["\\]/g, " ") // Remove quotes and backslashes
-      .replace(/\s+/g, " ") // Collapse multiple spaces
       .trim();
 
-    return { code_review: cleanedText, documentation: {} };
+    // Initialize output
+    let codeReview = cleanedText;
+    let documentation = {};
+
+    // Extract documentation for changed files from the diff
+    const files = [];
+    const diffLines = diff.split("\n");
+    for (const line of diffLines) {
+      if (line.startsWith("+++ ") || line.startsWith("--- ")) {
+        const filePath = line.substring(4).replace(/^b\//, "");
+        if (filePath && !files.includes(filePath) && !line.startsWith("---")) {
+          files.push(filePath);
+        }
+      }
+    }
+
+    // Generate simple documentation for each changed file
+    files.forEach((file) => {
+      documentation[
+        file
+      ] = `Auto-generated documentation for ${file}: Updated based on recent changes.`;
+    });
+
+    // If the response contains a documentation section, attempt to parse it
+    if (cleanedText.includes("## Documentation")) {
+      const sections = cleanedText.split("## Documentation");
+      codeReview = sections[0].trim();
+      const docSection = sections[1]?.trim();
+      if (docSection) {
+        // Simple parsing: assume documentation is formatted as "File: <path>\n<content>"
+        const docLines = docSection.split("\n");
+        let currentFile = null;
+        let currentContent = [];
+        for (const line of docLines) {
+          if (line.startsWith("File: ")) {
+            if (currentFile) {
+              documentation[currentFile] = currentContent.join(" ").trim();
+              currentContent = [];
+            }
+            currentFile = line.substring(6).trim();
+          } else if (currentFile) {
+            currentContent.push(line);
+          }
+        }
+        if (currentFile && currentContent.length) {
+          documentation[currentFile] = currentContent.join(" ").trim();
+        }
+      }
+    }
+
+    // Sanitize code_review for shell compatibility
+    codeReview = codeReview
+      .replace(/[\n\r]+/g, " ")
+      .replace(/["\\]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    return { code_review: codeReview, documentation };
   } catch (error) {
     console.error(
       "Error: Failed to call Gemini API.",

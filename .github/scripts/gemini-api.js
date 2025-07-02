@@ -1,5 +1,5 @@
 import axios from "axios";
-import fs from "fs"; // Import fs for file operations
+import fs from "fs";
 
 async function callGeminiApi(prompt, diff) {
   const geminiApiKey = process.env.GEMINI_API_KEY;
@@ -9,10 +9,8 @@ async function callGeminiApi(prompt, diff) {
     process.exit(1);
   }
 
-  // Updated model to gemini-2.5-flash
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiApiKey}`;
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
 
-  // The JSON body for the API request
   const geminiBody = {
     contents: [
       {
@@ -26,14 +24,12 @@ async function callGeminiApi(prompt, diff) {
   };
 
   try {
-    // Use axios to make the POST request
     const response = await axios.post(geminiUrl, geminiBody, {
       headers: {
         "Content-Type": "application/json",
       },
     });
 
-    // Access the response data
     const result = response.data;
 
     if (!result.candidates || !result.candidates[0]?.content?.parts[0]?.text) {
@@ -42,40 +38,10 @@ async function callGeminiApi(prompt, diff) {
       process.exit(1);
     }
 
-    // Clean the response by removing markdown backticks and 'json' specifier
-    const cleanedText = result.candidates[0].content.parts[0].text
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-
-    // Write cleansed response to a file
-    fs.writeFileSync("ai_output.json", cleanedText);
-
-    // Attempt to parse the cleaned text as JSON
-    try {
-      return JSON.parse(cleanedText);
-    } catch (jsonError) {
-      try {
-        // If JSON parsing fails, try to parse as URL-encoded string
-        const params = new URLSearchParams(cleanedText);
-        const json = {};
-        for (const [key, value] of params) {
-          json[key] = value;
-        }
-        return json;
-      } catch (urlParamsError) {
-        // If both parsing methods fail, log the errors and exit
-        console.error("Error: API response is not valid JSON or URL-encoded.");
-        console.error("Cleaned Text:", cleanedText);
-        console.error("JSON Error:", jsonError.message);
-        console.error("URLSearchParams Error:", urlParamsError.message);
-        process.exit(1);
-      }
-    }
+    return result.candidates[0].content.parts[0].text.trim();
   } catch (error) {
     console.error(
-      "Error: Failed to call or parse Gemini API response.",
-      // Axios provides more detailed error information
+      "Error: Failed to call Gemini API.",
       error.response ? error.response.data : error.message
     );
     process.exit(1);
@@ -83,22 +49,35 @@ async function callGeminiApi(prompt, diff) {
 }
 
 (async () => {
-  const prompt = process.argv[2];
+  const promptPath = process.argv[2];
   const diff = process.argv[3];
+  const outputDir = "output";
 
-  if (!prompt || !diff) {
-    console.error("Usage: node gemini-api.js <prompt> <diff>");
+  if (!promptPath || !diff) {
+    console.error("Usage: node gemini-api.js <promptPath> <diff>");
     process.exit(1);
   }
 
   try {
+    const prompt = fs.readFileSync(promptPath, "utf-8");
     const result = await callGeminiApi(prompt, diff);
-    // Set output for GitHub Actions
-    fs.appendFileSync(
-      process.env.GITHUB_OUTPUT,
-      `result=${JSON.stringify(result)}\n`
-    );
+
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir);
+    }
+
+    if (promptPath.includes("code-review")) {
+      fs.writeFileSync(`${outputDir}/code_review.md`, result);
+      console.log("Code review has been generated in the 'output' directory.");
+    } else if (promptPath.includes("documentation")) {
+      const safeFileName = diff.split("\n")[0].replace(/[/\\?%*:|"<>]/g, "_");
+      fs.writeFileSync(`${outputDir}/${safeFileName}.md`, result);
+      console.log(`Documentation for ${safeFileName} has been generated in the 'output' directory.`);
+    }
   } catch (error) {
+    console.error("Error:", error.message);
     process.exit(1);
   }
 })();
+
+export default callGeminiApi;

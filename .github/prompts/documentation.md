@@ -1,21 +1,9 @@
-# Documentation
+# AI Documentation Generation
 
-## Tasks:
+You will be provided with a git diff for a single file. Your task is to generate documentation for the changes in that file.
 
-1. Check if existing documentation covers the changed code.
-2. If well-documented:
-   - Create change documentation explaining what was modified and why.
-   - Include examples or diagrams if applicable.
-3. If poorly documented:
-   - Create comprehensive documentation for the entire function/class/module.
-   - Use a structured template: Purpose, Parameters, Return Values, Examples, and Notes.
-4. Highlight business logic changes, new dependencies, and API modifications.
-5. Ensure documentation is clear, concise, and developer-friendly.
+- If the file is already well-documented, create change documentation explaining what was modified and why.
+- If the file is poorly documented, create comprehensive documentation for the entire function/class/module.
+- Focus on business logic changes, new dependencies, and API modifications.
 
-## Instructions:
-
-- Use the git diff to identify changes.
-- Focus on areas that impact functionality or require clarification.
-- Provide documentation that aligns with coding standards and project guidelines.
-
-Based on the git diff, generate robust and detailed documentation.
+Your response should be the documentation content as a raw string, not enclosed in a JSON object or markdown.

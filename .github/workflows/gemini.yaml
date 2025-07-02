@@ -86,20 +86,7 @@ jobs:
             echo "No documentation generated, skipping documentation processing"
           fi
 
-      - name: Commit Generated Files
-        run: |
-          git config user.name "GitHub Actions Bot"
-          git config user.email "actions@github.com"
-          git add code-reviews/*.md docs/*.md
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "Add AI-generated code review and documentation"
-            git push https://x-access-token:${{ secrets.REPO_ACCESS_TOKEN }}@github.com/olasunkanmi-SE/Loophole.git HEAD:${{ github.head_ref }}
-          fi
-
       - name: Upload Artifacts
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ai-outputs

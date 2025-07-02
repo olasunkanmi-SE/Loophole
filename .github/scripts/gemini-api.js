@@ -93,7 +93,7 @@ async function callGeminiApi(prompt, diff) {
 
   try {
     const result = await callGeminiApi(prompt, diff);
-    console.log("AI output successfully processed.");
+    console.log(JSON.stringify(result, null, 2));
   } catch (error) {
     process.exit(1);
   }

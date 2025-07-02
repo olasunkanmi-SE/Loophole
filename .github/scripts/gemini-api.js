@@ -1,3 +1,5 @@
+import { ReadableStream } from "stream/web";
+global.ReadableStream = ReadableStream;
 import { fetch } from "undici";
 global.fetch = fetch;
 import { GoogleGenAI } from "@google/genai";

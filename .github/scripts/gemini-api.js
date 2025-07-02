@@ -1,30 +1,39 @@
-import { ReadableStream } from "stream/web";
-global.ReadableStream = ReadableStream;
-import { fetch } from "undici";
-global.fetch = fetch;
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+import { execSync } from "child_process";
 
 async function callGeminiApi(prompt, diff) {
-  if (!process.env.GEMINI_API_KEY) {
+  const geminiApiKey = process.env.GEMINI_API_KEY;
+
+  if (!geminiApiKey) {
     console.error("Error: GEMINI_API_KEY is not set.");
     process.exit(1);
   }
 
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: `${prompt}\n\n${diff}`,
-    });
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
+  const geminiBody = JSON.stringify({
+    contents: [
+      {
+        parts: [
+          {
+            text: `${prompt}\n\n${diff}`,
+          },
+        ],
+      },
+    ],
+  });
 
-    if (!response.text) {
+  try {
+    const curlCommand = `curl -X POST -H "Content-Type: application/json" -d '${geminiBody}' "${geminiUrl}"`;
+    const response = execSync(curlCommand, { encoding: "utf-8" });
+
+    const result = JSON.parse(response);
+
+    if (!result.candidates || !result.candidates[0]?.content?.parts[0]?.text) {
       console.error("Error: Unexpected API response structure.");
-      console.error("Response:", JSON.stringify(response, null, 2));
+      console.error("Response:", JSON.stringify(result, null, 2));
       process.exit(1);
     }
 
-    return JSON.parse(response.text);
+    return JSON.parse(result.candidates[0].content.parts[0].text);
   } catch (error) {
     console.error(
       "Error: Failed to call or parse Gemini API response.",

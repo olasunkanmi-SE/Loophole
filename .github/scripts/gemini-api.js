@@ -22,7 +22,9 @@ async function callGeminiApi(prompt, diff) {
   });
 
   try {
-    const curlCommand = `curl -X POST -H "Content-Type: application/json" -d '${geminiBody}' "${geminiUrl}"`;
+    // Escape the JSON payload for safe usage in the shell
+    const escapedBody = geminiBody.replace(/"/g, '\\"').replace(/'/g, "\\'");
+    const curlCommand = `curl -X POST -H "Content-Type: application/json" -d "${escapedBody}" "${geminiUrl}"`;
     const response = execSync(curlCommand, { encoding: "utf-8" });
 
     const result = JSON.parse(response);

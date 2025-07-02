@@ -1,0 +1,86 @@
+name: Gemini AI Code Review and Documentation
+
+on:
+  pull_request:
+    branches: [main, develop, uat]
+
+jobs:
+  ai_tasks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Get git diff
+        id: git_diff
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          git diff origin/${{ github.base_ref }} ${{ github.head_ref }} > diff.txt
+          echo "diff<<EOF" >> $GITHUB_OUTPUT
+          cat diff.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Validate GEMINI_API_KEY
+        run: |
+          if [ -z "${{ secrets.GEMINI_API_KEY }}" ]; then
+            echo "Error: GEMINI_API_KEY is not set"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+          cache: "npm"
+      - run: npm install
+
+      - name: Create output directories
+        run: |
+          mkdir -p docs
+          mkdir -p code-reviews
+
+      - name: Run AI Generation
+        id: ai_generation
+        run: |
+          prompt=$(cat .github/prompts/combined-review-docs.md)
+          diff=$(cat diff.txt)
+          output=$(node .github/scripts/gemini-api.js "$prompt" "$diff")
+          if [ -z "$output" ]; then
+            echo "Error: AI generation failed or returned empty output"
+            exit 1
+          fi
+          echo "output=$output" >> $GITHUB_OUTPUT
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      - name: Process Code Review
+        run: |
+          review=$(echo '${{ steps.ai_generation.outputs.output }}' | jq -r '.code_review')
+          timestamp=$(date +%s)
+          echo "$review" > code-reviews/${timestamp}-code-review.md
+
+      - name: Process Documentation
+        run: |
+          docs_json='${{ steps.ai_generation.outputs.output }}'
+          if [ -z "$docs_json" ]; then
+            echo "Error: Documentation JSON is empty"
+            exit 1
+          fi
+          echo "$docs_json" | jq -c '.documentation | to_entries[]' | while read -r entry; do
+            file_path=$(echo "$entry" | jq -r '.key')
+            documentation=$(echo "$entry" | jq -r '.value')
+            doc_filename=$(basename "$file_path").md
+            echo "$documentation" > docs/$doc_filename
+          done
+
+      - name: Logging Outputs
+        run: |
+          echo "Generated Code Review:" && cat code-reviews/*
+          echo "Generated Documentation:" && ls docs
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f diff.txt

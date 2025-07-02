@@ -1,4 +1,11 @@
-import { execSync } from "child_process";
+import { ReadableStream } from "stream/web";
+global.ReadableStream = ReadableStream;
+import { fetch } from "undici";
+global.fetch = fetch;
+import { GoogleGenAI } from "@google/genai";
+import fs from "fs";
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 async function callGeminiApi(prompt, diff) {
   const geminiApiKey = process.env.GEMINI_API_KEY;
@@ -46,15 +53,16 @@ async function callGeminiApi(prompt, diff) {
 }
 
 (async () => {
-  const prompt = process.argv[2];
+  const promptPath = process.argv[2];
   const diff = process.argv[3];
 
-  if (!prompt || !diff) {
-    console.error("Usage: node gemini-api.js <prompt> <diff>");
+  if (!promptPath || !diff) {
+    console.error("Usage: node gemini-api.js <prompt_path> <diff>");
     process.exit(1);
   }
 
   try {
+    const prompt = fs.readFileSync(promptPath, "utf-8");
     const result = await callGeminiApi(prompt, diff);
     console.log(JSON.stringify(result, null, 2));
   } catch (error) {

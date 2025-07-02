@@ -48,6 +48,10 @@ async function callGeminiApi(prompt, diff) {
       .replace(/```/g, "")
       .trim();
 
+    // Write cleaned response to a file
+    fs.writeFileSync("ai_output.json", cleanedText);
+    console.log("AI output written to ai_output.json");
+
     // Attempt to parse the cleaned text as JSON
     try {
       return JSON.parse(cleanedText);
@@ -90,7 +94,7 @@ async function callGeminiApi(prompt, diff) {
 
   try {
     const result = await callGeminiApi(prompt, diff);
-    console.log(JSON.stringify(result, null, 2));
+    console.log("AI output successfully processed.");
   } catch (error) {
     process.exit(1);
   }

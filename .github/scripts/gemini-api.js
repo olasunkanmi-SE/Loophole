@@ -42,35 +42,26 @@ async function callGeminiApi(prompt, diff) {
       process.exit(1);
     }
 
-    // Clean the response by removing markdown backticks and 'json' specifier
-    const cleanedText = result.candidates[0].content.parts[0].text
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
+    // Extract the JSON object from the response
+    const textResponse = result.candidates[0].content.parts[0].text;
+    const jsonStart = textResponse.indexOf("{");
+    const jsonEnd = textResponse.lastIndexOf("}");
 
-    // Attempt to parse the cleaned text as JSON
+    if (jsonStart === -1 || jsonEnd === -1) {
+      console.error("Error: Could not find a JSON object in the response.");
+      console.error("Response Text:", textResponse);
+      process.exit(1);
+    }
+
+    const jsonString = textResponse.substring(jsonStart, jsonEnd + 1);
+
     try {
-      return JSON.parse(cleanedText);
+      return JSON.parse(jsonString);
     } catch (jsonError) {
-      // If parsing fails, check if it's a JSON fragment
-      if (cleanedText.startsWith('"')) {
-        let parsableText = `{${cleanedText}}`;
-        try {
-          return JSON.parse(parsableText);
-        } catch (innerError) {
-          // If it still fails, log the error and exit
-          console.error("Error: Failed to parse JSON fragment.");
-          console.error("Cleaned Text:", cleanedText);
-          console.error("Original Error:", jsonError.message);
-          process.exit(1);
-        }
-      } else {
-        // If it's not a JSON fragment, log the error and exit
-        console.error("Error: API response is not valid JSON.");
-        console.error("Cleaned Text:", cleanedText);
-        console.error("Original Error:", jsonError.message);
-        process.exit(1);
-      }
+      console.error("Error: Failed to parse extracted JSON.");
+      console.error("Extracted JSON String:", jsonString);
+      console.error("Original Error:", jsonError.message);
+      process.exit(1);
     }
   } catch (error) {
     console.error(

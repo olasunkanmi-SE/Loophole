@@ -1,5 +1,6 @@
 import { execSync } from "child_process";
-import axios from "axios"; // Import axios
+import axios from "axios";
+import fs from "fs"; // Import fs for file operations
 
 async function callGeminiApi(prompt, diff) {
   const geminiApiKey = process.env.GEMINI_API_KEY;
@@ -47,24 +48,10 @@ async function callGeminiApi(prompt, diff) {
       .replace(/```/g, "")
       .trim();
 
-    // Ensure the response is a valid JSON object
-    let parsableText = cleanedText;
-    if (!parsableText.startsWith("{")) {
-      parsableText = "{" + parsableText;
-    }
-    if (!parsableText.endsWith("}")) {
-      parsableText = parsableText + "}";
-    }
+    fs.writeFileSync("ai_output.json", cleanedText); // Write cleaned response to a file
+    console.log("AI output written to ai_output.json");
 
-    try {
-      return JSON.parse(parsableText);
-    } catch (jsonError) {
-      console.error("Error: Failed to parse cleaned JSON response.");
-      console.error("Cleaned Text:", cleanedText);
-      console.error("Parsable Text:", parsableText);
-      console.error("Original Error:", jsonError.message);
-      process.exit(1);
-    }
+    return cleanedText;
   } catch (error) {
     console.error(
       "Error: Failed to call or parse Gemini API response.",
@@ -86,7 +73,7 @@ async function callGeminiApi(prompt, diff) {
 
   try {
     const result = await callGeminiApi(prompt, diff);
-    console.log(JSON.stringify(result, null, 2));
+    console.log("AI output successfully processed.");
   } catch (error) {
     process.exit(1);
   }

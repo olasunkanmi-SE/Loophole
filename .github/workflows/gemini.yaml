@@ -41,7 +41,7 @@ jobs:
       - name: Install dependencies
         uses: actions/setup-node@v4
         with:
-          node-version: "20" # Updated to a supported Node version
+          node-version: "20"
           cache: "npm"
       - run: npm install
 
@@ -60,29 +60,23 @@ jobs:
             echo "Error: AI generation failed or returned empty output"
             exit 1
           fi
-          # Validate JSON output
-          echo "$output" | jq -e '.' > /dev/null || { echo "Error: Invalid JSON output"; exit 1; }
+          # Validate JSON and write to temporary file
+          echo "$output" | jq -e '.' > output.json || { echo "Error: Invalid JSON output"; exit 1; }
           echo "output=$output" >> $GITHUB_OUTPUT
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
       - name: Process Code Review
         run: |
-          review=$(echo "${{ steps.ai_generation.outputs.output }}" | jq -r '.code_review // "No code review generated"')
+          review=$(jq -r '.code_review // "No code review generated"' output.json)
           timestamp=$(date +%s)
           echo "$review" > code-reviews/${timestamp}-code-review.md
 
       - name: Process Documentation
         run: |
-          docs_json='${{ steps.ai_generation.outputs.output }}'
-          if [ -z "$docs_json" ]; then
-            echo "Error: Documentation JSON is empty"
-            exit 1
-          fi
-          # Check if documentation field is non-empty before processing
-          has_docs=$(echo "$docs_json" | jq -r '.documentation | length > 0')
+          has_docs=$(jq -r '.documentation | length > 0' output.json)
           if [ "$has_docs" = "true" ]; then
-            echo "$docs_json" | jq -c '.documentation | to_entries[]' | while read -r entry; do
+            jq -c '.documentation | to_entries[]' output.json | while read -r entry; do
               file_path=$(echo "$entry" | jq -r '.key')
               documentation=$(echo "$entry" | jq -r '.value')
               doc_filename=$(basename "$file_path").md
@@ -102,4 +96,4 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          rm -f diff.txt
+          rm -f diff.txt output.json

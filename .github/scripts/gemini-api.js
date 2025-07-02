@@ -1,3 +1,5 @@
+import fetch from "node-fetch";
+global.fetch = fetch;
 import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });

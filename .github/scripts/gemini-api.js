@@ -1,5 +1,4 @@
-const fetch = require('node-fetch');
-
+import fetch from "node-fetch";
 async function callGeminiApi(prompt, diff) {
   const geminiApiKey = process.env.GEMINI_API_KEY;
 
@@ -10,18 +9,22 @@ async function callGeminiApi(prompt, diff) {
 
   const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`;
   const geminiBody = {
-    contents: [{
-      parts: [{
-        text: `${prompt}\n\n${diff}`
-      }]
-    }]
+    contents: [
+      {
+        parts: [
+          {
+            text: `${prompt}\n\n${diff}`,
+          },
+        ],
+      },
+    ],
   };
 
   try {
     const response = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(geminiBody)
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(geminiBody),
     });
 
     if (!response.ok) {
@@ -36,12 +39,14 @@ async function callGeminiApi(prompt, diff) {
       console.error("Response:", JSON.stringify(result, null, 2));
       process.exit(1);
     }
-    
+
     // The response is expected to be a JSON string, so we parse it.
     return JSON.parse(result.candidates[0].content.parts[0].text);
-
   } catch (error) {
-    console.error("Error: Failed to call or parse Gemini API response.", error.message);
+    console.error(
+      "Error: Failed to call or parse Gemini API response.",
+      error.message
+    );
     process.exit(1);
   }
 }

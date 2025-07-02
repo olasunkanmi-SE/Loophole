@@ -47,7 +47,24 @@ async function callGeminiApi(prompt, diff) {
       .replace(/```/g, "")
       .trim();
 
-    return JSON.parse(cleanedText);
+    // Ensure the response is a valid JSON object
+    let parsableText = cleanedText;
+    if (!parsableText.startsWith("{")) {
+      parsableText = "{" + parsableText;
+    }
+    if (!parsableText.endsWith("}")) {
+      parsableText = parsableText + "}";
+    }
+
+    try {
+      return JSON.parse(parsableText);
+    } catch (jsonError) {
+      console.error("Error: Failed to parse cleaned JSON response.");
+      console.error("Cleaned Text:", cleanedText);
+      console.error("Parsable Text:", parsableText);
+      console.error("Original Error:", jsonError.message);
+      process.exit(1);
+    }
   } catch (error) {
     console.error(
       "Error: Failed to call or parse Gemini API response.",

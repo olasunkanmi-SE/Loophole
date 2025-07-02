@@ -53,7 +53,7 @@ jobs:
       - name: Run AI Generation
         id: ai_generation
         run: |
-          prompt=$(cat .github/prompts/combined-review.md)
+          prompt=$(cat .github/prompts/code-review.md)
           diff=$(cat diff.txt)
           output=$(node .github/scripts/gemini-api.js "$prompt" "$diff")
           if [ -z "$output" ]; then

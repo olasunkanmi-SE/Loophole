@@ -9,8 +9,8 @@ async function callGeminiApi(prompt, diff) {
     process.exit(1);
   }
 
-  // Updated model name to "gemini-2.5-flash" as "gemini-1.5-flash" is no longer available for new projects
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
+  // Updated model to gemini-2.5-flash
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiApiKey}`;
 
   // The JSON body for the API request
   const geminiBody = {
@@ -48,7 +48,7 @@ async function callGeminiApi(prompt, diff) {
       .replace(/```/g, "")
       .trim();
 
-    // Write cleaned response to a file
+    // Write cleansed response to a file
     fs.writeFileSync("ai_output.json", cleanedText);
 
     // Attempt to parse the cleaned text as JSON
@@ -93,8 +93,11 @@ async function callGeminiApi(prompt, diff) {
 
   try {
     const result = await callGeminiApi(prompt, diff);
-    // Output the parsed result as JSON to stdout
-    console.log(JSON.stringify(result, null, 2));
+    // Set output for GitHub Actions
+    fs.appendFileSync(
+      process.env.GITHUB_OUTPUT,
+      `result=${JSON.stringify(result)}\n`
+    );
   } catch (error) {
     process.exit(1);
   }

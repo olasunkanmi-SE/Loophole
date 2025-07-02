@@ -48,10 +48,30 @@ async function callGeminiApi(prompt, diff) {
       .replace(/```/g, "")
       .trim();
 
-    fs.writeFileSync("ai_output.json", cleanedText); // Write cleaned response to a file
-    console.log("AI output written to ai_output.json");
-
-    return cleanedText;
+    // Attempt to parse the cleaned text as JSON
+    try {
+      return JSON.parse(cleanedText);
+    } catch (jsonError) {
+      // If parsing fails, check if it's a JSON fragment
+      if (cleanedText.startsWith('"')) {
+        let parsableText = `{${cleanedText}}`;
+        try {
+          return JSON.parse(parsableText);
+        } catch (innerError) {
+          // If it still fails, log the error and exit
+          console.error("Error: Failed to parse JSON fragment.");
+          console.error("Cleaned Text:", cleanedText);
+          console.error("Original Error:", jsonError.message);
+          process.exit(1);
+        }
+      } else {
+        // If it's not a JSON fragment, log the error and exit
+        console.error("Error: API response is not valid JSON.");
+        console.error("Cleaned Text:", cleanedText);
+        console.error("Original Error:", jsonError.message);
+        process.exit(1);
+      }
+    }
   } catch (error) {
     console.error(
       "Error: Failed to call or parse Gemini API response.",

@@ -1,47 +1,26 @@
-import fetch from "node-fetch";
-async function callGeminiApi(prompt, diff) {
-  const geminiApiKey = process.env.GEMINI_API_KEY;
+import { GoogleGenAI } from "@google/genai";
 
-  if (!geminiApiKey) {
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+async function callGeminiApi(prompt, diff) {
+  if (!process.env.GEMINI_API_KEY) {
     console.error("Error: GEMINI_API_KEY is not set.");
     process.exit(1);
   }
 
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`;
-  const geminiBody = {
-    contents: [
-      {
-        parts: [
-          {
-            text: `${prompt}\n\n${diff}`,
-          },
-        ],
-      },
-    ],
-  };
-
   try {
-    const response = await fetch(geminiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(geminiBody),
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `${prompt}\n\n${diff}`,
     });
 
-    if (!response.ok) {
-      console.error(`Error: API call failed with status ${response.status}`);
-      process.exit(1);
-    }
-
-    const result = await response.json();
-
-    if (!result.candidates || !result.candidates[0]?.content?.parts[0]?.text) {
+    if (!response.text) {
       console.error("Error: Unexpected API response structure.");
-      console.error("Response:", JSON.stringify(result, null, 2));
+      console.error("Response:", JSON.stringify(response, null, 2));
       process.exit(1);
     }
 
-    // The response is expected to be a JSON string, so we parse it.
-    return JSON.parse(result.candidates[0].content.parts[0].text);
+    return JSON.parse(response.text);
   } catch (error) {
     console.error(
       "Error: Failed to call or parse Gemini API response.",
@@ -64,7 +43,6 @@ async function callGeminiApi(prompt, diff) {
     const result = await callGeminiApi(prompt, diff);
     console.log(JSON.stringify(result, null, 2));
   } catch (error) {
-    // The error is already logged in callGeminiApi, so just exit.
     process.exit(1);
   }
 })();

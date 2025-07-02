@@ -9,9 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.head_ref }}
 
       - name: Get git diff
         id: git_diff
@@ -39,9 +40,9 @@ jobs:
           fi
 
       - name: Install dependencies
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: "16"
+          node-version: "20"
           cache: "npm"
       - run: npm install
 
@@ -60,36 +61,52 @@ jobs:
             echo "Error: AI generation failed or returned empty output"
             exit 1
           fi
+          echo "$output" | jq -e '.' > output.json || { echo "Error: Invalid JSON output"; exit 1; }
           echo "output=$output" >> $GITHUB_OUTPUT
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
       - name: Process Code Review
         run: |
-          review=$(echo '${{ steps.ai_generation.outputs.output }}' | jq -r '.code_review')
+          raw_file=$(jq -r '.code_review_raw // ""' output.json)
           timestamp=$(date +%s)
-          echo "$review" > code-reviews/${timestamp}-code-review.md
+          if [ -n "$raw_file" ] && [ -f "$raw_file" ]; then
+            cp "$raw_file" code-reviews/${timestamp}-code-review.md
+          else
+            review=$(jq -r '.code_review // "No code review generated"' output.json)
+            echo "$review" > code-reviews/${timestamp}-code-review.md
+          fi
 
       - name: Process Documentation
         run: |
-          docs_json='${{ steps.ai_generation.outputs.output }}'
-          if [ -z "$docs_json" ]; then
-            echo "Error: Documentation JSON is empty"
-            exit 1
+          has_docs=$(jq -r '.documentation | length > 0' output.json)
+          if [ "$has_docs" = "true" ]; then
+            jq -c '.documentation | to_entries[]' output.json | while read -r entry; do
+              file_path=$(echo "$entry" | jq -r '.key')
+              documentation=$(echo "$entry" | jq -r '.value')
+              doc_filename=$(basename "$file_path").md
+              echo "$documentation" > docs/$doc_filename
+            done
+          else
+            echo "No documentation generated, skipping documentation processing"
           fi
-          echo "$docs_json" | jq -c '.documentation | to_entries[]' | while read -r entry; do
-            file_path=$(echo "$entry" | jq -r '.key')
-            documentation=$(echo "$entry" | jq -r '.value')
-            doc_filename=$(basename "$file_path").md
-            echo "$documentation" > docs/$doc_filename
-          done
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-outputs
+          path: |
+            code-reviews/
+            docs/
 
       - name: Logging Outputs
         run: |
-          echo "Generated Code Review:" && cat code-reviews/*
-          echo "Generated Documentation:" && ls docs
+          echo "Generated Code Review:"
+          cat code-reviews/*
+          echo "Generated Documentation:"
+          ls -R docs || echo "No documentation files generated"
 
       - name: Cleanup
         if: always()
         run: |
-          rm -f diff.txt
+          rm -f diff.txt output.json code_review_raw.md

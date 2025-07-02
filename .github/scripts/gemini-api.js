@@ -1,5 +1,6 @@
 import axios from "axios";
 import fs from "fs";
+import crypto from "crypto"; // Import crypto for hashing
 
 async function callGeminiApi(prompt, diff) {
   const geminiApiKey = process.env.GEMINI_API_KEY;
@@ -70,9 +71,17 @@ async function callGeminiApi(prompt, diff) {
       fs.writeFileSync(`${outputDir}/code_review.md`, result);
       console.log("Code review has been generated in the 'output' directory.");
     } else if (promptPath.includes("documentation")) {
-      const safeFileName = diff.split("\n")[0].replace(/[/\\?%*:|"<>]/g, "_");
-      fs.writeFileSync(`${outputDir}/${safeFileName}.md`, result);
-      console.log(`Documentation for ${safeFileName} has been generated in the 'output' directory.`);
+      // Generate a safe filename using a hash of the diff content
+      const hash = crypto
+        .createHash("sha256")
+        .update(diff)
+        .digest("hex")
+        .slice(0, 16);
+      const safeFileName = `documentation_${hash}.md`;
+      fs.writeFileSync(`${outputDir}/${safeFileName}`, result);
+      console.log(
+        `Documentation has been generated in the 'output' directory with filename: ${safeFileName}`
+      );
     }
   } catch (error) {
     console.error("Error:", error.message);

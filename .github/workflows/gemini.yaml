@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -39,9 +39,9 @@ jobs:
           fi
 
       - name: Install dependencies
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: "16"
+          node-version: "20" # Updated to a supported Node version
           cache: "npm"
       - run: npm install
 
@@ -60,13 +60,15 @@ jobs:
             echo "Error: AI generation failed or returned empty output"
             exit 1
           fi
+          # Validate JSON output
+          echo "$output" | jq -e '.' > /dev/null || { echo "Error: Invalid JSON output"; exit 1; }
           echo "output=$output" >> $GITHUB_OUTPUT
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
       - name: Process Code Review
         run: |
-          review=$(echo '${{ steps.ai_generation.outputs.output }}' | jq -r '.code_review')
+          review=$(echo "${{ steps.ai_generation.outputs.output }}" | jq -r '.code_review // "No code review generated"')
           timestamp=$(date +%s)
           echo "$review" > code-reviews/${timestamp}-code-review.md
 
@@ -77,17 +79,25 @@ jobs:
             echo "Error: Documentation JSON is empty"
             exit 1
           fi
-          echo "$docs_json" | jq -c '.documentation | to_entries[]' | while read -r entry; do
-            file_path=$(echo "$entry" | jq -r '.key')
-            documentation=$(echo "$entry" | jq -r '.value')
-            doc_filename=$(basename "$file_path").md
-            echo "$documentation" > docs/$doc_filename
-          done
+          # Check if documentation field is non-empty before processing
+          has_docs=$(echo "$docs_json" | jq -r '.documentation | length > 0')
+          if [ "$has_docs" = "true" ]; then
+            echo "$docs_json" | jq -c '.documentation | to_entries[]' | while read -r entry; do
+              file_path=$(echo "$entry" | jq -r '.key')
+              documentation=$(echo "$entry" | jq -r '.value')
+              doc_filename=$(basename "$file_path").md
+              echo "$documentation" > docs/$doc_filename
+            done
+          else
+            echo "No documentation generated, skipping documentation processing"
+          fi
 
       - name: Logging Outputs
         run: |
-          echo "Generated Code Review:" && cat code-reviews/*
-          echo "Generated Documentation:" && ls docs
+          echo "Generated Code Review:"
+          cat code-reviews/*
+          echo "Generated Documentation:"
+          ls -R docs || echo "No documentation files generated"
 
       - name: Cleanup
         if: always()

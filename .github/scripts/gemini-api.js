@@ -44,7 +44,14 @@ async function callGeminiApi(prompt, diff) {
       };
     }
 
-    const cleanedText = result.candidates[0].content.parts[0].text.trim();
+    // Clean the response by removing markdown backticks and newlines
+    const cleanedText = result.candidates[0].content.parts[0].text
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .replace(/\n/g, " ") // Replace newlines with spaces
+      .replace(/\s+/g, " ") // Collapse multiple spaces
+      .trim();
+
     return { code_review: cleanedText, documentation: {} };
   } catch (error) {
     console.error(
@@ -52,7 +59,10 @@ async function callGeminiApi(prompt, diff) {
       error.response ? error.response.data : error.message
     );
     return {
-      code_review: `Error: Failed to generate code review. ${error.message}`,
+      code_review: `Error: Failed to generate code review. ${error.message.replace(
+        /\n/g,
+        " "
+      )}`,
       documentation: {},
     };
   }
@@ -86,7 +96,10 @@ async function callGeminiApi(prompt, diff) {
   } catch (error) {
     console.error("Error:", error.message);
     const errorResult = {
-      code_review: `Error: Script execution failed. ${error.message}`,
+      code_review: `Error: Script execution failed. ${error.message.replace(
+        /\n/g,
+        " "
+      )}`,
       documentation: {},
     };
     console.log(JSON.stringify(errorResult));

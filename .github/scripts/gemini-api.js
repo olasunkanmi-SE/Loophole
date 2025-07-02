@@ -1,4 +1,3 @@
-import { execSync } from "child_process";
 import axios from "axios";
 import fs from "fs"; // Import fs for file operations
 
@@ -10,7 +9,8 @@ async function callGeminiApi(prompt, diff) {
     process.exit(1);
   }
 
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+  // Updated model name to "gemini-2.5-flash" as "gemini-1.5-flash" is no longer available for new projects
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
 
   // The JSON body for the API request
   const geminiBody = {
@@ -50,7 +50,6 @@ async function callGeminiApi(prompt, diff) {
 
     // Write cleaned response to a file
     fs.writeFileSync("ai_output.json", cleanedText);
-    console.log("AI output written to ai_output.json");
 
     // Attempt to parse the cleaned text as JSON
     try {
@@ -94,7 +93,8 @@ async function callGeminiApi(prompt, diff) {
 
   try {
     const result = await callGeminiApi(prompt, diff);
-    console.log("AI output successfully processed.");
+    // Output the parsed result as JSON to stdout
+    console.log(JSON.stringify(result, null, 2));
   } catch (error) {
     process.exit(1);
   }

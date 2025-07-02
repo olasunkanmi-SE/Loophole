@@ -41,7 +41,13 @@ async function callGeminiApi(prompt, diff) {
       process.exit(1);
     }
 
-    return JSON.parse(result.candidates[0].content.parts[0].text);
+    // Clean the response by removing markdown backticks and 'json' specifier
+    const cleanedText = result.candidates[0].content.parts[0].text
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+
+    return JSON.parse(cleanedText);
   } catch (error) {
     console.error(
       "Error: Failed to call or parse Gemini API response.",
